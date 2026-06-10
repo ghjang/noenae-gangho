@@ -40,24 +40,35 @@
   function center(n) {
     return { x: n.x + (n.w || 180) / 2, y: n.y + (n.h || 48) / 2 }
   }
-  // 緣의 끝점 — 자식 박스의 좌/우 변 (화살촉이 박스 밑에 숨지 않게).
-  // 현재 베지어는 끝에서 항상 수평 진입하므로 변의 세로 중앙이 자연스럽다.
+  // 緣의 끝점 — 자식 박스 4변 중 부모를 향한 변 (화살촉이 박스 밑에 숨지 않게).
+  // (ax, ay)는 진입 축 단위벡터: 가로 진입 ax=±1 / 세로 진입 ay=±1.
+  // 가로·세로 선택은 중심 간 변위의 우세 축으로.
   function edgeEnd(a, b) {
     const A = center(a), B = center(b)
-    const fromLeft = A.x <= B.x
-    return { x: fromLeft ? b.x : b.x + (b.w || 180), y: B.y, dir: fromLeft ? 1 : -1 }
+    const dx = B.x - A.x, dy = B.y - A.y
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      const fromLeft = dx >= 0
+      return { x: fromLeft ? b.x : b.x + (b.w || 180), y: B.y, ax: fromLeft ? 1 : -1, ay: 0 }
+    }
+    const fromTop = dy >= 0
+    return { x: B.x, y: fromTop ? b.y : b.y + (b.h || 48), ax: 0, ay: fromTop ? 1 : -1 }
   }
   function edgePath(a, b) {
     const A = center(a), E = edgeEnd(a, b)
-    const ex = E.x - 7 * E.dir // 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게
-    const mx = (A.x + ex) / 2
-    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${E.y}, ${ex} ${E.y}`
+    // 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게
+    const ex = E.x - 7 * E.ax, ey = E.y - 7 * E.ay
+    if (E.ax !== 0) {
+      const mx = (A.x + ex) / 2
+      return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${ey}, ${ex} ${ey}`
+    }
+    const my = (A.y + ey) / 2
+    return `M ${A.x} ${A.y} C ${A.x} ${my}, ${ex} ${my}, ${ex} ${ey}`
   }
-  // 방향 화살촉 — a(부모) → b(자식), 진입 방향으로 7px
+  // 방향 화살촉 — a(부모) → b(자식), 진입 축으로 7px·날개 ±4px
   function arrowPath(a, b) {
     const E = edgeEnd(a, b)
-    const s = 7 * E.dir
-    return `M ${E.x} ${E.y} l ${-s} -4 l 0 8 z`
+    const bx = E.x - 7 * E.ax, by = E.y - 7 * E.ay
+    return `M ${E.x} ${E.y} L ${bx - 4 * E.ay} ${by + 4 * E.ax} L ${bx + 4 * E.ay} ${by - 4 * E.ax} Z`
   }
   function ghostPath(s, x, y) {
     const A = center(s)
@@ -145,12 +156,13 @@
     ui.selectedId = n.id
     ui.linking = { from: n.id, x: w.x, y: w.y }
   }
-  function onResizeDown(e, n) {
+  function onResizeDown(e, n, edge) {
     e.stopPropagation()
     ui.selectedId = n.id
     ui.selectedEdgeId = null
     const w = toWorld(e)
-    resizing = { id: n.id, sx: w.x, sw: n.bw || n.w || 180 }
+    const sw = n.bw || n.w || 180
+    resizing = { id: n.id, edge, sx: w.x, sw, right: n.x + sw }
   }
   function onResizeDbl(e, n) {
     e.stopPropagation()
@@ -175,7 +187,12 @@
       }
     } else if (resizing) {
       const w = toWorld(e)
-      setNodeWidth(resizing.id, resizing.sw + (w.x - resizing.sx))
+      const dx = w.x - resizing.sx
+      setNodeWidth(resizing.id, resizing.edge === 'right' ? resizing.sw + dx : resizing.sw - dx)
+      if (resizing.edge === 'left') {
+        const n = byId(resizing.id)
+        if (n) n.x = resizing.right - n.bw // 왼변을 끌 때는 오른변 고정
+      }
     } else if (ui.linking) {
       const w = toWorld(e)
       ui.linking.x = w.x
@@ -414,8 +431,8 @@
         data-color={n.color}
         data-node-id={n.id}
         style={`left:${n.x}px; top:${n.y}px;${n.bw ? ` width:${n.bw}px;` : ''}`}
-        bind:clientWidth={n.w}
-        bind:clientHeight={n.h}
+        bind:offsetWidth={n.w}
+        bind:offsetHeight={n.h}
         role="group"
         onpointerdown={(e) => onNodeDown(e, n)}
         ondblclick={(e) => onNodeDbl(e, n)}
@@ -442,10 +459,17 @@
           ondblclick={(e) => e.stopPropagation()}
         ></button>
         <button
-          class="rhandle"
+          class="rsz left"
           title={t.resizeHandleTitle}
           aria-label={t.resizeHandleAria}
-          onpointerdown={(e) => onResizeDown(e, n)}
+          onpointerdown={(e) => onResizeDown(e, n, 'left')}
+          ondblclick={(e) => onResizeDbl(e, n)}
+        ></button>
+        <button
+          class="rsz right"
+          title={t.resizeHandleTitle}
+          aria-label={t.resizeHandleAria}
+          onpointerdown={(e) => onResizeDown(e, n, 'right')}
           ondblclick={(e) => onResizeDbl(e, n)}
         ></button>
       </div>
