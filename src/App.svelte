@@ -232,8 +232,26 @@
     const w = toWorld(e)
     drag = { id: n.id, ox: w.x - n.x, oy: w.y - n.y, moved: false }
   }
+  // 더블클릭 좌표 → 표시 텍스트의 오프셋 (편집 진입 시 그 자리에 캐럿)
+  let pendingCaret = null
+  function caretIndexAt(x, y, textEl) {
+    try {
+      if (document.caretPositionFromPoint) {
+        const p = document.caretPositionFromPoint(x, y)
+        if (p && textEl.contains(p.offsetNode)) return p.offset
+      } else if (document.caretRangeFromPoint) {
+        const r = document.caretRangeFromPoint(x, y)
+        if (r && textEl.contains(r.startContainer)) return r.startOffset
+      }
+    } catch {
+      /* 미지원이면 끝 캐럿으로 */
+    }
+    return null
+  }
   function onNodeDbl(e, n) {
     e.stopPropagation()
+    const ntext = e.currentTarget.querySelector('.ntext')
+    pendingCaret = ntext && n.text ? caretIndexAt(e.clientX, e.clientY, ntext) : null
     ui.selectedId = n.id
     ui.editingId = n.id
   }
@@ -508,13 +526,15 @@
   }
 
   // 편집 textarea — 자동 높이 + 포커스.
-  // 전체 선택 대신 끝에 캐럿: 여러 줄 메모가 오타 한 방에 증발하지 않게 (갈아엎기는 Ctrl+A)
+  // 캐럿: 더블클릭이면 클릭한 그 자리(pendingCaret), 키보드 진입이면 끝.
+  // 전체 선택은 안 한다 — 여러 줄 메모가 오타 한 방에 증발하지 않게 (갈아엎기는 Ctrl+A)
   function autogrow(el) {
     const fit = () => { el.style.height = '0px'; el.style.height = el.scrollHeight + 'px' }
     fit()
     el.focus()
-    const end = el.value.length
-    el.setSelectionRange(end, end)
+    const pos = Math.min(pendingCaret ?? el.value.length, el.value.length)
+    pendingCaret = null
+    el.setSelectionRange(pos, pos)
     el.addEventListener('input', fit)
     return { destroy() { el.removeEventListener('input', fit) } }
   }
