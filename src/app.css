@@ -321,6 +321,29 @@ button.armed {
 .node:hover .handle,
 .node.selected .handle { opacity: 1; }
 
+/* 우하단 — 가지 접기 배지 (자식 있는 쪽지만, 접힌 상태면 상시 표시 + 자식 수) */
+.fold {
+  position: absolute;
+  z-index: 1;
+  right: -7px;
+  bottom: -7px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--hanji);
+  color: var(--ink);
+  border: 1.5px solid var(--c, var(--c-muk));
+  font-size: 9.5px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.node:hover .fold,
+.node.selected .fold,
+.fold.on { opacity: 1; }
+
 /* 좌/우 변 — 보이지 않는 너비 조절 띠 (호버하면 커서가 ↔ 로) */
 .rsz {
   position: absolute;

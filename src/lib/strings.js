@@ -47,6 +47,8 @@ export const STRINGS = {
     handleAria: '緣 잇기',
     resizeHandleTitle: '좌·우 변을 끌어 너비 조절 (두 번 두드리면 자동 너비로)',
     resizeHandleAria: '너비 조절',
+    foldBadgeTitle: '가지 봉문/개문 (단축키 C) — 접으면 후손 쪽지가 숨는다',
+    foldBadgeAria: '가지 접기/펼치기',
 
     zoomOutAria: '축소',
     zoomInAria: '확대',
@@ -67,6 +69,7 @@ export const STRINGS = {
       ['Enter', '선택한 쪽지 편집'],
       ['Delete', '선택한 쪽지/緣 베기'],
       ['F', '가리키거나 선택한 緣 방향 뒤집기 (한 가닥씩)'],
+      ['C / ▾ 배지', '선택한 쪽지의 가지 봉문/개문'],
       ['Ctrl ± · 0', '축경(줌) · 0이면 100%로'],
       ['화살표 키', '유람 · 쪽지 선택 중엔 그 쪽지 옮기기 (Shift 성큼)'],
       ['PgUp/PgDn', '한 화면씩 오르내리기'],
@@ -120,6 +123,8 @@ export const STRINGS = {
     handleAria: '연결하기',
     resizeHandleTitle: '좌/우 가장자리를 끌어 너비 조절 (더블클릭하면 자동 너비)',
     resizeHandleAria: '너비 조절',
+    foldBadgeTitle: '하위 노트 접기/펼치기 (단축키 C)',
+    foldBadgeAria: '접기/펼치기',
 
     zoomOutAria: '축소',
     zoomInAria: '확대',
@@ -140,6 +145,7 @@ export const STRINGS = {
       ['Enter', '선택한 노트 편집'],
       ['Delete', '선택한 노트/연결 삭제'],
       ['F', '마우스로 가리키거나 선택한 연결 방향 뒤집기'],
+      ['C / ▾ 배지', '선택한 노트의 하위 접기/펼치기'],
       ['Ctrl ± · 0', '확대/축소 · 0이면 100%'],
       ['화살표 키', '화면 이동 · 노트 선택 시 노트 이동 (Shift 크게)'],
       ['PgUp/PgDn', '한 화면씩 위/아래'],
