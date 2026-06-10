@@ -107,6 +107,18 @@
     ui.pan.x = (r.width - (x0 + x1) * s) / 2
     ui.pan.y = (r.height - (y0 + y1) * s) / 2
   }
+  // 쪽지가 화면 밖이면 중앙으로 끌어온다 (Alt+화살표 緣 타기용)
+  function ensureVisible(n) {
+    const r = viewportEl.getBoundingClientRect()
+    const b = nodeBox(n)
+    const x0 = b.x * ui.scale + ui.pan.x, y0 = b.y * ui.scale + ui.pan.y
+    const x1 = x0 + b.w * ui.scale, y1 = y0 + b.h * ui.scale
+    const m = 24
+    if (x0 < m || y0 < m || x1 > r.width - m || y1 > r.height - m) {
+      ui.pan.x = r.width / 2 - (b.x + b.w / 2) * ui.scale
+      ui.pan.y = r.height / 2 - (b.y + b.h / 2) * ui.scale
+    }
+  }
   function addAtCenter() {
     const r = viewportEl.getBoundingClientRect()
     const x = (r.width / 2 - ui.pan.x) / ui.scale
@@ -280,9 +292,42 @@
       flipEdge(edgeHover ?? ui.selectedEdgeId) // 가리키는 緣이 선택보다 우선
       return
     }
-    if (e.code === 'KeyC' && selected && graph.edges.some((ed) => ed.a === selected.id)) {
+    if ((e.code === 'KeyC' || e.code === 'Space') && selected && graph.edges.some((ed) => ed.a === selected.id)) {
       e.preventDefault()
-      toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만
+      toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만 (Space는 FreeMind 혈통 별칭)
+      return
+    }
+    // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
+    if (e.altKey && e.key.startsWith('Arrow') && selected) {
+      e.preventDefault()
+      const cy = (nd) => nd.y + (nd.h || 48) / 2
+      const visible = (id) => !hidden.has(id)
+      let target = null
+      if (e.key === 'ArrowLeft') {
+        const pe = graph.edges.find((ed) => ed.b === selected.id && visible(ed.a))
+        target = pe ? byId(pe.a) : null
+      } else if (e.key === 'ArrowRight') {
+        const kids = graph.edges
+          .filter((ed) => ed.a === selected.id && visible(ed.b))
+          .map((ed) => byId(ed.b))
+          .filter(Boolean)
+          .sort((p, q) => cy(p) - cy(q))
+        target = kids[0] ?? null
+      } else {
+        const pe = graph.edges.find((ed) => ed.b === selected.id)
+        const sibs = (pe
+          ? graph.edges.filter((ed) => ed.a === pe.a).map((ed) => byId(ed.b))
+          : graph.nodes.filter((nd) => !graph.edges.some((ed) => ed.b === nd.id)))
+          .filter((nd) => nd && visible(nd.id))
+          .sort((p, q) => cy(p) - cy(q))
+        const i = sibs.findIndex((nd) => nd.id === selected.id)
+        target = e.key === 'ArrowUp' ? sibs[i - 1] : sibs[i + 1]
+      }
+      if (target) {
+        ui.selectedId = target.id
+        ui.selectedEdgeId = null
+        ensureVisible(target)
+      }
       return
     }
     if (e.key === 'Tab' && ui.selectedId) {
@@ -407,6 +452,10 @@
       out.add(id)
       for (const e of graph.edges) if (e.a === id) stack.push(e.b)
     }
+    // 불변식: 봉문한 쪽지는 절대 숨지 않는다 — 순환 緣이 BFS를 타고 돌아와
+    // 접은 쪽지 자신(또는 서로)을 가두는 잠금을 원천 차단. 겉 봉문 안의
+    // 속 봉문 쪽지는 '봉인된 상자'로 화면에 남는다 (배지로 항상 복구 가능)
+    for (const n of graph.nodes) if (n.collapsed) out.delete(n.id)
     return out
   })
 
