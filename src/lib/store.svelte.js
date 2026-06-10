@@ -7,6 +7,7 @@ import { nodeBox } from './geometry.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
+const VIEW_KEY = 'noenae-gangho-view' // 마지막 뷰(팬/줌) — 역시 로컬 취향, snapshot 밖
 
 function loadTone() {
   try {
@@ -17,11 +18,23 @@ function loadTone() {
   }
 }
 
+function loadView() {
+  try {
+    const v = JSON.parse(localStorage.getItem(VIEW_KEY))
+    if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.s))
+      return { x: v.x, y: v.y, s: Math.min(2.5, Math.max(0.35, v.s)) }
+  } catch {
+    /* 깨진 저장값은 무시 */
+  }
+  return null
+}
+const view = loadView()
+
 export const graph = $state({ nodes: [], edges: [] })
 
 export const ui = $state({
-  pan: { x: 0, y: 0 },
-  scale: 1,
+  pan: { x: view?.x ?? 0, y: view?.y ?? 0 },
+  scale: view?.s ?? 1,
   selectedId: null,
   selectedEdgeId: null,
   editingId: null,
@@ -71,6 +84,19 @@ let saveTimer = null
 export function scheduleSave() {
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => adapter.save(snapshot()), 500)
+}
+
+// 뷰(팬/줌) 저장 — App의 $effect가 변화 감지 후 호출. 그래프 스냅샷과 무관
+let viewTimer = null
+export function scheduleViewSave() {
+  clearTimeout(viewTimer)
+  viewTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
+    } catch {
+      /* 실패는 조용히 */
+    }
+  }, 300)
 }
 
 export function snapshot() {
