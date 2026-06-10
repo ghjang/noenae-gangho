@@ -40,6 +40,13 @@
 
   --serif: 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
   --sans: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+
+  /* 자체 커서 셋 — OS 기본 I빔·십자선은 1비트 XOR(반전) 커서라 일부 GPU/드라이버가
+     하드웨어 커서 플레인에서 '보더 없는 흰 판'으로 깨뜨린다. 풀컬러 비트맵 커서는
+     그 경로를 아예 안 타므로 교체로 우회 (CSS 변수는 data URI 안에서 못 쓴다 —
+     먹 #2a241c / 한지 #fff6ea / 인주 #c8472b 고정값, 토큰과 같은 값) */
+  --cursor-text: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><g fill='none' stroke-linecap='round'><g stroke='%23fff6ea' stroke-width='4.5'><path d='M12 4.5v15M9.5 4.5h5M9.5 19.5h5'/></g><g stroke='%232a241c' stroke-width='2'><path d='M12 4.5v15M9.5 4.5h5M9.5 19.5h5'/></g></g></svg>") 12 12;
+  --cursor-cross: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><g fill='none' stroke-linecap='round'><g stroke='%232a241c' stroke-width='4.5'><path d='M12 2.5v6M12 15.5v6M2.5 12h6M15.5 12h6'/></g><g stroke='%23fff6ea' stroke-width='2'><path d='M12 2.5v6M12 15.5v6M2.5 12h6M15.5 12h6'/></g><circle cx='12' cy='12' r='1.7' fill='%23c8472b'/></g></svg>") 12 12;
 }
 
 * { box-sizing: border-box; }
@@ -49,7 +56,7 @@
   background: rgba(200, 71, 43, 0.35); /* 인주 박명 */
   color: inherit;
 }
-textarea, input { caret-color: currentColor; }
+textarea, input { caret-color: currentColor; cursor: var(--cursor-text), text; }
 
 html, body {
   margin: 0;
@@ -334,16 +341,6 @@ button.armed {
   resize: none;
   padding: 0;
   overflow: hidden;
-}
-
-/* GPU 합성 글리치 완화 — 스케일된 world 안의 편집창이 포커스 순간
-   '보더 없는 흰 판'으로 번쩍이는 크로미움 증상. 편집 중인 쪽지와
-   편집창을 미리 GPU 레이어로 승격해 잘못된 합성 순서를 회피 */
-.node:focus-within,
-.node textarea {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  will-change: transform;
 }
 
 .handle {
