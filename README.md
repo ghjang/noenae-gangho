@@ -11,6 +11,7 @@
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # dist/ 정적 빌드 (상대경로 — 아무 데나 얹어도 동작)
+npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
 ```
 
 ## 조작 요결

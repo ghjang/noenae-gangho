@@ -11,7 +11,7 @@
     removeNode, addEdge, removeEdge, clearAll,
     snapshot, loadData, scheduleSave, toggleTone,
   } from './lib/store.svelte.js'
-  import { STRINGS } from './lib/strings.js'
+  import { STRINGS, fmt } from './lib/strings.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -282,7 +282,7 @@
       <button
         style={`--swatch: var(--c-${c})`}
         title={`${t.colorLabel[c]}(${c})`}
-        aria-label={t.paletteSet(t.colorLabel[c])}
+        aria-label={fmt(t.paletteSet, { label: t.colorLabel[c] })}
         disabled={!selected}
         onclick={() => selected && setColor(selected.id, c)}
       ></button>

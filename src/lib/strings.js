@@ -3,9 +3,18 @@
 // muhyeop(무협 톤, 기본)과 plain(일반 톤) 두 벌을 같은 키로 유지한다.
 // 선택은 ui.tone, 전환은 상단 바 '무공봉인' 토글(store.toggleTone).
 // 새 문구를 들일 때는 반드시 두 팩 모두에 같은 키로 추가할 것.
+// 팩은 순수 데이터(JSON 직렬화 가능) 유지 — 함수 금지. 매개변수가 필요한
+// 문구는 '{label}' 같은 플레이스홀더로 쓰고 fmt()로 치환한다.
+// 정합성은 scripts/check-strings.mjs(npm run check)가 지킨다.
 // ──────────────────────────────────────────────
 
 export const TONES = ['muhyeop', 'plain'] // [0]이 기본값
+
+// 플레이스홀더 치환: fmt('{label} 색으로', { label: '먹' }) → '먹 색으로'
+// 빠진 매개변수는 {이름}을 그대로 남겨 화면에서 바로 눈에 띄게 한다.
+export function fmt(template, params) {
+  return template.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? `{${k}}`)
+}
 
 export const STRINGS = {
   muhyeop: {
@@ -16,7 +25,7 @@ export const STRINGS = {
 
     colorLabel: { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' },
     paletteAria: '오행 색',
-    paletteSet: (label) => `선택한 쪽지를 ${label} 색으로`,
+    paletteSet: '선택한 쪽지를 {label} 색으로',
 
     newNode: '+ 새 쪽지',
     mdButton: '비급.md',
@@ -77,7 +86,7 @@ export const STRINGS = {
 
     colorLabel: { muk: '흑', cheong: '녹', dan: '적', hwang: '황', nam: '남' },
     paletteAria: '노트 색',
-    paletteSet: (label) => `선택한 노트를 ${label} 색으로`,
+    paletteSet: '선택한 노트를 {label} 색으로',
 
     newNode: '+ 새 노트',
     mdButton: 'Markdown',

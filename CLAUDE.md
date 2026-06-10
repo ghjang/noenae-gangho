@@ -8,14 +8,15 @@
 - `npm run dev` — 개발 서버 (localhost:5173)
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
-- 테스트·린트·포매터 없음. 자동 검증은 `npm run build` 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
+- `npm run check` — 문구 팩 정합성 검사(`scripts/check-strings.mjs`): 팩 간 키 일치 · App 사용 키 존재 · 팩 순수 데이터(함수 금지). `npm run build` 때 prebuild로 자동 실행
+- 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 
 ## 구조와 역할 분담
 
 - `src/lib/store.svelte.js` — 모든 상태(`$state`)·변이 함수·저장 어댑터. **로직은 전부 여기로.** 컴포넌트에 도메인 상태 두지 말 것
   - `graph`/`ui`는 export된 `$state` 객체 — 재할당 금지, `push`/`splice`/`length = 0` 같은 제자리 변이만
   - 변이 함수는 반드시 끝에 `scheduleSave()`(500ms 디바운스) 호출. 스토어 밖에서 직접 변이하는 예외(노드 드래그의 `n.x/n.y`)는 호출부가 챙긴다 — 빠뜨리면 새로고침 때 조용히 증발
-- `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가
+- `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
 - `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지
 
