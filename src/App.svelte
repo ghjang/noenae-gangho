@@ -67,6 +67,7 @@
   function onViewportDown(e) {
     if (e.target !== e.currentTarget) return
     commitEditing()
+    searchQ = null // 캔버스 직접 조작 = 검색창 닫기 (팝오버 국룰)
     ui.selectedId = null
     ui.selectedEdgeId = null
     touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -167,8 +168,10 @@
       e.preventDefault()
       searchIdx = (searchIdx - 1 + len) % len
     } else if (e.key === 'Enter' && len) {
-      jumpTo(matches[searchIdx % len])
-      searchIdx = (searchIdx + 1) % len // 연타하면 다음 결과로 — 순회 유지
+      const cur = searchIdx % len
+      jumpTo(matches[cur])
+      // 연타 순회 — Shift+Enter면 역방향 (찾기 UI 국룰)
+      searchIdx = e.shiftKey ? (cur - 1 + len) % len : (cur + 1) % len
     }
   }
   const focusit = (el) => { el.focus() }
@@ -218,6 +221,7 @@
     e.stopPropagation()
     if (ui.editingId === n.id) return
     if (ui.editingId) commitEditing()
+    searchQ = null // 쪽지 직접 선택 = 검색창 닫기
     ui.selectedId = n.id
     ui.selectedEdgeId = null
     const w = toWorld(e)
@@ -661,6 +665,7 @@
               onpointerleave={() => (edgeHover = null)}
               onpointerdown={(ev) => {
                 ev.stopPropagation()
+                searchQ = null
                 ui.selectedEdgeId = e.id
                 ui.selectedId = null
               }}
