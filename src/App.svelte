@@ -165,6 +165,7 @@
   function onSearchKey(e) {
     const len = matches.length
     if (e.key === 'Escape') {
+      e.stopPropagation() // 전역 Esc(단계식 해제)가 같은 키로 또 동작하지 않게
       searchQ = null
     } else if (e.key === 'ArrowDown' && len) {
       e.preventDefault()
@@ -375,7 +376,7 @@
   // ── 키보드 ───────────────────────────────────
   function onKey(e) {
     const el = e.target
-    if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) return
+    const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
     if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
     if (e.key === 'Escape') {
@@ -396,7 +397,8 @@
       return
     }
     if (ui.overlay) return
-    // Ctrl/Cmd + ± / 0 — 브라우저 줌 대신 앱 자체 축경 (입력 중·시트 열림엔 양보)
+    // Ctrl/Cmd 조합 — 줌(±/0)과 검색(F)은 입력 필드에 포커스가 있어도 캔버스 몫
+    // (검색창 띄운 채 Ctrl+±로 찾은 쪽지 확대). 나머지는 필드 네이티브에 양보
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
         e.preventDefault(); zoomCenter(1.18); return
@@ -407,6 +409,14 @@
       if (e.key === '0' || e.code === 'Numpad0') {
         e.preventDefault(); resetView(); return
       }
+      if (e.code === 'KeyF') {
+        // 무한 캔버스에서 브라우저 찾기는 무용지물 — 念 수소문으로 (#4)
+        e.preventDefault()
+        if (searchQ === null) { searchQ = ''; searchIdx = 0; searchJumped = false }
+        else searchEl?.select() // 이미 열려 있으면 질의 유지 + 전체 선택 (찾기 관행)
+        return
+      }
+      if (inField) return // Ctrl+Z/A/C/V 등은 입력 필드의 몫
       if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
         e.preventDefault(); ui.editingId = ui.selectedId; return // F2와 동일 — 편집 진입
       }
@@ -419,15 +429,9 @@
       if (e.code === 'KeyY') {
         e.preventDefault(); redo(); return
       }
-      if (e.code === 'KeyF') {
-        // 무한 캔버스에서 브라우저 찾기는 무용지물 — 念 수소문으로 (#4)
-        e.preventDefault()
-        if (searchQ === null) { searchQ = ''; searchIdx = 0; searchJumped = false }
-        else searchEl?.select() // 이미 열려 있으면 질의 유지 + 전체 선택 (찾기 관행)
-        return
-      }
       return // 나머지 Ctrl 조합(새로고침 등)은 브라우저 몫
     }
+    if (inField) return
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
     if (e.key.startsWith('Arrow') && !e.altKey) {
@@ -478,13 +482,13 @@
       toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만 (Space는 FreeMind 혈통 별칭)
       return
     }
-    // R — 가지런히(Tidy): 선택한 가지(없으면 전체) 정돈, 0.25초 슬라이드
+    // R — 가지런히(Tidy): 무조건 전체. Shift+R = 선택한 가지만 (예측 가능성 우선)
     if (e.code === 'KeyR') {
       e.preventDefault()
       tidying = true
       clearTimeout(tidyTimer)
       tidyTimer = setTimeout(() => (tidying = false), 300)
-      arrange(selected?.id ?? null)
+      arrange(e.shiftKey ? (selected?.id ?? null) : null)
       return
     }
     // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
