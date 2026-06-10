@@ -9,13 +9,14 @@
   import { backOut, cubicIn } from 'svelte/easing'
   import {
     graph, ui, COLORS, byId, init,
-    addNodeAt, addChild, updateText, setColor, setNodeWidth,
+    addNodeAt, addChild, addSibling, updateText, setColor, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
   import { nodeBox, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
+  import { computeHidden, childIdsOf, childCounts, rootIds } from './lib/graph.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -97,6 +98,7 @@
     }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
     for (const n of graph.nodes) {
+      if (hidden.has(n.id)) continue // 접혀 숨은 쪽지는 측량 밖 — 보이는 강호만 맞춘다
       const b = nodeBox(n)
       x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y)
       x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h)
@@ -235,6 +237,8 @@
   function onKey(e) {
     const el = e.target
     if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) return
+    // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
+    if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
     if (e.key === 'Escape') {
       ui.linking = null
       ui.overlay = null
@@ -308,7 +312,7 @@
       flipEdge(edgeHover ?? ui.selectedEdgeId) // 가리키는 緣이 선택보다 우선
       return
     }
-    if ((e.code === 'KeyC' || e.code === 'Space') && selected && graph.edges.some((ed) => ed.a === selected.id)) {
+    if ((e.code === 'KeyC' || e.code === 'Space') && selected && (kidCount.get(selected.id) ?? 0) > 0) {
       e.preventDefault()
       toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만 (Space는 FreeMind 혈통 별칭)
       return
@@ -323,17 +327,15 @@
         const pe = graph.edges.find((ed) => ed.b === selected.id && visible(ed.a))
         target = pe ? byId(pe.a) : null
       } else if (e.key === 'ArrowRight') {
-        const kids = graph.edges
-          .filter((ed) => ed.a === selected.id && visible(ed.b))
-          .map((ed) => byId(ed.b))
-          .filter(Boolean)
+        const kids = childIdsOf(graph.edges, selected.id)
+          .map(byId)
+          .filter((nd) => nd && visible(nd.id))
           .sort((p, q) => cy(p) - cy(q))
         target = kids[0] ?? null
       } else {
         const pe = graph.edges.find((ed) => ed.b === selected.id)
-        const sibs = (pe
-          ? graph.edges.filter((ed) => ed.a === pe.a).map((ed) => byId(ed.b))
-          : graph.nodes.filter((nd) => !graph.edges.some((ed) => ed.b === nd.id)))
+        const sibs = (pe ? childIdsOf(graph.edges, pe.a) : rootIds(graph.nodes, graph.edges))
+          .map(byId)
           .filter((nd) => nd && visible(nd.id))
           .sort((p, q) => cy(p) - cy(q))
         const i = sibs.findIndex((nd) => nd.id === selected.id)
@@ -351,23 +353,10 @@
       addChild(ui.selectedId)
       return
     }
-    // Enter — 형제 가지치기 (마인드맵 국룰: Tab=자식, Enter=형제). 루트면 아래에 새 루트
+    // Enter — 형제 가지치기 (마인드맵 국룰: Tab=자식, Enter=형제). 로직은 store.addSibling
     if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
       e.preventDefault()
-      const pe = graph.edges.find((ed) => ed.b === ui.selectedId) // 부모 여럿이면 첫 緣 기준
-      if (pe && selected) {
-        // 형제는 addChild 기본 슬롯(부모 옆)이 아니라 선택한 쪽지 바로 아래에 — 시선이 머무는 곳
-        asOneStep(() => {
-          const p = byId(pe.a)
-          if (p?.collapsed) p.collapsed = undefined
-          const b = nodeBox(selected)
-          const node = addNodeAt(b.x, b.y + b.h + 24, '', selected.color)
-          addEdge(pe.a, node.id)
-        })
-      } else if (selected) {
-        const b = nodeBox(selected)
-        addNodeAt(b.x, b.y + b.h + 44, '', selected.color)
-      }
+      addSibling(ui.selectedId)
       return
     }
     // F2 — 편집 진입 (Ctrl+Enter도 동일)
@@ -465,44 +454,20 @@
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
 
-  // 접힌 가지 아래 숨은 쪽지들 — 봉문 뿌리를 순서대로 적용한다.
-  // 규칙: ① 이미 숨은 뿌리의 봉문은 효력 없음(상호 잠금 방지)
-  //       ② 봉문은 자기 조상(순환 동료 포함)을 절대 숨기지 못한다 — 순환 緣에서
-  //          펼치기 단추가 증발하는 참사 방지. 순환 고리 안끼리는 서로 못 숨긴다
-  // 중첩 봉문(접힌 자식)은 정상으로 숨는다
-  const hidden = $derived.by(() => {
-    const out = new Set()
-    for (const root of graph.nodes) {
-      if (!root.collapsed || out.has(root.id)) continue
-      // 역방향 BFS — root에 닿을 수 있는 모든 조상 (root 자신 포함)
-      const anc = new Set([root.id])
-      let stack = []
-      for (const e of graph.edges) if (e.b === root.id) stack.push(e.a)
-      while (stack.length) {
-        const id = stack.pop()
-        if (anc.has(id)) continue
-        anc.add(id)
-        for (const e of graph.edges) if (e.b === id) stack.push(e.a)
-      }
-      // 정방향 BFS — 조상은 숨기지도, 그 너머로 건너가지도 않는다
-      const seen = anc
-      stack = []
-      for (const e of graph.edges) if (e.a === root.id) stack.push(e.b)
-      while (stack.length) {
-        const id = stack.pop()
-        if (seen.has(id)) continue
-        seen.add(id)
-        out.add(id)
-        for (const e of graph.edges) if (e.a === id) stack.push(e.b)
-      }
-    }
-    return out
-  })
+  // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.js computeHidden
+  // (시나리오 검증: scripts/check-graph.mjs)
+  const hidden = $derived.by(() => computeHidden(graph.nodes, graph.edges))
+  // 자식 수 — 봉문 배지용 (노드마다 edges를 다시 돌지 않게 한 번에)
+  const kidCount = $derived(childCounts(graph.edges))
 
-  // 숨은 쪽지가 선택/편집 상태로 남지 않게
+  // 숨은 쪽지/緣이 선택·편집 상태로 남지 않게
   $effect(() => {
     if (ui.selectedId && hidden.has(ui.selectedId)) ui.selectedId = null
     if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null
+    if (ui.selectedEdgeId) {
+      const ed = graph.edges.find((x) => x.id === ui.selectedEdgeId)
+      if (!ed || hidden.has(ed.a) || hidden.has(ed.b)) ui.selectedEdgeId = null
+    }
   })
 </script>
 
@@ -600,7 +565,7 @@
     </svg>
 
     {#each graph.nodes.filter((nd) => !hidden.has(nd.id)) as n (n.id)}
-      {@const kids = graph.edges.filter((ed) => ed.a === n.id).length}
+      {@const kids = kidCount.get(n.id) ?? 0}
       <div
         class="node"
         class:selected={ui.selectedId === n.id}

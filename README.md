@@ -51,6 +51,7 @@ src/
   lib/store.svelte.js  # 상태($state) + 변이 함수 + 저장 어댑터
   lib/strings.js       # UI 문구 팩 — 무협(muhyeop) / 일반(plain)
   lib/geometry.js      # 緣 기하 — 경로/화살촉 계산 (순수 함수)
+  lib/graph.js         # 緣 그래프 — 봉문(접기) 규칙/탐색 헬퍼 (순수 함수)
 ```
 
 저장은 기본 localStorage (`noenae-gangho-v1`), 말투 선택은 `noenae-gangho-tone`에 따로. 데이터 포맷:

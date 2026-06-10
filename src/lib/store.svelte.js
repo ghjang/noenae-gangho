@@ -227,6 +227,27 @@ export function addChild(parentId, text = '', edit = true) {
   return node
 }
 
+// 형제 가지치기 — 같은 부모 밑, 그 쪽지 바로 아래에 (시선이 머무는 곳).
+// 부모가 없으면(뿌리) 바로 아래에 새 뿌리. 부모 여럿이면 첫 緣 기준
+export function addSibling(id) {
+  const n = byId(id)
+  if (!n) return null
+  const pe = graph.edges.find((e) => e.b === id)
+  const b = nodeBox(n)
+  let node = null
+  if (pe) {
+    asOneStep(() => {
+      const p = byId(pe.a)
+      if (p?.collapsed) p.collapsed = undefined
+      node = addNodeAt(b.x, b.y + b.h + 24, '', n.color)
+      addEdge(pe.a, node.id)
+    })
+  } else {
+    node = addNodeAt(b.x, b.y + b.h + 44, '', n.color)
+  }
+  return node
+}
+
 export function updateText(id, text) {
   const n = byId(id)
   if (!n) return
