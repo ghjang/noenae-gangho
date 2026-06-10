@@ -466,14 +466,27 @@
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
 
   // 접힌 가지 아래 숨은 쪽지들 — 봉문 뿌리를 순서대로 적용한다.
-  // 이미 숨은 뿌리의 봉문은 효력 없음(상호 잠금 방지), 뿌리 자신은 자기
-  // 순환으로 숨지 않음(seen 선등록). 중첩 봉문(접힌 자식)은 정상으로 숨는다
+  // 규칙: ① 이미 숨은 뿌리의 봉문은 효력 없음(상호 잠금 방지)
+  //       ② 봉문은 자기 조상(순환 동료 포함)을 절대 숨기지 못한다 — 순환 緣에서
+  //          펼치기 단추가 증발하는 참사 방지. 순환 고리 안끼리는 서로 못 숨긴다
+  // 중첩 봉문(접힌 자식)은 정상으로 숨는다
   const hidden = $derived.by(() => {
     const out = new Set()
     for (const root of graph.nodes) {
       if (!root.collapsed || out.has(root.id)) continue
-      const seen = new Set([root.id])
-      const stack = []
+      // 역방향 BFS — root에 닿을 수 있는 모든 조상 (root 자신 포함)
+      const anc = new Set([root.id])
+      let stack = []
+      for (const e of graph.edges) if (e.b === root.id) stack.push(e.a)
+      while (stack.length) {
+        const id = stack.pop()
+        if (anc.has(id)) continue
+        anc.add(id)
+        for (const e of graph.edges) if (e.b === id) stack.push(e.a)
+      }
+      // 정방향 BFS — 조상은 숨기지도, 그 너머로 건너가지도 않는다
+      const seen = anc
+      stack = []
       for (const e of graph.edges) if (e.a === root.id) stack.push(e.b)
       while (stack.length) {
         const id = stack.pop()
