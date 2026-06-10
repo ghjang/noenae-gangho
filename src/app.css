@@ -160,7 +160,10 @@ button.armed {
 }
 .palette button.dim { opacity: 0.25; }
 .palette button.dim:hover { opacity: 1; } /* 범례 모드 — 호버한 색은 제 색으로 */
-.palette button:hover { transform: scale(1.18); }
+.palette button:hover {
+  transform: scale(1.18);
+  background: var(--swatch); /* .bar button:hover의 회색 배경이 오행색을 덮지 않게 */
+}
 
 /* ── 캔버스 ── */
 .viewport {
@@ -242,7 +245,7 @@ button.armed {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
-  transition: opacity 0.15s ease;
+  transition: filter 0.15s ease;
   animation: stamp 0.14s ease-out;
 }
 .node:active { cursor: grabbing; }
@@ -258,9 +261,10 @@ button.armed {
   box-shadow: 0 0 0 6px rgba(200, 71, 43, 0.13), 0 9px 22px -10px rgba(0, 0, 0, 0.75);
 }
 
-/* 팔레트 범례 호버(선택 없음) — 같은 색은 제 색 테두리, 다른 색은 물러남 */
+/* 팔레트 범례 호버(선택 없음) — 같은 색은 제 색 테두리, 다른 색은 물러남.
+   opacity가 아니라 filter인 이유: 반투명해지면 노드 뒤를 지나는 緣이 비친다 */
 .node.lit { outline: 2px solid var(--c); outline-offset: 2px; }
-.node.fade { opacity: 0.22; }
+.node.fade { filter: brightness(0.32) saturate(0.55); }
 
 /* 사용자 지정 너비(bw) — 상한 해제, 편집창도 박스에 맞춤 */
 .node.resized { max-width: none; }
