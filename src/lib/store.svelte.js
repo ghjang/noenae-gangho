@@ -48,6 +48,7 @@ export const ui = $state({
   overlay: null, // { mode: 'export'|'import'|'md' }
   showHelp: false,
   tone: loadTone(), // 'muhyeop'(무협, 기본) | 'plain'(일반) — strings.js 팩 선택
+  ink: 'muk', // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 })
 
 export const COLORS = ['muk', 'cheong', 'dan', 'hwang', 'nam']
@@ -226,7 +227,7 @@ function seed() {
 }
 
 // ── 변이 함수들 ──────────────────────────────
-export function addNodeAt(x, y, text = '', color = 'muk', edit = true) {
+export function addNodeAt(x, y, text = '', color = ui.ink, edit = true) {
   markUndo()
   const node = { id: uid(), x, y, text, color, w: 180, h: 48 }
   graph.nodes.push(node)
@@ -285,7 +286,13 @@ export function setColor(id, color) {
   if (!n) return
   markUndo()
   n.color = color
+  ui.ink = color // 칠한 색이 곧 다음 붓 색
   scheduleSave()
+}
+
+// 붓 색만 고르기 — 도구 상태라 undo/저장 대상 아님 (선택 없을 때 팔레트 클릭)
+export function setInk(color) {
+  if (COLORS.includes(color)) ui.ink = color
 }
 
 // 쪽지 너비 — null이면 자동(내용 따라). 리사이즈 드래그가 매 프레임 호출해도

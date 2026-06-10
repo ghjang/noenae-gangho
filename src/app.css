@@ -177,9 +177,21 @@ button.armed {
 .palette button.dim { opacity: 0.25; }
 .palette button.dim:hover { opacity: 1; } /* 범례 모드 — 호버한 색은 제 색으로 */
 .palette button.cur {
-  /* 선택한 쪽지의 현재 색 — 한지빛 링 */
+  /* 선택한 쪽지의 색 — 또는 선택 없을 땐 현재 붓 색 — 한지빛 링 */
   border-color: var(--hanji);
   box-shadow: 0 0 0 2px var(--paper-dim);
+}
+.palette button.dim.cur { opacity: 1; } /* 빈손이어도 붓 색 하나는 또렷이 */
+
+/* + 버튼의 붓 색 점 — 새 쪽지가 무슨 색으로 피는지 */
+.inkwell i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 7px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 246, 234, 0.75);
+  vertical-align: -1px;
 }
 .palette button:hover {
   transform: scale(1.18);

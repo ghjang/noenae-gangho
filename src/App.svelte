@@ -9,7 +9,7 @@
   import { backOut, cubicIn } from 'svelte/easing'
   import {
     graph, ui, COLORS, byId, init,
-    addNodeAt, addChild, addSibling, updateText, setColor, setNodeWidth,
+    addNodeAt, addChild, addSibling, updateText, setColor, setInk, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo, flushSave, SCALE_MIN, SCALE_MAX,
@@ -742,18 +742,19 @@
         style={`--swatch: var(--c-${c})`}
         title={`${t.colorLabel[c]}(${c})`}
         aria-label={fmt(t.paletteSet, { label: t.colorLabel[c] })}
-        aria-disabled={!selected}
         class:dim={!selected}
-        class:cur={!!selected && selected.color === c}
+        class:cur={selected ? selected.color === c : ui.ink === c}
         onpointerenter={() => (colorHover = selected ? null : c)}
         onpointerleave={() => (colorHover = null)}
-        onclick={() => selected && setColor(selected.id, c)}
+        onclick={() => (selected ? setColor(selected.id, c) : setInk(c))}
       ></button>
     {/each}
   </div>
 
   <div class="actions">
-    <button class="primary" onclick={addAtCenter}>{t.newNode}</button>
+    <button class="primary inkwell" onclick={addAtCenter} title={t.newNode} aria-label={t.newNode}>
+      +<i style={`background: var(--c-${ui.ink})`}></i>
+    </button>
     <button onclick={openMd}>{t.mdButton}</button>
     <button onclick={openExport}>{t.exportButton}</button>
     <button onclick={openImport}>{t.importButton}</button>
