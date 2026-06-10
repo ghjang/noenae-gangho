@@ -49,8 +49,9 @@
   }
   function edgePath(a, b) {
     const A = center(a), E = edgeEnd(a, b)
-    const mx = (A.x + E.x) / 2
-    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${E.y}, ${E.x} ${E.y}`
+    const ex = E.x - 7 * E.dir // 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게
+    const mx = (A.x + ex) / 2
+    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${E.y}, ${ex} ${E.y}`
   }
   // 방향 화살촉 — a(부모) → b(자식), 진입 방향으로 7px
   function arrowPath(a, b) {
@@ -93,8 +94,28 @@
     const r = viewportEl.getBoundingClientRect()
     zoomAt(r.width / 2, r.height / 2, factor)
   }
+  // 배율만 100%로 — 보던 화면 중심은 그대로 (#18)
   function resetView() {
-    ui.pan.x = 40; ui.pan.y = 40; ui.scale = 1
+    zoomCenter(1 / ui.scale)
+  }
+  // 강호 전경 — 모든 쪽지를 화면에 맞춤. 빈 강호면 원점 100%
+  function fitAll() {
+    if (graph.nodes.length === 0) {
+      ui.pan.x = 40; ui.pan.y = 40; ui.scale = 1
+      return
+    }
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const n of graph.nodes) {
+      x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y)
+      x1 = Math.max(x1, n.x + (n.w || 180)); y1 = Math.max(y1, n.y + (n.h || 48))
+    }
+    const pad = 60
+    const r = viewportEl.getBoundingClientRect()
+    const s = Math.min(2.5, Math.max(0.35,
+      Math.min(r.width / (x1 - x0 + pad * 2), r.height / (y1 - y0 + pad * 2))))
+    ui.scale = s
+    ui.pan.x = (r.width - (x0 + x1) * s) / 2
+    ui.pan.y = (r.height - (y0 + y1) * s) / 2
   }
   function addAtCenter() {
     const r = viewportEl.getBoundingClientRect()
@@ -360,6 +381,7 @@
         {@const b = byId(e.b)}
         {#if a && b}
           {@const d = edgePath(a, b)}
+          {@const E = edgeEnd(a, b)}
           <g class="edge" class:sel={ui.selectedEdgeId === e.id}>
             <path
               class="hit"
@@ -372,6 +394,7 @@
             />
             <path class="vis" d={d} />
             <path class="tip" d={arrowPath(a, b)} />
+            <circle class="dot" cx={E.x} cy={E.y} r="3" />
           </g>
         {/if}
       {/each}
@@ -435,6 +458,7 @@
   <button onclick={() => zoomCenter(1 / 1.18)} aria-label={t.zoomOutAria}>−</button>
   <button class="pct" onclick={resetView} title={t.resetViewTitle}>{Math.round(ui.scale * 100)}%</button>
   <button onclick={() => zoomCenter(1.18)} aria-label={t.zoomInAria}>+</button>
+  <button onclick={fitAll} title={t.fitButtonTitle} aria-label={t.fitAria}>{t.fitButton}</button>
 </div>
 {#if t.colophon}<div class="colophon">{t.colophon}</div>{/if}
 
