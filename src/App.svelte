@@ -15,8 +15,8 @@
     markUndo, asOneStep, undo, redo,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
-  import { nodeBox, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
-  import { computeHidden, childIdsOf, childCounts, rootIds } from './lib/graph.js'
+  import { nodeBox, center, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
+  import { computeHidden, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -39,6 +39,7 @@
   let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let searchQ = $state(null)     // 검색 질의 — null이면 닫힘
   let searchIdx = $state(0)      // Enter 연타 순회 인덱스
+  let searchEl = null            // 검색 input — 재호출 시 전체 선택용
   let vpW = $state(0), vpH = $state(0) // 뷰포트 실측 — 미니맵 뷰 사각형용
   let mmDrag = false             // 미니맵 스크럽 중
   let mmEl = null                // 미니맵 svg (스크럽 좌표 변환용)
@@ -383,7 +384,10 @@
       }
       if (e.code === 'KeyF') {
         // 무한 캔버스에서 브라우저 찾기는 무용지물 — 念 수소문으로 (#4)
-        e.preventDefault(); searchQ = ''; searchIdx = 0; return
+        e.preventDefault()
+        if (searchQ === null) { searchQ = ''; searchIdx = 0 }
+        else searchEl?.select() // 이미 열려 있으면 질의 유지 + 전체 선택 (찾기 관행)
+        return
       }
       return // 나머지 Ctrl 조합(새로고침 등)은 브라우저 몫
     }
@@ -440,7 +444,7 @@
     // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
     if (e.altKey && e.key.startsWith('Arrow') && selected) {
       e.preventDefault()
-      const cy = (nd) => nd.y + (nd.h || 48) / 2
+      const cy = (nd) => center(nd).y
       const visible = (id) => !hidden.has(id)
       let target = null
       if (e.key === 'ArrowLeft') {
@@ -453,7 +457,7 @@
           .sort((p, q) => cy(p) - cy(q))
         target = kids[0] ?? null
       } else {
-        const pe = graph.edges.find((ed) => ed.b === selected.id)
+        const pe = parentEdgeOf(graph.edges, selected.id)
         const sibs = (pe ? childIdsOf(graph.edges, pe.a) : rootIds(graph.nodes, graph.edges))
           .map(byId)
           .filter((nd) => nd && visible(nd.id))
@@ -790,6 +794,8 @@
   <aside class="search-card">
     <input
       use:focusit
+      bind:this={searchEl}
+      aria-label={t.searchPlaceholder}
       placeholder={t.searchPlaceholder}
       value={searchQ}
       oninput={(e) => { searchQ = e.currentTarget.value; searchIdx = 0 }}

@@ -21,7 +21,7 @@
 - `src/lib/geometry.js` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만
 - `src/lib/graph.js` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
-- `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지
+- `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙
 
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것
 
