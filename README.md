@@ -39,6 +39,7 @@ npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
 | Ctrl+Z / Ctrl+Shift+Z (Y) | 되돌리기 / 다시 실행 — 타이핑·드래그는 한 걸음으로 병합 |
 | Ctrl+F | 쪽지 검색 — Enter 순회 · Shift+Enter 역순, 접힌 가지 속이면 펼치며 점프 |
 | Shift+1 | 전체 보기 — 좌하단 全 버튼과 동일 (Ctrl+0 = 100%와 짝) |
+| Shift+2 | 선택한 쪽지를 화면 가득 확대 (Figma Zoom to Selection) |
 | 미니맵 클릭/드래그 | 해당 지점으로 즉시 이동 (우하단 전도 — 폰에선 숨김) |
 | 화살표 키 | 화면 이동 · 쪽지 선택 중엔 쪽지 이동 (Shift = 성큼) |
 | PgUp / PgDn | 한 화면씩 세로 이동 |

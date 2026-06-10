@@ -132,6 +132,17 @@
     ui.pan.x = (r.width - (x0 + x1) * s) / 2
     ui.pan.y = (r.height - (y0 + y1) * s) / 2
   }
+  // 선택한 쪽지를 화면 가득히 (Shift+2 — Figma 'Zoom to Selection' 국룰)
+  function fitSelection(n) {
+    const b = nodeBox(n)
+    const pad = 48
+    const r = viewportEl.getBoundingClientRect()
+    const s = Math.min(SCALE_MAX, Math.max(SCALE_MIN,
+      Math.min(r.width / (b.w + pad * 2), r.height / (b.h + pad * 2))))
+    ui.scale = s
+    ui.pan.x = (r.width - (b.x * 2 + b.w) * s) / 2
+    ui.pan.y = (r.height - (b.y * 2 + b.h) * s) / 2
+  }
   // 쪽지를 화면 중앙으로 (배율 유지)
   function centerOn(n) {
     const r = viewportEl.getBoundingClientRect()
@@ -467,6 +478,12 @@
     if (e.code === 'Digit1' && e.shiftKey) {
       e.preventDefault()
       fitAll()
+      return
+    }
+    // Shift+2 — 선택한 쪽지를 화면 가득히 (Figma Zoom to Selection)
+    if (e.code === 'Digit2' && e.shiftKey && selected) {
+      e.preventDefault()
+      fitSelection(selected)
       return
     }
     if (e.key === 'Delete' || e.key === 'Backspace') {
