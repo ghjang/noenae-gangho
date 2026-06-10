@@ -444,6 +444,22 @@
       }
       return // 나머지 Ctrl 조합(새로고침 등)은 브라우저 몫
     }
+    // 검색창에서도 보기 단축키는 통한다 — Shift+1 전체 / Shift+2 찾은 쪽지 가득
+    // ('!','@' 직접 입력은 포기 — 부분 일치 검색이라 기호 없이도 찾힌다)
+    if (inField && el === searchEl && e.shiftKey && (e.code === 'Digit1' || e.code === 'Digit2')) {
+      e.preventDefault()
+      if (e.code === 'Digit1') {
+        fitAll()
+      } else {
+        const m = matches.length ? matches[searchIdx % matches.length] : selected
+        if (m) {
+          jumpTo(m) // 개문 + 선택 + 중앙
+          fitSelection(m) // 그리고 화면 가득
+          searchJumped = true
+        }
+      }
+      return
+    }
     if (inField) return
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
