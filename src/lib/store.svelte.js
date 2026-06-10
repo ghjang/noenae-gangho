@@ -75,8 +75,9 @@ export function scheduleSave() {
 export function snapshot() {
   return {
     app: 'noenae-gangho',
-    v: 1,
-    nodes: graph.nodes.map(({ id, x, y, text, color }) => ({ id, x, y, text, color })),
+    // v2: bw(사용자 지정 너비, 선택적) 추가 — v1 데이터는 bw 없음(자동 너비)으로 그대로 읽힌다
+    v: 2,
+    nodes: graph.nodes.map(({ id, x, y, text, color, bw }) => ({ id, x, y, text, color, bw })),
     edges: graph.edges.map(({ id, a, b }) => ({ id, a, b })),
   }
 }
@@ -143,6 +144,15 @@ export function setColor(id, color) {
   const n = byId(id)
   if (!n) return
   n.color = color
+  scheduleSave()
+}
+
+// 쪽지 너비 — null이면 자동(내용 따라). 리사이즈 드래그가 매 프레임 호출해도
+// 저장은 scheduleSave 디바운스가 받아준다. undefined는 JSON 직렬화에서 빠진다.
+export function setNodeWidth(id, w) {
+  const n = byId(id)
+  if (!n) return
+  n.bw = w == null ? undefined : Math.min(480, Math.max(120, Math.round(w)))
   scheduleSave()
 }
 
