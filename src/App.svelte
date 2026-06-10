@@ -38,7 +38,8 @@
   let sheetText = $state('')     // 입출력 시트 본문
   let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let searchQ = $state(null)     // 검색 질의 — null이면 닫힘
-  let searchIdx = $state(0)      // Enter 연타 순회 인덱스
+  let searchIdx = $state(0)      // 하이라이트 = 지금/다음에 볼 결과 (화면과 항상 일치)
+  let searchJumped = false       // Enter 의미 분기: 처음엔 현재 항목, 그 뒤엔 전진 후 점프
   let searchEl = null            // 검색 input — 재호출 시 전체 선택용
   let vpW = $state(0), vpH = $state(0) // 뷰포트 실측 — 미니맵 뷰 사각형용
   let mmDrag = false             // 미니맵 스크럽 중
@@ -165,14 +166,17 @@
     } else if (e.key === 'ArrowDown' && len) {
       e.preventDefault()
       searchIdx = (searchIdx + 1) % len
+      searchJumped = false // 화살표로 고른 항목엔 다음 Enter가 '그대로' 점프
     } else if (e.key === 'ArrowUp' && len) {
       e.preventDefault()
       searchIdx = (searchIdx - 1 + len) % len
+      searchJumped = false
     } else if (e.key === 'Enter' && len) {
-      const cur = searchIdx % len
-      jumpTo(matches[cur])
-      // 연타 순회 — Shift+Enter면 역방향 (찾기 UI 국룰)
-      searchIdx = e.shiftKey ? (cur - 1 + len) % len : (cur + 1) % len
+      // 첫 Enter = 현재 하이라이트로, 그 뒤 = 전진(Shift면 후진) 후 점프
+      // — 하이라이트가 항상 화면의 결과와 일치한다
+      if (searchJumped) searchIdx = e.shiftKey ? (searchIdx - 1 + len) % len : (searchIdx + 1) % len
+      jumpTo(matches[searchIdx % len])
+      searchJumped = true
     }
   }
   const focusit = (el) => { el.focus() }
@@ -350,12 +354,20 @@
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
     if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
     if (e.key === 'Escape') {
+      // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
+      // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
+      const hadOpen =
+        ui.linking || ui.overlay || ui.showHelp || armedClear || searchQ !== null || ui.editingId
       ui.linking = null
       ui.overlay = null
       ui.showHelp = false
       armedClear = false
       searchQ = null
       commitEditing()
+      if (!hadOpen) {
+        ui.selectedId = null
+        ui.selectedEdgeId = null
+      }
       return
     }
     if (ui.overlay) return
@@ -385,7 +397,7 @@
       if (e.code === 'KeyF') {
         // 무한 캔버스에서 브라우저 찾기는 무용지물 — 念 수소문으로 (#4)
         e.preventDefault()
-        if (searchQ === null) { searchQ = ''; searchIdx = 0 }
+        if (searchQ === null) { searchQ = ''; searchIdx = 0; searchJumped = false }
         else searchEl?.select() // 이미 열려 있으면 질의 유지 + 전체 선택 (찾기 관행)
         return
       }
@@ -798,14 +810,17 @@
       aria-label={t.searchPlaceholder}
       placeholder={t.searchPlaceholder}
       value={searchQ}
-      oninput={(e) => { searchQ = e.currentTarget.value; searchIdx = 0 }}
+      oninput={(e) => { searchQ = e.currentTarget.value; searchIdx = 0; searchJumped = false }}
       onkeydown={onSearchKey}
     />
     {#if searchQ.trim()}
       <ul>
         {#each matches as m, i (m.id)}
           <li class:sel={i === searchIdx % matches.length}>
-            <button onclick={() => jumpTo(m)} onpointerenter={() => (searchIdx = i)}>
+            <button
+              onclick={() => { searchIdx = i; searchJumped = true; jumpTo(m) }}
+              onpointerenter={() => { searchIdx = i; searchJumped = false }}
+            >
               <i style={`background: var(--c-${m.color})`}></i>
               <span>{m.text}</span>
             </button>

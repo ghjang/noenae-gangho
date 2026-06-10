@@ -255,9 +255,15 @@ button.armed {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  /* 자식 배지/핸들의 z-index가 쪽지 밖으로 탈출하지 못하게 — 겹친 아래
+     쪽지의 접기 배지가 위 쪽지를 뚫고 떠오르던 버그의 처방 */
+  isolation: isolate;
   /* 등장/퇴장(도장·봉문)은 Svelte transition이 담당 — App의 in:/out:scale */
   transition: filter 0.15s ease;
 }
+/* 겹침에서는 만지는 놈이 위로 — 호버/선택 부상 (캔버스 앱 관행) */
+.node:hover { z-index: 1; }
+.node.selected { z-index: 2; }
 .node:active { cursor: grabbing; }
 .node[data-color='muk'] { --c: var(--c-muk); }
 .node[data-color='cheong'] { --c: var(--c-cheong); }
