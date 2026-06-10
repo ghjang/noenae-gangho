@@ -5,6 +5,8 @@
 
 > 시작은 '깨다름'이라는 오타 하나였다. 자세한 사연은 첫 실행 시드 데이터 참고 ㅋ
 
+**바로 써보기 → <https://ghjang.github.io/noenae-gangho/>** (main 머지마다 자동 배포)
+
 ## 빠른 시작
 
 ```bash
@@ -67,9 +69,4 @@ git branch -M main && git push -u origin main
 
 ## 다음 후보들
 
-- [ ] 미니맵 / 검색
-- [ ] 노드 접기(가지 숨기기)
-- [ ] Undo/Redo (스냅샷 스택)
-- [ ] 마크다운 → 그래프 역방향 가져오기
-- [ ] 모바일 핀치 줌
-- [ ] 무협 모드 전용 이스터에그
+할일은 [GitHub 이슈](https://github.com/ghjang/noenae-gangho/issues)에서 관리한다 — 우선순위와 설계 메모도 거기에.

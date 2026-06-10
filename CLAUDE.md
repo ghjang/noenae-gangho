@@ -9,6 +9,7 @@
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
 - `npm run check` — 문구 팩 정합성 검사(`scripts/check-strings.mjs`): 팩 간 키 일치 · App 사용 키 존재 · 팩 순수 데이터(함수 금지). `npm run build` 때 prebuild로 자동 실행
+- 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 
 ## 구조와 역할 분담
@@ -36,14 +37,10 @@
 - 조작·단축키를 바꾸면 strings.js 두 팩의 `helpItems`(도움말 카드)와 README '조작 요결' 표도 같이 갱신
 - 커밋 메시지 한국어 환영. 유머 허용, 단 무엇을 왜 바꿨는지는 명확히
 
-## 로드맵 (우선순위순)
+## 로드맵
 
-1. Undo/Redo — snapshot 스택, store에 구현
-2. 노드 접기 (가지 숨김)
-3. 미니맵 / 노드 검색
-4. 마크다운 → 그래프 역방향 가져오기
-5. 모바일 핀치 줌
-6. 무협 모드 전용 거리 (이스터에그 — 아이디어 단계)
+할일·우선순위·설계 메모는 GitHub 이슈로 관리: https://github.com/ghjang/noenae-gangho/issues
+새 할일을 이 문서나 README에 쌓지 말고 이슈로 등록할 것 (각 이슈 본문에 '우선순위: N/총수' 표기). Claude Code 세션은 GitHub 도구로 이슈를 직접 읽고 쓸 수 있다 — 커밋/PR에 `closes #N`을 달면 머지 때 자동으로 닫힌다.
 
 ## 검증 체크리스트
 
