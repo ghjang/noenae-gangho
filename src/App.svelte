@@ -491,6 +491,18 @@
       arrange(e.shiftKey ? (selected?.id ?? null) : null)
       return
     }
+    // Z / Shift+Z — 한 손 줌: 선택한 쪽지를 앵커로 확대/축소 (없으면 화면 중앙)
+    if (e.code === 'KeyZ') {
+      e.preventDefault()
+      const f = e.shiftKey ? 1 / 1.18 : 1.18
+      if (selected) {
+        const c = center(selected)
+        zoomAt(c.x * ui.scale + ui.pan.x, c.y * ui.scale + ui.pan.y, f)
+      } else {
+        zoomCenter(f)
+      }
+      return
+    }
     // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
     if (e.altKey && e.key.startsWith('Arrow') && selected) {
       e.preventDefault()
