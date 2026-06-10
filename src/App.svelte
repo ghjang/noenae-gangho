@@ -234,6 +234,9 @@
       if (e.key === '0' || e.code === 'Numpad0') {
         e.preventDefault(); resetView(); return
       }
+      if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
+        e.preventDefault(); ui.editingId = ui.selectedId; return // F2와 동일 — 편집 진입
+      }
       return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
     }
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬)
@@ -283,7 +286,20 @@
       addChild(ui.selectedId)
       return
     }
+    // Enter — 형제 가지치기 (마인드맵 국룰: Tab=자식, Enter=형제). 루트면 아래에 새 루트
     if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
+      e.preventDefault()
+      const pe = graph.edges.find((ed) => ed.b === ui.selectedId) // 부모 여럿이면 첫 緣 기준
+      if (pe) {
+        addChild(pe.a)
+      } else if (selected) {
+        const b = nodeBox(selected)
+        addNodeAt(b.x, b.y + b.h + 44, '', selected.color)
+      }
+      return
+    }
+    // F2 — 편집 진입 (Ctrl+Enter도 동일)
+    if (e.key === 'F2' && ui.selectedId && !ui.editingId) {
       e.preventDefault()
       ui.editingId = ui.selectedId
     }
