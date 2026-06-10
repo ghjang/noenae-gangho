@@ -452,6 +452,10 @@
       out.add(id)
       for (const e of graph.edges) if (e.a === id) stack.push(e.b)
     }
+    // 불변식: 봉문한 쪽지는 절대 숨지 않는다 — 순환 緣이 BFS를 타고 돌아와
+    // 접은 쪽지 자신(또는 서로)을 가두는 잠금을 원천 차단. 겉 봉문 안의
+    // 속 봉문 쪽지는 '봉인된 상자'로 화면에 남는다 (배지로 항상 복구 가능)
+    for (const n of graph.nodes) if (n.collapsed) out.delete(n.id)
     return out
   })
 
