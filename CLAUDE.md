@@ -16,7 +16,7 @@
 
 - `src/lib/store.svelte.js` — 모든 상태(`$state`)·변이 함수·저장 어댑터. **로직은 전부 여기로.** 컴포넌트에 도메인 상태 두지 말 것
   - `graph`/`ui`는 export된 `$state` 객체 — 재할당 금지, `push`/`splice`/`length = 0` 같은 제자리 변이만
-  - 변이 함수는 반드시 끝에 `scheduleSave()`(500ms 디바운스) 호출. 스토어 밖에서 직접 변이하는 예외(노드 드래그의 `n.x/n.y`)는 호출부가 챙긴다 — 빠뜨리면 새로고침 때 조용히 증발
+  - 변이 함수는 첫머리에 `markUndo()`(되돌리기 스택 — 타이핑·드래그 등 연속 제스처는 key로 병합, 복합 변이는 `asOneStep`으로 한 걸음) · 끝에 `scheduleSave()`(500ms 디바운스). 스토어 밖 직접 변이(드래그/넛지의 `n.x/n.y`)는 호출부가 둘 다 챙긴다 — 빠뜨리면 저장 증발/유령 undo
 - `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
 - `src/lib/geometry.js` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
