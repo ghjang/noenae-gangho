@@ -10,7 +10,7 @@
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, addSibling, updateText, setColor, setNodeWidth,
-    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, clearAll,
+    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo,
   } from './lib/store.svelte.js'
@@ -37,6 +37,11 @@
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
   let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
+  let searchQ = $state(null)     // 검색 질의 — null이면 닫힘
+  let searchIdx = $state(0)      // Enter 연타 순회 인덱스
+  let vpW = $state(0), vpH = $state(0) // 뷰포트 실측 — 미니맵 뷰 사각형용
+  let mmDrag = false             // 미니맵 스크럽 중
+  let mmEl = null                // 미니맵 svg (스크럽 좌표 변환용)
 
   onMount(() => { init() })
 
@@ -121,6 +126,13 @@
     ui.pan.x = (r.width - (x0 + x1) * s) / 2
     ui.pan.y = (r.height - (y0 + y1) * s) / 2
   }
+  // 쪽지를 화면 중앙으로 (배율 유지)
+  function centerOn(n) {
+    const r = viewportEl.getBoundingClientRect()
+    const b = nodeBox(n)
+    ui.pan.x = r.width / 2 - (b.x + b.w / 2) * ui.scale
+    ui.pan.y = r.height / 2 - (b.y + b.h / 2) * ui.scale
+  }
   // 쪽지가 화면 밖이면 중앙으로 끌어온다 (Alt+화살표 緣 타기용)
   function ensureVisible(n) {
     const r = viewportEl.getBoundingClientRect()
@@ -128,10 +140,64 @@
     const x0 = b.x * ui.scale + ui.pan.x, y0 = b.y * ui.scale + ui.pan.y
     const x1 = x0 + b.w * ui.scale, y1 = y0 + b.h * ui.scale
     const m = 24
-    if (x0 < m || y0 < m || x1 > r.width - m || y1 > r.height - m) {
-      ui.pan.x = r.width / 2 - (b.x + b.w / 2) * ui.scale
-      ui.pan.y = r.height / 2 - (b.y + b.h / 2) * ui.scale
+    if (x0 < m || y0 < m || x1 > r.width - m || y1 > r.height - m) centerOn(n)
+  }
+
+  // ── 검색 (Ctrl+F) ────────────────────────────
+  const matches = $derived.by(() => {
+    if (searchQ === null) return []
+    const q = searchQ.trim().toLowerCase()
+    if (!q) return []
+    return graph.nodes.filter((n) => n.text.toLowerCase().includes(q)).slice(0, 8)
+  })
+  function jumpTo(n) {
+    revealNode(n.id) // 접힌 가지 속이면 조상 봉문을 열며 데려간다
+    ui.selectedId = n.id
+    ui.selectedEdgeId = null
+    centerOn(n)
+  }
+  function onSearchKey(e) {
+    if (e.key === 'Escape') {
+      searchQ = null
+    } else if (e.key === 'Enter' && matches.length) {
+      jumpTo(matches[searchIdx % matches.length])
+      searchIdx++
     }
+  }
+  const focusit = (el) => { el.focus() }
+
+  // ── 미니맵 ───────────────────────────────────
+  // 현재 화면이 비추는 world 사각형
+  const viewRect = $derived({
+    x: -ui.pan.x / ui.scale,
+    y: -ui.pan.y / ui.scale,
+    w: vpW / ui.scale,
+    h: vpH / ui.scale,
+  })
+  // 전도 범위 — 보이는 쪽지들 + 현재 뷰 사각형의 합집합 (+여백)
+  const minimapBox = $derived.by(() => {
+    let x0 = viewRect.x, y0 = viewRect.y
+    let x1 = viewRect.x + viewRect.w, y1 = viewRect.y + viewRect.h
+    for (const n of graph.nodes) {
+      if (hidden.has(n.id)) continue
+      const b = nodeBox(n)
+      x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y)
+      x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h)
+    }
+    const pad = 60
+    return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 }
+  })
+  // 미니맵의 한 점(world)이 화면 중앙에 오도록
+  function mmJump(e) {
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(mmEl.getScreenCTM().inverse())
+    ui.pan.x = vpW / 2 - pt.x * ui.scale
+    ui.pan.y = vpH / 2 - pt.y * ui.scale
+  }
+  function onMinimapDown(e) {
+    e.stopPropagation()
+    mmDrag = true
+    mmEl.setPointerCapture?.(e.pointerId)
+    mmJump(e)
   }
   function addAtCenter() {
     const r = viewportEl.getBoundingClientRect()
@@ -192,6 +258,10 @@
 
   // ── 전역 포인터: 드래그 진행/마무리 ────────────
   function onWinMove(e) {
+    if (mmDrag) {
+      mmJump(e)
+      return
+    }
     if (pinch && touchPts.has(e.pointerId)) {
       // 핀치 — 거리비만큼 중점 기준 축경, 중점 이동만큼 팬
       touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -234,6 +304,7 @@
     }
   }
   function onWinUp(e) {
+    mmDrag = false
     touchPts.delete(e.pointerId)
     if (touchPts.size < 2) pinch = null
     if (drag) {
@@ -271,6 +342,7 @@
       ui.overlay = null
       ui.showHelp = false
       armedClear = false
+      searchQ = null
       commitEditing()
       return
     }
@@ -298,7 +370,11 @@
       if (e.code === 'KeyY') {
         e.preventDefault(); redo(); return
       }
-      return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
+      if (e.code === 'KeyF') {
+        // 무한 캔버스에서 브라우저 찾기는 무용지물 — 念 수소문으로 (#4)
+        e.preventDefault(); searchQ = ''; searchIdx = 0; return
+      }
+      return // 나머지 Ctrl 조합(새로고침 등)은 브라우저 몫
     }
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
@@ -541,6 +617,8 @@
 <div
   class="viewport"
   bind:this={viewportEl}
+  bind:clientWidth={vpW}
+  bind:clientHeight={vpH}
   role="application"
   aria-label={t.canvasAria}
   onpointerdown={onViewportDown}
@@ -671,6 +749,49 @@
   <button onclick={fitAll} title={t.fitButtonTitle} aria-label={t.fitAria}>{t.fitButton}</button>
 </div>
 {#if t.colophon}<div class="colophon">{t.colophon}</div>{/if}
+
+<!-- ── 미니맵 (전도) — 폰에서는 CSS로 숨김 ── -->
+{#if graph.nodes.length > 0}
+  <svg
+    class="minimap"
+    bind:this={mmEl}
+    viewBox={`${minimapBox.x} ${minimapBox.y} ${minimapBox.w} ${minimapBox.h}`}
+    aria-label={t.minimapAria}
+    onpointerdown={onMinimapDown}
+  >
+    {#each graph.nodes.filter((nd) => !hidden.has(nd.id)) as n (n.id)}
+      {@const b = nodeBox(n)}
+      <rect class="mm-node" x={b.x} y={b.y} width={b.w} height={b.h} rx="8" style={`fill: var(--c-${n.color})`} />
+    {/each}
+    <rect class="mm-view" x={viewRect.x} y={viewRect.y} width={viewRect.w} height={viewRect.h} />
+  </svg>
+{/if}
+
+<!-- ── 검색 (Ctrl+F) ── -->
+{#if searchQ !== null}
+  <aside class="search-card">
+    <input
+      use:focusit
+      placeholder={t.searchPlaceholder}
+      value={searchQ}
+      oninput={(e) => { searchQ = e.currentTarget.value; searchIdx = 0 }}
+      onkeydown={onSearchKey}
+    />
+    {#if searchQ.trim()}
+      <ul>
+        {#each matches as m (m.id)}
+          <li>
+            <button onclick={() => jumpTo(m)}>
+              <i style={`background: var(--c-${m.color})`}></i>
+              <span>{m.text}</span>
+            </button>
+          </li>
+        {/each}
+        {#if matches.length === 0}<li class="none">{t.searchEmpty}</li>{/if}
+      </ul>
+    {/if}
+  </aside>
+{/if}
 
 <!-- ── 도움말 ── -->
 {#if ui.showHelp}

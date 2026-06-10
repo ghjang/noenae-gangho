@@ -57,6 +57,10 @@ export const STRINGS = {
     fitButtonTitle: '강호 전경 — 모든 쪽지를 한눈에',
     fitAria: '전체 보기',
 
+    searchPlaceholder: '念 수소문 — 글자 일부로 찾기',
+    searchEmpty: '그런 念은 강호에 없다',
+    minimapAria: '강호 전도',
+
     helpTitle: '강호 행보 요결',
     helpItems: [
       ['빈 곳 2번', '새 念(쪽지) 피우기'],
@@ -74,6 +78,7 @@ export const STRINGS = {
       ['Alt+화살표', '緣 타고 이동 — ←부모 →자식 ↑↓형제'],
       ['Ctrl ± · 0', '축경(줌) · 0이면 100%로'],
       ['Ctrl+Z / Y', '시간 되돌리기 / 다시 감기'],
+      ['Ctrl+F', '念 수소문 — Enter 연타로 차례차례 점프'],
       ['화살표 키', '유람 · 쪽지 선택 중엔 그 쪽지 옮기기 (Shift 성큼)'],
       ['PgUp/PgDn', '한 화면씩 오르내리기'],
       ['빈 곳 끌기', '강호 유람(이동)'],
@@ -137,6 +142,10 @@ export const STRINGS = {
     fitButtonTitle: '모든 노트가 보이도록 맞춤',
     fitAria: '전체 보기',
 
+    searchPlaceholder: '노트 검색 — 글자 일부 입력',
+    searchEmpty: '결과 없음',
+    minimapAria: '미니맵',
+
     helpTitle: '사용법',
     helpItems: [
       ['빈 곳 더블클릭', '새 노트 만들기'],
@@ -154,6 +163,7 @@ export const STRINGS = {
       ['Alt+화살표', '연결 따라 이동 — ←부모 →자식 ↑↓형제'],
       ['Ctrl ± · 0', '확대/축소 · 0이면 100%'],
       ['Ctrl+Z / Y', '실행 취소 / 다시 실행'],
+      ['Ctrl+F', '노트 검색 — Enter로 다음 결과 점프'],
       ['화살표 키', '화면 이동 · 노트 선택 시 노트 이동 (Shift 크게)'],
       ['PgUp/PgDn', '한 화면씩 위/아래'],
       ['빈 곳 드래그', '화면 이동(팬)'],
