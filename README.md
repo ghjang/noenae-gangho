@@ -26,7 +26,7 @@ npm run build    # dist/ 정적 빌드 (상대경로 — 아무 데나 얹어도
 | Delete | 선택한 쪽지/緣 삭제 |
 | 빈 곳 드래그 / 휠 | 팬 / 줌 |
 
-상단 바: 오행 색 팔레트 · 비급.md(마크다운 개요 출력) · 내보내기/불러오기(JSON) · 강호 비우기(2단 확인).
+상단 바: 오행 색 팔레트 · 비급.md(마크다운 개요 출력) · 내보내기/불러오기(JSON) · 강호 비우기(2단 확인) · 무공봉인(무협 ↔ 일반 말투 전환).
 
 ## 구조
 
@@ -36,9 +36,10 @@ src/
   app.css              # 디자인 토큰 (먹/한지/인주/오행)
   App.svelte           # UI 전체 — 캔버스, 노드, 엣지, 시트
   lib/store.svelte.js  # 상태($state) + 변이 함수 + 저장 어댑터
+  lib/strings.js       # UI 문구 팩 — 무협(muhyeop) / 일반(plain)
 ```
 
-저장은 기본 localStorage (`noenae-gangho-v1`). 데이터 포맷:
+저장은 기본 localStorage (`noenae-gangho-v1`), 말투 선택은 `noenae-gangho-tone`에 따로. 데이터 포맷:
 
 ```json
 { "app": "noenae-gangho", "v": 1,
@@ -70,3 +71,4 @@ git branch -M main && git push -u origin main
 - [ ] Undo/Redo (스냅샷 스택)
 - [ ] 마크다운 → 그래프 역방향 가져오기
 - [ ] 모바일 핀치 줌
+- [ ] 무협 모드 전용 이스터에그

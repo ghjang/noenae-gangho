@@ -1,0 +1,132 @@
+// ──────────────────────────────────────────────
+// 뇌내강호 문구 팩 — 화면에 보이는 모든 텍스트는 여기서.
+// muhyeop(무협 톤, 기본)과 plain(일반 톤) 두 벌을 같은 키로 유지한다.
+// 선택은 ui.tone, 전환은 상단 바 '무공봉인' 토글(store.toggleTone).
+// 새 문구를 들일 때는 반드시 두 팩 모두에 같은 키로 추가할 것.
+// ──────────────────────────────────────────────
+
+export const TONES = ['muhyeop', 'plain'] // [0]이 기본값
+
+export const STRINGS = {
+  muhyeop: {
+    docTitle: '뇌내강호 — 두서없는 아이디어 정리소',
+    titleMain: '腦內江湖',
+    titleSub: '뇌내강호 · 두서없는 아이디어 정리소',
+    colophon: '腦內江湖 — 한 글자의 다름에서',
+
+    colorLabel: { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' },
+    paletteAria: '오행 색',
+    paletteSet: (label) => `선택한 쪽지를 ${label} 색으로`,
+
+    newNode: '+ 새 쪽지',
+    mdButton: '비급.md',
+    exportButton: '내보내기',
+    importButton: '불러오기',
+    clearButton: '강호 비우기',
+    clearConfirm: '진짜 비움?',
+    toneButton: '무공봉인',
+    toneButtonTitle: '무공을 봉인하고 일반 말투로 전환',
+    helpAria: '도움말',
+
+    canvasAria: '강호 — 생각의 캔버스',
+    emptyTitle: '허공이 비어 있다.',
+    emptyHint: '빈 곳을 두 번 두드리면 念이 핀다 — 우상단 ? 참고',
+
+    nodePlaceholder: '念…',
+    handleTitle: '끌어서 다른 쪽지에 緣 잇기 (허공에 놓으면 새 쪽지)',
+    handleAria: '緣 잇기',
+
+    zoomOutAria: '축소',
+    zoomInAria: '확대',
+    resetViewTitle: '원점 회귀',
+
+    helpTitle: '강호 행보 요결',
+    helpItems: [
+      ['빈 곳 2번', '새 念(쪽지) 피우기'],
+      ['쪽지 2번', '글 고치기'],
+      ['쪽지 끌기', '자리 옮기기'],
+      ['붉은 점 끌기', '緣 잇기 · 허공에 놓으면 새 쪽지'],
+      ['Tab', '선택한 쪽지에 가지 치기'],
+      ['Enter', '선택한 쪽지 편집'],
+      ['Delete', '선택한 쪽지/緣 베기'],
+      ['빈 곳 끌기', '강호 유람(이동)'],
+      ['휠', '축경(줌)'],
+    ],
+    closeButton: '닫기',
+
+    exportTitle: '내공 내보내기 — JSON',
+    importTitle: '내공 흡수 — JSON 붙여넣기',
+    mdTitle: '비급으로 출력 — Markdown',
+    cancelButton: '취소',
+    applyImportButton: '흡수',
+    copyButton: '복사',
+    importBadShape: '형식이 비급답지 않습니다. nodes 배열이 있는 JSON이어야 함.',
+    importParseFail: 'JSON 해독 실패 — 주화입마 직전에 멈췄다 ㅋ 다시 확인을.',
+    copyOk: '복사 완료. 단전에 잘 갈무리하시길.',
+    copyFail: '자동 복사 실패 — 본문을 직접 긁어가시게.',
+
+    mdHeading: '# 뇌내강호 — 念 모음',
+    mdEmptyNode: '(빈 쪽지)',
+  },
+
+  plain: {
+    docTitle: '아이디어 맵 — 생각을 잇는 캔버스',
+    titleMain: '아이디어 맵',
+    titleSub: '생각을 잇는 캔버스',
+    colophon: '', // 빈 값이면 콜로폰을 그리지 않는다
+
+    colorLabel: { muk: '흑', cheong: '녹', dan: '적', hwang: '황', nam: '남' },
+    paletteAria: '노트 색',
+    paletteSet: (label) => `선택한 노트를 ${label} 색으로`,
+
+    newNode: '+ 새 노트',
+    mdButton: 'Markdown',
+    exportButton: '내보내기',
+    importButton: '가져오기',
+    clearButton: '모두 지우기',
+    clearConfirm: '정말 지울까요?',
+    toneButton: '무협모드',
+    toneButtonTitle: '무협 말투로 전환',
+    helpAria: '도움말',
+
+    canvasAria: '아이디어 캔버스',
+    emptyTitle: '캔버스가 비어 있습니다.',
+    emptyHint: '빈 곳을 더블클릭하면 새 노트가 생깁니다 — 우상단 ? 참고',
+
+    nodePlaceholder: '메모…',
+    handleTitle: '끌어서 다른 노트에 연결 (빈 곳에 놓으면 새 노트)',
+    handleAria: '연결하기',
+
+    zoomOutAria: '축소',
+    zoomInAria: '확대',
+    resetViewTitle: '보기 초기화',
+
+    helpTitle: '사용법',
+    helpItems: [
+      ['빈 곳 더블클릭', '새 노트 만들기'],
+      ['노트 더블클릭', '내용 편집'],
+      ['노트 드래그', '이동'],
+      ['빨간 점 드래그', '연결 · 빈 곳에 놓으면 새 노트'],
+      ['Tab', '선택한 노트에 하위 노트'],
+      ['Enter', '선택한 노트 편집'],
+      ['Delete', '선택한 노트/연결 삭제'],
+      ['빈 곳 드래그', '화면 이동(팬)'],
+      ['휠', '확대/축소'],
+    ],
+    closeButton: '닫기',
+
+    exportTitle: '내보내기 — JSON',
+    importTitle: '가져오기 — JSON 붙여넣기',
+    mdTitle: 'Markdown 출력',
+    cancelButton: '취소',
+    applyImportButton: '가져오기',
+    copyButton: '복사',
+    importBadShape: '형식이 올바르지 않습니다. nodes 배열이 있는 JSON이어야 합니다.',
+    importParseFail: 'JSON 파싱에 실패했습니다. 내용을 다시 확인해 주세요.',
+    copyOk: '복사했습니다.',
+    copyFail: '자동 복사에 실패했습니다. 본문을 직접 복사해 주세요.',
+
+    mdHeading: '# 아이디어 맵 — 노트 모음',
+    mdEmptyNode: '(빈 노트)',
+  },
+}

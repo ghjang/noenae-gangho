@@ -2,7 +2,19 @@
 // 뇌내강호 상태 저장소 (Svelte 5 runes)
 // 그래프(念/緣) 데이터와 UI 상태, 영속화 어댑터.
 // ──────────────────────────────────────────────
+import { TONES } from './strings.js'
+
 const KEY = 'noenae-gangho-v1'
+const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
+
+function loadTone() {
+  try {
+    const t = localStorage.getItem(TONE_KEY)
+    return TONES.includes(t) ? t : TONES[0]
+  } catch {
+    return TONES[0]
+  }
+}
 
 export const graph = $state({ nodes: [], edges: [] })
 
@@ -13,8 +25,9 @@ export const ui = $state({
   selectedEdgeId: null,
   editingId: null,
   linking: null, // { from, x, y } — 연결 드래그 중
-  overlay: null, // { mode: 'export'|'import'|'md', title, text }
+  overlay: null, // { mode: 'export'|'import'|'md' }
   showHelp: false,
+  tone: loadTone(), // 'muhyeop'(무협, 기본) | 'plain'(일반) — strings.js 팩 선택
 })
 
 export const COLORS = ['muk', 'cheong', 'dan', 'hwang', 'nam']
@@ -166,4 +179,19 @@ export function clearAll() {
   graph.edges.length = 0
   ui.selectedId = ui.selectedEdgeId = ui.editingId = null
   scheduleSave()
+}
+
+// 무공봉인/해제 — scheduleSave() 없음: 톤은 그래프가 아니라 TONE_KEY에 직접 저장
+export function setTone(tone) {
+  if (!TONES.includes(tone)) return
+  ui.tone = tone
+  try {
+    localStorage.setItem(TONE_KEY, tone)
+  } catch {
+    /* 취향 저장 실패는 조용히 — 이번 판만 새 말투로 산다 */
+  }
+}
+
+export function toggleTone() {
+  setTone(ui.tone === 'muhyeop' ? 'plain' : 'muhyeop')
 }

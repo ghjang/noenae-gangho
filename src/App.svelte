@@ -2,17 +2,19 @@
   // ──────────────────────────────────────────────
   // 뇌내강호(腦內江湖) — 메인 컴포넌트
   // 먹빛 허공에 念(쪽지)을 띄우고 緣(연결)으로 잇는다.
-  // 상태/영속화는 lib/store.svelte.js, 모양은 app.css가 담당.
+  // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.js가 담당.
   // ──────────────────────────────────────────────
   import { onMount } from 'svelte'
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor,
     removeNode, addEdge, removeEdge, clearAll,
-    snapshot, loadData, scheduleSave,
+    snapshot, loadData, scheduleSave, toggleTone,
   } from './lib/store.svelte.js'
+  import { STRINGS } from './lib/strings.js'
 
-  const COLOR_LABEL = { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' }
+  // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
+  const t = $derived(STRINGS[ui.tone])
 
   let viewportEl
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
@@ -20,9 +22,11 @@
 
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
-  let sheetMsg = $state('')      // 시트 하단 메시지
+  let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
 
   onMount(() => { init() })
+
+  $effect(() => { document.title = t.docTitle })
 
   // ── 좌표 변환 ─────────────────────────────────
   function toWorld(e) {
@@ -153,8 +157,8 @@
 
   // ── 키보드 ───────────────────────────────────
   function onKey(e) {
-    const t = e.target
-    if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT')) return
+    const el = e.target
+    if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) return
     if (e.key === 'Escape') {
       ui.linking = null
       ui.overlay = null
@@ -197,43 +201,43 @@
   function openExport() {
     sheetMsg = ''
     sheetText = JSON.stringify(snapshot(), null, 2)
-    ui.overlay = { mode: 'export', title: '내공 내보내기 — JSON' }
+    ui.overlay = { mode: 'export' }
   }
   function openImport() {
     sheetMsg = ''
     sheetText = ''
-    ui.overlay = { mode: 'import', title: '내공 흡수 — JSON 붙여넣기' }
+    ui.overlay = { mode: 'import' }
   }
   function openMd() {
     sheetMsg = ''
     sheetText = toMarkdown()
-    ui.overlay = { mode: 'md', title: '비급으로 출력 — Markdown' }
+    ui.overlay = { mode: 'md' }
   }
   function applyImport() {
     try {
       const data = JSON.parse(sheetText)
       if (loadData(data)) { scheduleSave(); ui.overlay = null }
-      else sheetMsg = '형식이 비급답지 않습니다. nodes 배열이 있는 JSON이어야 함.'
+      else sheetMsg = 'importBadShape'
     } catch {
-      sheetMsg = 'JSON 해독 실패 — 주화입마 직전에 멈췄다 ㅋ 다시 확인을.'
+      sheetMsg = 'importParseFail'
     }
   }
   async function copySheet() {
     try {
       await navigator.clipboard.writeText(sheetText)
-      sheetMsg = '복사 완료. 단전에 잘 갈무리하시길.'
+      sheetMsg = 'copyOk'
     } catch {
-      sheetMsg = '자동 복사 실패 — 본문을 직접 긁어가시게.'
+      sheetMsg = 'copyFail'
     }
   }
 
   // 그래프 → 마크다운 개요 (루트부터 가지치기, 순환은 ↻ 표시)
   function toMarkdown() {
-    const out = ['# 뇌내강호 — 念 모음', '']
+    const out = [t.mdHeading, '']
     const incoming = new Set(graph.edges.map((e) => e.b))
     const kidsOf = (id) =>
       graph.edges.filter((e) => e.a === id).map((e) => byId(e.b)).filter(Boolean)
-    const label = (n) => (n.text || '(빈 쪽지)').replace(/\s*\n+\s*/g, ' / ')
+    const label = (n) => (n.text || t.mdEmptyNode).replace(/\s*\n+\s*/g, ' / ')
     const seen = new Set()
     const walk = (n, d) => {
       if (seen.has(n.id)) { out.push(`${'  '.repeat(d)}- ${label(n)} ↻`); return }
@@ -260,6 +264,7 @@
   }
 
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
+  const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
 </script>
 
 <svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onkeydown={onKey} />
@@ -267,17 +272,17 @@
 <!-- ── 상단 바 ── -->
 <header class="bar">
   <div class="title">
-    <span class="hanja">腦內江湖</span>
-    <span class="ko">뇌내강호 · 두서없는 아이디어 정리소</span>
+    <span class="hanja">{t.titleMain}</span>
+    <span class="ko">{t.titleSub}</span>
     <span class="ver">α</span>
   </div>
 
-  <div class="palette" aria-label="오행 색">
+  <div class="palette" aria-label={t.paletteAria}>
     {#each COLORS as c (c)}
       <button
         style={`--swatch: var(--c-${c})`}
-        title={`${COLOR_LABEL[c]}(${c})`}
-        aria-label={`선택한 쪽지를 ${COLOR_LABEL[c]} 색으로`}
+        title={`${t.colorLabel[c]}(${c})`}
+        aria-label={t.paletteSet(t.colorLabel[c])}
         disabled={!selected}
         onclick={() => selected && setColor(selected.id, c)}
       ></button>
@@ -285,14 +290,15 @@
   </div>
 
   <div class="actions">
-    <button class="primary" onclick={addAtCenter}>+ 새 쪽지</button>
-    <button onclick={openMd}>비급.md</button>
-    <button onclick={openExport}>내보내기</button>
-    <button onclick={openImport}>불러오기</button>
+    <button class="primary" onclick={addAtCenter}>{t.newNode}</button>
+    <button onclick={openMd}>{t.mdButton}</button>
+    <button onclick={openExport}>{t.exportButton}</button>
+    <button onclick={openImport}>{t.importButton}</button>
     <button class:armed={armedClear} onclick={onClear}>
-      {armedClear ? '진짜 비움?' : '강호 비우기'}
+      {armedClear ? t.clearConfirm : t.clearButton}
     </button>
-    <button onclick={() => (ui.showHelp = !ui.showHelp)} aria-label="도움말">?</button>
+    <button onclick={toggleTone} title={t.toneButtonTitle}>{t.toneButton}</button>
+    <button onclick={() => (ui.showHelp = !ui.showHelp)} aria-label={t.helpAria}>?</button>
   </div>
 </header>
 
@@ -301,15 +307,15 @@
   class="viewport"
   bind:this={viewportEl}
   role="application"
-  aria-label="강호 — 생각의 캔버스"
+  aria-label={t.canvasAria}
   onpointerdown={onViewportDown}
   ondblclick={onViewportDbl}
   onwheel={onWheel}
 >
   {#if graph.nodes.length === 0}
     <div class="empty">
-      <p>허공이 비어 있다.</p>
-      <p class="sub">빈 곳을 두 번 두드리면 念이 핀다 — 우상단 ? 참고</p>
+      <p>{t.emptyTitle}</p>
+      <p class="sub">{t.emptyHint}</p>
     </div>
   {/if}
 
@@ -360,7 +366,7 @@
             use:autogrow
             rows="1"
             value={n.text}
-            placeholder="念…"
+            placeholder={t.nodePlaceholder}
             oninput={(e) => updateText(n.id, e.currentTarget.value)}
             onkeydown={(e) => onEditorKey(e, n)}
             onblur={commitEditing}
@@ -371,8 +377,8 @@
         {/if}
         <button
           class="handle"
-          title="끌어서 다른 쪽지에 緣 잇기 (허공에 놓으면 새 쪽지)"
-          aria-label="緣 잇기"
+          title={t.handleTitle}
+          aria-label={t.handleAria}
           onpointerdown={(e) => onHandleDown(e, n)}
           ondblclick={(e) => e.stopPropagation()}
         ></button>
@@ -383,29 +389,23 @@
 
 <!-- ── 하단 HUD + 콜로폰 ── -->
 <div class="hud">
-  <button onclick={() => zoomCenter(1 / 1.18)} aria-label="축소">−</button>
-  <button class="pct" onclick={resetView} title="원점 회귀">{Math.round(ui.scale * 100)}%</button>
-  <button onclick={() => zoomCenter(1.18)} aria-label="확대">+</button>
+  <button onclick={() => zoomCenter(1 / 1.18)} aria-label={t.zoomOutAria}>−</button>
+  <button class="pct" onclick={resetView} title={t.resetViewTitle}>{Math.round(ui.scale * 100)}%</button>
+  <button onclick={() => zoomCenter(1.18)} aria-label={t.zoomInAria}>+</button>
 </div>
-<div class="colophon">腦內江湖 — 한 글자의 다름에서</div>
+{#if t.colophon}<div class="colophon">{t.colophon}</div>{/if}
 
 <!-- ── 도움말 ── -->
 {#if ui.showHelp}
   <aside class="help-card">
-    <h2>강호 행보 요결</h2>
+    <h2>{t.helpTitle}</h2>
     <dl>
-      <dt>빈 곳 2번</dt><dd>새 念(쪽지) 피우기</dd>
-      <dt>쪽지 2번</dt><dd>글 고치기</dd>
-      <dt>쪽지 끌기</dt><dd>자리 옮기기</dd>
-      <dt>붉은 점 끌기</dt><dd>緣 잇기 · 허공에 놓으면 새 쪽지</dd>
-      <dt>Tab</dt><dd>선택한 쪽지에 가지 치기</dd>
-      <dt>Enter</dt><dd>선택한 쪽지 편집</dd>
-      <dt>Delete</dt><dd>선택한 쪽지/緣 베기</dd>
-      <dt>빈 곳 끌기</dt><dd>강호 유람(이동)</dd>
-      <dt>휠</dt><dd>축경(줌)</dd>
+      {#each t.helpItems as [key, desc] (key)}
+        <dt>{key}</dt><dd>{desc}</dd>
+      {/each}
     </dl>
     <div class="close-row">
-      <button onclick={() => (ui.showHelp = false)}>닫기</button>
+      <button onclick={() => (ui.showHelp = false)}>{t.closeButton}</button>
     </div>
   </aside>
 {/if}
@@ -417,17 +417,17 @@
     role="presentation"
     onpointerdown={(e) => { if (e.target === e.currentTarget) ui.overlay = null }}
   >
-    <div class="sheet" role="dialog" aria-label={ui.overlay.title}>
-      <h2>{ui.overlay.title}</h2>
+    <div class="sheet" role="dialog" aria-label={sheetTitle}>
+      <h2>{sheetTitle}</h2>
       <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
-      {#if sheetMsg}<p class="msg">{sheetMsg}</p>{/if}
+      {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
       <div class="row">
         {#if ui.overlay.mode === 'import'}
-          <button onclick={() => (ui.overlay = null)}>취소</button>
-          <button class="primary" onclick={applyImport}>흡수</button>
+          <button onclick={() => (ui.overlay = null)}>{t.cancelButton}</button>
+          <button class="primary" onclick={applyImport}>{t.applyImportButton}</button>
         {:else}
-          <button onclick={() => (ui.overlay = null)}>닫기</button>
-          <button class="primary" onclick={copySheet}>복사</button>
+          <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
+          <button class="primary" onclick={copySheet}>{t.copyButton}</button>
         {/if}
       </div>
     </div>
