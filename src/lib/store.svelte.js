@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────
 import { TONES } from './strings.js'
 import { nodeBox } from './geometry.js'
-import { ancestorIds, parentEdgeOf } from './graph.js'
+import { ancestorIds, parentEdgeOf, tidyLayout } from './graph.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
@@ -120,7 +120,8 @@ export function loadData(data) {
   graph.edges.length = 0
   for (const n of data.nodes) {
     const old = prev.get(n.id)
-    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...n })
+    const { w: _w, h: _h, ...rest } = n // 실측값은 포맷 밖 — 손으로 고친 JSON이 앵커를 오염 못 하게
+    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...rest })
   }
   for (const e of data.edges ?? []) {
     if (e && e.a && e.b) graph.edges.push({ id: e.id ?? uid(), a: e.a, b: e.b })
@@ -310,6 +311,18 @@ export function removeEdge(id) {
     graph.edges.splice(i, 1)
   }
   if (ui.selectedEdgeId === id) ui.selectedEdgeId = null
+  scheduleSave()
+}
+
+// 가지런히(Tidy) — rootId의 하위 트리(없으면 전체)를 정돈. undo 한 걸음
+export function arrange(rootId = null) {
+  const pos = tidyLayout(graph.nodes, graph.edges, rootId)
+  if (pos.size === 0) return
+  markUndo()
+  for (const n of graph.nodes) {
+    const p = pos.get(n.id)
+    if (p) { n.x = p.x; n.y = p.y }
+  }
   scheduleSave()
 }
 

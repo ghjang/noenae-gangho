@@ -264,6 +264,10 @@ button.armed {
 /* 겹침에서는 만지는 놈이 위로 — 호버/선택 부상 (캔버스 앱 관행) */
 .node:hover { z-index: 1; }
 .node.selected { z-index: 2; }
+/* 정돈(R) 직후 잠깐만 — 쪽지가 새 자리로 미끄러진다 (드래그엔 무영향) */
+.world.tidying .node {
+  transition: left 0.25s ease, top 0.25s ease, filter 0.15s ease;
+}
 .node:active { cursor: grabbing; }
 .node[data-color='muk'] { --c: var(--c-muk); }
 .node[data-color='cheong'] { --c: var(--c-cheong); }
