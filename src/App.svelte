@@ -12,7 +12,7 @@
     addNodeAt, addChild, addSibling, updateText, setColor, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
-    markUndo, asOneStep, undo, redo,
+    markUndo, asOneStep, undo, redo, flushSave, SCALE_MIN, SCALE_MAX,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
   import { nodeBox, center, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
@@ -97,7 +97,7 @@
     zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12)
   }
   function zoomAt(cx, cy, factor) {
-    const ns = Math.min(2.5, Math.max(0.35, ui.scale * factor))
+    const ns = Math.min(SCALE_MAX, Math.max(SCALE_MIN, ui.scale * factor))
     const k = ns / ui.scale
     ui.pan.x = cx - (cx - ui.pan.x) * k
     ui.pan.y = cy - (cy - ui.pan.y) * k
@@ -126,7 +126,7 @@
     }
     const pad = 60
     const r = viewportEl.getBoundingClientRect()
-    const s = Math.min(2.5, Math.max(0.35,
+    const s = Math.min(SCALE_MAX, Math.max(SCALE_MIN,
       Math.min(r.width / (x1 - x0 + pad * 2), r.height / (y1 - y0 + pad * 2))))
     ui.scale = s
     ui.pan.x = (r.width - (x0 + x1) * s) / 2
@@ -656,7 +656,7 @@
   })
 </script>
 
-<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} onkeyup={onKeyUp} />
+<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} onkeyup={onKeyUp} onpagehide={flushSave} />
 
 <!-- ── 상단 바 ── -->
 <header class="bar">

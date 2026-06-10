@@ -7,6 +7,11 @@ import { nodeBox } from './geometry.js'
 import { ancestorIds, parentEdgeOf, tidyLayout } from './graph.js'
 
 const KEY = 'noenae-gangho-v1'
+
+// 줌 한계 — zoomAt/fitAll/뷰 복원이 같은 값을 쓴다. 하한 0.1: 큰 강호도
+// 전체 보기(全)가 한 화면에 다 담을 수 있게 (0.35는 잘림 사고의 원인이었다)
+export const SCALE_MIN = 0.1
+export const SCALE_MAX = 2.5
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
 const VIEW_KEY = 'noenae-gangho-view' // 마지막 뷰(팬/줌) — 역시 로컬 취향, snapshot 밖
 
@@ -23,7 +28,7 @@ function loadView() {
   try {
     const v = JSON.parse(localStorage.getItem(VIEW_KEY))
     if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.s))
-      return { x: v.x, y: v.y, s: Math.min(2.5, Math.max(0.35, v.s)) }
+      return { x: v.x, y: v.y, s: Math.min(SCALE_MAX, Math.max(SCALE_MIN, v.s)) }
   } catch {
     /* 깨진 저장값은 무시 */
   }
@@ -85,6 +90,18 @@ let saveTimer = null
 export function scheduleSave() {
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => adapter.save(snapshot()), 500)
+}
+
+// 즉시 저장 — 탭 닫힘/숨김 직전(pagehide), 디바운스 500ms를 못 기다릴 때
+export function flushSave() {
+  clearTimeout(saveTimer)
+  adapter.save(snapshot())
+  clearTimeout(viewTimer)
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
+  } catch {
+    /* 조용히 */
+  }
 }
 
 // 뷰(팬/줌) 저장 — App의 $effect가 변화 감지 후 호출. 그래프 스냅샷과 무관
