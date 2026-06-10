@@ -287,9 +287,7 @@ button.armed {
 
 .handle {
   position: absolute;
-  right: -9px;
-  top: 50%;
-  translate: 0 -50%;
+  z-index: 1; /* 좌/우 리사이즈 띠(.rsz)보다 위 — 점이 보이는 곳에선 점이 이긴다 */
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -300,6 +298,11 @@ button.armed {
   cursor: crosshair;
   padding: 0;
 }
+/* 마우스와 가장 가까운 변에 나타난다 (기본은 우변) */
+.handle.right { right: -9px; top: 50%; translate: 0 -50%; }
+.handle.left { left: -9px; top: 50%; translate: 0 -50%; }
+.handle.top { top: -9px; left: 50%; translate: -50% 0; }
+.handle.bottom { bottom: -9px; left: 50%; translate: -50% 0; }
 .node:hover .handle,
 .node.selected .handle { opacity: 1; }
 
