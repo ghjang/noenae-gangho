@@ -24,7 +24,7 @@
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것
 
 1. **저장은 어댑터 패턴** (`setStorageAdapter`): localStorage는 기본값일 뿐. VSCode 웹뷰 이식 시 postMessage 어댑터로 교체 예정 — `load()/save(data)` 시그니처 유지
-2. **데이터 포맷** `{ app: 'noenae-gangho', v: 1, nodes, edges }` — 스키마 바꾸면 `v` 올리고 `loadData()`에 구버전 마이그레이션 추가. `snapshot()`은 저장 필드를 화이트리스트로 추림(노드 `id,x,y,text,color` / 엣지 `id,a,b`) — 영속 필드를 새로 들이면 `snapshot()`과 `loadData()` 기본값 양쪽을 같이 고칠 것
+2. **데이터 포맷** `{ app: 'noenae-gangho', v: 2, nodes, edges }` — 스키마 바꾸면 `v` 올리고 `loadData()`에 구버전 마이그레이션 추가 (v1→v2는 `bw` 선택 필드 추가뿐이라 마이그레이션 불요). `snapshot()`은 저장 필드를 화이트리스트로 추림(노드 `id,x,y,text,color,bw?` / 엣지 `id,a,b`) — 영속 필드를 새로 들이면 `snapshot()`과 `loadData()` 기본값 양쪽을 같이 고칠 것
 3. **좌표계**: 노드 x/y는 world 좌표, 화면 변환은 `ui.pan`/`ui.scale`. 새 인터랙션은 `toWorld()` 경유
 4. **노드 w/h는 실측** (`bind:clientWidth/Height`) — 엣지 앵커 계산에 쓰임. 하드코딩 금지
 5. **엣지는 방향이 있다**: `a`=부모, `b`=자식. Tab 가지치기(`addChild`)와 비급.md 트리 출력(`toMarkdown`)이 이 방향에 의존하고, 화면에는 화살촉으로 표시(F키 = `flipEdge` 방향 뒤집기). 단 중복 판정(`addEdge`)은 무방향 — 같은 두 쪽지 사이 緣은 한 가닥뿐

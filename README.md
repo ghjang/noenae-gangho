@@ -25,6 +25,7 @@ npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
 | 쪽지 드래그 | 이동 |
 | 붉은 점 드래그 → 다른 쪽지 | 緣(연결) 잇기 |
 | 붉은 점 드래그 → 허공 | 그 자리에 새 쪽지 + 자동 연결 |
+| 우하단 모서리 드래그 | 쪽지 너비 조절 (더블클릭 = 자동 너비) |
 | Tab | 선택한 쪽지에 자식 가지치기 |
 | Delete | 선택한 쪽지/緣 삭제 |
 | F | 선택한 緣 방향 뒤집기 (화살촉 반전) |
@@ -46,10 +47,12 @@ src/
 저장은 기본 localStorage (`noenae-gangho-v1`), 말투 선택은 `noenae-gangho-tone`에 따로. 데이터 포맷:
 
 ```json
-{ "app": "noenae-gangho", "v": 1,
-  "nodes": [{ "id", "x", "y", "text", "color" }],
+{ "app": "noenae-gangho", "v": 2,
+  "nodes": [{ "id", "x", "y", "text", "color", "bw?" }],
   "edges": [{ "id", "a", "b" }] }
 ```
+
+`bw`는 사용자 지정 너비(px, 선택) — 없으면 내용 따라 자동. v1 데이터도 그대로 읽힌다.
 
 ## 내 GitHub 프라이빗 레포에 올리기
 

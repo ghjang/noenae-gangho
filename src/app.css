@@ -22,6 +22,9 @@
   /* 인주 — 단 하나의 강세 */
   --inju: #c8472b;
 
+  /* 쪽지 기본 너비 상한 — 자동 너비일 때 이 폭에서 줄바꿈 */
+  --node-max-w: 230px;
+
   /* 오행 색 (노드 분류) */
   --c-muk: #5a5347;
   --c-cheong: #4e7a66;
@@ -221,7 +224,7 @@ button.armed {
 /* 念 — 노드 */
 .node {
   position: absolute;
-  max-width: 230px;
+  max-width: var(--node-max-w);
   min-width: 84px;
   padding: 10px 13px 11px;
   background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
@@ -250,6 +253,10 @@ button.armed {
   outline-offset: 2px;
   box-shadow: 0 0 0 6px rgba(200, 71, 43, 0.13), 0 9px 22px -10px rgba(0, 0, 0, 0.75);
 }
+
+/* 사용자 지정 너비(bw) — 상한 해제, 편집창도 박스에 맞춤 */
+.node.resized { max-width: none; }
+.node.resized textarea { width: 100%; }
 
 @keyframes stamp {
   from { transform: scale(0.92); opacity: 0.4; }
@@ -293,6 +300,24 @@ button.armed {
 }
 .node:hover .handle,
 .node.selected .handle { opacity: 1; }
+
+/* 우하단 — 너비 조절 손잡이 (둥근 緣 핸들과 구분되는 각진 모양) */
+.rhandle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--hanji);
+  border: 2px solid var(--c, var(--c-muk));
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: ew-resize;
+  padding: 0;
+}
+.node:hover .rhandle,
+.node.selected .rhandle { opacity: 1; }
 
 /* 빈 강호 */
 .empty {

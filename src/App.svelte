@@ -7,7 +7,7 @@
   import { onMount } from 'svelte'
   import {
     graph, ui, COLORS, byId, init,
-    addNodeAt, addChild, updateText, setColor,
+    addNodeAt, addChild, updateText, setColor, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, clearAll,
     snapshot, loadData, scheduleSave, toggleTone,
   } from './lib/store.svelte.js'
@@ -19,6 +19,7 @@
   let viewportEl
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
+  let resizing = null // { id, sx, sw } — 쪽지 너비 조절
 
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
@@ -123,6 +124,17 @@
     ui.selectedId = n.id
     ui.linking = { from: n.id, x: w.x, y: w.y }
   }
+  function onResizeDown(e, n) {
+    e.stopPropagation()
+    ui.selectedId = n.id
+    ui.selectedEdgeId = null
+    const w = toWorld(e)
+    resizing = { id: n.id, sx: w.x, sw: n.bw || n.w || 180 }
+  }
+  function onResizeDbl(e, n) {
+    e.stopPropagation()
+    setNodeWidth(n.id, null) // 자동 너비로 복귀
+  }
   function commitEditing() {
     if (ui.editingId) ui.editingId = null
   }
@@ -140,6 +152,9 @@
         n.y = w.y - drag.oy
         drag.moved = true
       }
+    } else if (resizing) {
+      const w = toWorld(e)
+      setNodeWidth(resizing.id, resizing.sw + (w.x - resizing.sx))
     } else if (ui.linking) {
       const w = toWorld(e)
       ui.linking.x = w.x
@@ -152,6 +167,7 @@
       drag = null
     }
     panning = null
+    resizing = null
     if (ui.linking) {
       const from = ui.linking.from
       const el = document.elementFromPoint(e.clientX, e.clientY)
@@ -371,9 +387,10 @@
       <div
         class="node"
         class:selected={ui.selectedId === n.id}
+        class:resized={!!n.bw}
         data-color={n.color}
         data-node-id={n.id}
-        style={`left:${n.x}px; top:${n.y}px`}
+        style={`left:${n.x}px; top:${n.y}px;${n.bw ? ` width:${n.bw}px;` : ''}`}
         bind:clientWidth={n.w}
         bind:clientHeight={n.h}
         role="group"
@@ -400,6 +417,13 @@
           aria-label={t.handleAria}
           onpointerdown={(e) => onHandleDown(e, n)}
           ondblclick={(e) => e.stopPropagation()}
+        ></button>
+        <button
+          class="rhandle"
+          title={t.resizeHandleTitle}
+          aria-label={t.resizeHandleAria}
+          onpointerdown={(e) => onResizeDown(e, n)}
+          ondblclick={(e) => onResizeDbl(e, n)}
         ></button>
       </div>
     {/each}
