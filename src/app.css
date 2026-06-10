@@ -4,6 +4,10 @@
    선택은 인주(印朱) 낙관으로 찍는다.
    ────────────────────────────────────────────── */
 :root {
+  /* 다크 앱임을 브라우저에 선언 — 폼 컨트롤(캐럿·포커스 링·IME 조합 하이라이트·
+     스크롤바)이 라이트 기본색(흰 배경)으로 그려지는 증상 방지 */
+  color-scheme: dark;
+
   /* 바탕 */
   --muk-void: #1b1712;        /* 먹 — 벼루 바닥 같은 어둠 */
   --chrome: rgba(33, 27, 20, 0.88);
@@ -39,6 +43,13 @@
 }
 
 * { box-sizing: border-box; }
+
+/* 글자 선택/캐럿도 먹과 인주의 세계관 안에서 */
+::selection {
+  background: rgba(200, 71, 43, 0.35); /* 인주 박명 */
+  color: inherit;
+}
+textarea, input { caret-color: currentColor; }
 
 html, body {
   margin: 0;
