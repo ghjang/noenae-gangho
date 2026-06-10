@@ -63,8 +63,24 @@ const ids = (s) => [...s].sort().join(',')
   if (Math.abs(mid - (r.y + 20)) > 1) err('정돈: 부모가 자식 블록 세로 중앙이 아님')
 }
 
+// 7) 정돈 — 뿌리 없는 순환 덩어리도 전체 정돈에서 빠짐없이 배치된다
+{
+  const nodes = [
+    { id: 'a', x: 0, y: 0, w: 80, h: 40 },
+    { id: 'b', x: 10, y: 50, w: 80, h: 40 },
+    { id: 'c', x: 20, y: 100, w: 80, h: 40 },
+    { id: 'z', x: 500, y: 500, w: 80, h: 40 },
+  ]
+  const edges = [E('a', 'b'), E('b', 'c'), E('c', 'a'), E('a', 'z')]
+  const pos = tidyLayout(nodes, edges)
+  for (const id of ['a', 'b', 'c', 'z'])
+    if (!pos.has(id)) err(`정돈 순환 구제: '${id}' 미배치`)
+  const a = pos.get('a'), z = pos.get('z')
+  if (a && z && !(z.x > a.x)) err('정돈 순환 구제: 자식 z가 첫 부모 a의 오른쪽이 아님')
+}
+
 if (fail) {
   console.error(`봉문 검사 실패 — ${fail}건`)
   process.exit(1)
 }
-console.log('봉문 검사 통과 — 시나리오 6종 (접기 5 + 정돈 1)')
+console.log('봉문 검사 통과 — 시나리오 7종 (접기 5 + 정돈 2)')

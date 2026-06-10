@@ -125,6 +125,15 @@ export function tidyLayout(nodes, edges, rootId = null, gapX = 90, gapY = 24) {
   for (const r of roots) {
     place(r, r.x, r.y - (calcH(r) - nodeBox(r).h) / 2) // 뿌리는 제자리 고정
   }
+  // 전체 정돈일 때 — 뿌리가 없는 순환 덩어리(서로가 첫 부모)와 거기 매달린
+  // 가지들은 출발점이 없어 통째로 미배치로 남는다. 미배치 쪽지를 차례로
+  // 닻 삼아 마저 전개 (pos.has 가드가 중복·순환을 막는다)
+  if (!rootId) {
+    for (const n of nodes) {
+      if (hidden.has(n.id) || pos.has(n.id)) continue
+      place(n, n.x, n.y - (calcH(n) - nodeBox(n).h) / 2)
+    }
+  }
   // 접힌 쪽지의 숨은 후손 동행 — 같은 dx/dy로 이동
   for (const n of nodes) {
     if (!n.collapsed || !pos.has(n.id)) continue
