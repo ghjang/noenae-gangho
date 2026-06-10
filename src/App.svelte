@@ -232,6 +232,7 @@
     mmJump(e)
   }
   function addAtCenter() {
+    searchQ = null // 새 쪽지 행동 = 검색 팝오버 닫기 (캔버스/쪽지 클릭과 같은 국룰)
     const r = viewportEl.getBoundingClientRect()
     const x = (r.width / 2 - ui.pan.x) / ui.scale
     const y = (r.height / 2 - ui.pan.y) / ui.scale
@@ -241,11 +242,13 @@
   // ── 쪽지(노드) ────────────────────────────────
   function onNodeDown(e, n) {
     e.stopPropagation()
-    // 편집 중인 쪽지라도 여백(테두리 안쪽)을 잡으면 확정하고 바로 드래그를 시작한다
-    // — 글자 위 클릭(캐럿 이동)은 textarea 자신의 pointerdown stopPropagation이 지키므로
-    // 여기 오는 pointerdown은 전부 '옮기려는 손'. 예전엔 return으로 무시해서
-    // blur가 편집만 닫고(빈 쪽지는 폭까지 줄며) 잡은 손이 헛도는 증상이 있었다
-    if (ui.editingId) commitEditing()
+    // 편집 중인 쪽지의 여백을 잡으면 — 편집을 유지한 채 그대로 드래그한다.
+    // preventDefault가 포커스 이탈(blur)을 막아, 빈 쪽지가 끌리는 도중에
+    // 자동 폭으로 쪼그라드는 꼴을 방지. 확정·수축은 다른 곳을 짚어 편집이
+    // 풀리는 순간의 몫이다. 글자 위 클릭(캐럿 이동)은 textarea 자신의
+    // pointerdown stopPropagation이 지키므로 여기 오는 손은 전부 '옮기려는 손'
+    if (ui.editingId === n.id) e.preventDefault()
+    else if (ui.editingId) commitEditing()
     searchQ = null // 쪽지 직접 선택 = 검색창 닫기
     ui.selectedId = n.id
     ui.selectedEdgeId = null
@@ -826,8 +829,9 @@
     </svg>
 
     {#if dragId}
-      <!-- 이동 중인 쪽지의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로 -->
-      <svg class="edges overlay" aria-hidden="true">
+      <!-- 이동 중인 쪽지의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로.
+           주의: 'overlay'라는 클래스명은 입출력 시트 배경막(.overlay)과 충돌한다 -->
+      <svg class="edges lift-layer" aria-hidden="true">
         {#each graph.edges.filter((ed) => ed.a === dragId || ed.b === dragId) as e (e.id)}
           {@const a = byId(e.a)}
           {@const b = byId(e.b)}

@@ -227,8 +227,10 @@ button.armed {
   overflow: visible;
   pointer-events: none;
 }
-/* 드래그 중 緣 부상층 — 노드들(.node z≤2) 위, 클릭은 통과 */
-.edges.overlay { z-index: 3; }
+/* 드래그 중 緣 부상층 — 노드들(.node z≤2) 위, 클릭은 통과.
+   ('overlay'라 이름 지으면 시트 배경막 .overlay 규칙이 같이 발려
+   검은 박스 + 緣 18px 어긋남 사고가 난다 — 실제로 났었다 ㅋ) */
+.edges.lift-layer { z-index: 3; }
 .edge.lift .vis { stroke: var(--edge-strong); }
 
 .edge .hit {
