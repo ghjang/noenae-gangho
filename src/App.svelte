@@ -269,8 +269,9 @@
       }
       return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
     }
-    // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬)
-    if (e.key.startsWith('Arrow')) {
+    // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
+    // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
+    if (e.key.startsWith('Arrow') && !e.altKey) {
       e.preventDefault()
       const mult = e.shiftKey ? 4 : 1
       if (selected) {
@@ -354,8 +355,15 @@
     if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
       e.preventDefault()
       const pe = graph.edges.find((ed) => ed.b === ui.selectedId) // 부모 여럿이면 첫 緣 기준
-      if (pe) {
-        addChild(pe.a)
+      if (pe && selected) {
+        // 형제는 addChild 기본 슬롯(부모 옆)이 아니라 선택한 쪽지 바로 아래에 — 시선이 머무는 곳
+        asOneStep(() => {
+          const p = byId(pe.a)
+          if (p?.collapsed) p.collapsed = undefined
+          const b = nodeBox(selected)
+          const node = addNodeAt(b.x, b.y + b.h + 24, '', selected.color)
+          addEdge(pe.a, node.id)
+        })
       } else if (selected) {
         const b = nodeBox(selected)
         addNodeAt(b.x, b.y + b.h + 44, '', selected.color)
