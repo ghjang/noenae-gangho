@@ -534,9 +534,32 @@
       }
       return
     }
-    if (e.key === 'Tab' && ui.selectedId) {
-      e.preventDefault()
-      addChild(ui.selectedId)
+    if (e.key === 'Tab') {
+      if (ui.selectedId) {
+        e.preventDefault()
+        addChild(ui.selectedId)
+        return
+      }
+      // 선택이 없으면 — 화면 중심에 가장 가까운 보이는 쪽지를 선택 (키보드 진입점,
+      // 포커스가 엄한 데로 유랑하는 것도 차단). 툴바 버튼 포커스 중엔 네이티브 유지
+      if (el?.tagName !== 'BUTTON') {
+        const r = viewportEl.getBoundingClientRect()
+        const wx = (r.width / 2 - ui.pan.x) / ui.scale
+        const wy = (r.height / 2 - ui.pan.y) / ui.scale
+        let best = null, bd = Infinity
+        for (const n of graph.nodes) {
+          if (hidden.has(n.id)) continue
+          const c = center(n)
+          const d = (c.x - wx) ** 2 + (c.y - wy) ** 2
+          if (d < bd) { bd = d; best = n }
+        }
+        if (best) {
+          e.preventDefault()
+          ui.selectedId = best.id
+          ui.selectedEdgeId = null
+          ensureVisible(best)
+        }
+      }
       return
     }
     // Enter — 형제 가지치기 (마인드맵 국룰: Tab=자식, Enter=형제). 로직은 store.addSibling
