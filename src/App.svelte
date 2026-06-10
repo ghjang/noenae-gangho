@@ -26,6 +26,7 @@
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const dur = (ms) => (REDUCED ? 0 : ms)
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
+  let dragId = $state(null) // 실제 이동 중인 쪽지 id — 그 緣을 위층에 띄우는 용도
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
   let touchPts = new Map() // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
@@ -319,7 +320,10 @@
     } else if (drag) {
       const n = byId(drag.id)
       if (n) {
-        if (!drag.moved) markUndo('drag:' + drag.id) // 제스처 시작 시점의 모습을 한 번만
+        if (!drag.moved) {
+          markUndo('drag:' + drag.id) // 제스처 시작 시점의 모습을 한 번만
+          dragId = drag.id // 이동 시작 — 이 쪽지의 緣을 위층에
+        }
         const w = toWorld(e)
         n.x = w.x - drag.ox
         n.y = w.y - drag.oy
@@ -346,6 +350,7 @@
     if (drag) {
       if (drag.moved) scheduleSave()
       drag = null
+      dragId = null // 이동 끝 — 緣은 다시 뒤로
     }
     panning = null
     resizing = null
@@ -733,6 +738,23 @@
         {/if}
       {/if}
     </svg>
+
+    {#if dragId}
+      <!-- 이동 중인 쪽지의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로 -->
+      <svg class="edges overlay" aria-hidden="true">
+        {#each graph.edges.filter((ed) => ed.a === dragId || ed.b === dragId) as e (e.id)}
+          {@const a = byId(e.a)}
+          {@const b = byId(e.b)}
+          {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
+            {@const E = edgeEnd(a, b)}
+            <g class="edge lift">
+              <path class="vis" d={edgePath(a, E)} />
+              <g class="cap"><path d={arrowPath(E)} /><circle cx={E.x} cy={E.y} r="3" /></g>
+            </g>
+          {/if}
+        {/each}
+      </svg>
+    {/if}
 
     {#each graph.nodes.filter((nd) => !hidden.has(nd.id)) as n (n.id)}
       {@const kids = kidCount.get(n.id) ?? 0}
