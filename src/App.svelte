@@ -755,9 +755,8 @@
   </div>
 
   <div class="actions">
-    <button class="primary inkwell" onclick={addAtCenter} title={t.newNode} aria-label={t.newNode}>
-      +<i style={`background: var(--c-${ui.ink})`}></i>
-    </button>
+    <!-- 붓 색 표시는 팔레트의 링(.cur)이 담당 — 버튼은 인주 단색 '+' 하나로 깔끔하게 -->
+    <button class="primary" onclick={addAtCenter} title={t.newNode} aria-label={t.newNode}>+</button>
     <button onclick={openMd}>{t.mdButton}</button>
     <button onclick={openExport}>{t.exportButton}</button>
     <button onclick={openImport}>{t.importButton}</button>

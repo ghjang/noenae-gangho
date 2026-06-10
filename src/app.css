@@ -190,16 +190,6 @@ button.armed {
 }
 .palette button.dim.cur { opacity: 1; } /* 빈손이어도 붓 색 하나는 또렷이 */
 
-/* + 버튼의 붓 색 점 — 새 쪽지가 무슨 색으로 피는지 */
-.inkwell i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-left: 7px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 246, 234, 0.75);
-  vertical-align: -1px;
-}
 .palette button:hover {
   transform: scale(1.18);
   background: var(--swatch); /* .bar button:hover의 회색 배경이 오행색을 덮지 않게 */
