@@ -1,0 +1,409 @@
+/* ──────────────────────────────────────────────
+   뇌내강호 디자인 토큰
+   먹빛 허공(캔버스) 위에 한지 쪽지(노드)를 붙이고,
+   선택은 인주(印朱) 낙관으로 찍는다.
+   ────────────────────────────────────────────── */
+:root {
+  /* 바탕 */
+  --muk-void: #1b1712;        /* 먹 — 벼루 바닥 같은 어둠 */
+  --chrome: rgba(33, 27, 20, 0.88);
+  --hairline: rgba(242, 233, 214, 0.1);
+
+  /* 종이와 글씨 */
+  --hanji: #f2e9d6;
+  --hanji-2: #e8dcc2;
+  --ink: #2a241c;
+  --paper-dim: rgba(242, 233, 214, 0.55);
+
+  /* 연(緣) — 잇는 선 */
+  --edge: rgba(242, 233, 214, 0.28);
+  --edge-strong: rgba(242, 233, 214, 0.55);
+
+  /* 인주 — 단 하나의 강세 */
+  --inju: #c8472b;
+
+  /* 오행 색 (노드 분류) */
+  --c-muk: #5a5347;
+  --c-cheong: #4e7a66;
+  --c-dan: #bf4530;
+  --c-hwang: #c08f35;
+  --c-nam: #46618c;
+
+  --serif: 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', Batang, serif;
+  --sans: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--muk-void);
+  color: var(--hanji);
+  font-family: var(--sans);
+}
+
+#app { height: 100%; }
+
+button { -webkit-tap-highlight-color: transparent; }
+
+/* ── 상단 바 ── */
+.bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 52px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px;
+  background: var(--chrome);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-right: auto;
+  white-space: nowrap;
+}
+.title .hanja {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 5px;
+  color: var(--hanji);
+}
+.title .ko {
+  font-size: 12px;
+  color: var(--paper-dim);
+}
+.title .ver {
+  font-size: 10.5px;
+  color: var(--inju);
+  border: 1px solid rgba(200, 71, 43, 0.55);
+  border-radius: 99px;
+  padding: 1px 7px;
+  font-family: var(--serif);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.actions::-webkit-scrollbar { display: none; }
+
+.bar button,
+.hud button,
+.sheet button,
+.help-card button {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--hanji);
+  background: rgba(242, 233, 214, 0.06);
+  border: 1px solid rgba(242, 233, 214, 0.16);
+  padding: 6px 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bar button:hover,
+.hud button:hover,
+.sheet button:hover { background: rgba(242, 233, 214, 0.13); }
+
+button.primary {
+  background: var(--inju);
+  border-color: var(--inju);
+  color: #fff6ea;
+}
+button.primary:hover { background: #d6552f; }
+
+button.armed {
+  background: var(--c-dan);
+  border-color: var(--c-dan);
+  color: #fff6ea;
+}
+
+/* 오행 팔레트 */
+.palette {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding-right: 10px;
+  border-right: 1px solid var(--hairline);
+}
+.palette button {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  padding: 0;
+  border: 1.5px solid rgba(242, 233, 214, 0.4);
+  background: var(--swatch);
+}
+.palette button:disabled { opacity: 0.25; cursor: default; }
+.palette button:not(:disabled):hover { transform: scale(1.18); }
+
+/* ── 캔버스 ── */
+.viewport {
+  position: absolute;
+  inset: 52px 0 0 0;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  background:
+    radial-gradient(1100px 600px at 72% -8%, rgba(242, 233, 214, 0.05), transparent 60%),
+    radial-gradient(rgba(242, 233, 214, 0.07) 1px, transparent 1.4px),
+    var(--muk-void);
+  background-size: auto, 26px 26px, auto;
+}
+.viewport:active { cursor: grabbing; }
+
+.world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+/* 연(緣) — 엣지 */
+.edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+}
+.edge .hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.edge .vis {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 2;
+  transition: stroke 0.12s ease;
+}
+.edge:hover .vis { stroke: var(--edge-strong); }
+.edge.sel .vis { stroke: var(--inju); stroke-width: 2.5; }
+.ghost {
+  fill: none;
+  stroke: var(--inju);
+  stroke-width: 2;
+  stroke-dasharray: 5 6;
+}
+
+/* 念 — 노드 */
+.node {
+  position: absolute;
+  max-width: 230px;
+  min-width: 84px;
+  padding: 10px 13px 11px;
+  background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 14.5px;
+  line-height: 1.45;
+  border-radius: 3px;
+  border-left: 3px solid var(--c, var(--c-muk));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 9px 22px -10px rgba(0, 0, 0, 0.75);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: stamp 0.14s ease-out;
+}
+.node:active { cursor: grabbing; }
+.node[data-color='muk'] { --c: var(--c-muk); }
+.node[data-color='cheong'] { --c: var(--c-cheong); }
+.node[data-color='dan'] { --c: var(--c-dan); }
+.node[data-color='hwang'] { --c: var(--c-hwang); }
+.node[data-color='nam'] { --c: var(--c-nam); }
+
+.node.selected {
+  outline: 2px solid var(--inju);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(200, 71, 43, 0.13), 0 9px 22px -10px rgba(0, 0, 0, 0.75);
+}
+
+@keyframes stamp {
+  from { transform: scale(0.92); opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node { animation: none; }
+}
+
+.ntext {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.node textarea {
+  width: 200px;
+  display: block;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  resize: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.handle {
+  position: absolute;
+  right: -9px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--inju);
+  border: 2px solid var(--hanji);
+  opacity: 0;
+  transition: opacity 0.12s;
+  cursor: crosshair;
+  padding: 0;
+}
+.node:hover .handle,
+.node.selected .handle { opacity: 1; }
+
+/* 빈 강호 */
+.empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+  font-family: var(--serif);
+  color: var(--paper-dim);
+}
+.empty p { margin: 4px 0; font-size: 16px; }
+.empty .sub { font-size: 13px; opacity: 0.7; }
+
+/* ── 하단 HUD / 콜로폰 ── */
+.hud {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+}
+.hud .pct { min-width: 56px; }
+
+.colophon {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  z-index: 20;
+  font-family: var(--serif);
+  font-size: 12.5px;
+  letter-spacing: 1px;
+  color: var(--paper-dim);
+  pointer-events: none;
+}
+
+/* ── 도움말 카드 ── */
+.help-card {
+  position: fixed;
+  right: 14px;
+  top: 62px;
+  z-index: 30;
+  width: min(320px, calc(100vw - 28px));
+  background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+  color: var(--ink);
+  border-radius: 4px;
+  border-left: 3px solid var(--inju);
+  padding: 14px 16px;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8);
+}
+.help-card h2 {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 15px;
+}
+.help-card dl {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+}
+.help-card dt {
+  font-weight: 600;
+  font-family: var(--serif);
+  white-space: nowrap;
+}
+.help-card dd { margin: 0; color: #4d4538; }
+.help-card .close-row { margin-top: 10px; text-align: right; }
+.help-card button {
+  color: var(--ink);
+  background: rgba(42, 36, 28, 0.06);
+  border-color: rgba(42, 36, 28, 0.25);
+}
+
+/* ── 입출력 시트 ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 12, 9, 0.62);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+.sheet {
+  width: min(560px, 100%);
+  background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+  color: var(--ink);
+  border-radius: 5px;
+  border-left: 3px solid var(--inju);
+  padding: 16px 18px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.85);
+}
+.sheet h2 {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 16px;
+}
+.sheet textarea {
+  width: 100%;
+  height: 240px;
+  font: 12px/1.5 ui-monospace, 'D2Coding', Consolas, monospace;
+  color: var(--ink);
+  background: rgba(255, 252, 244, 0.7);
+  border: 1px solid rgba(42, 36, 28, 0.25);
+  border-radius: 4px;
+  padding: 10px;
+  resize: vertical;
+}
+.sheet .row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.sheet button {
+  color: var(--ink);
+  background: rgba(42, 36, 28, 0.06);
+  border-color: rgba(42, 36, 28, 0.25);
+}
+.sheet button.primary { color: #fff6ea; background: var(--inju); border-color: var(--inju); }
+.sheet .msg {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--inju);
+}
