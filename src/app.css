@@ -336,6 +336,16 @@ button.armed {
   overflow: hidden;
 }
 
+/* GPU 합성 글리치 완화 — 스케일된 world 안의 편집창이 포커스 순간
+   '보더 없는 흰 판'으로 번쩍이는 크로미움 증상. 편집 중인 쪽지와
+   편집창을 미리 GPU 레이어로 승격해 잘못된 합성 순서를 회피 */
+.node:focus-within,
+.node textarea {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
 .handle {
   position: absolute;
   z-index: 1; /* 좌/우 리사이즈 띠(.rsz)보다 위 — 점이 보이는 곳에선 점이 이긴다 */
