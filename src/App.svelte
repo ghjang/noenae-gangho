@@ -266,10 +266,14 @@
     else if (e.key === 'Tab') { e.preventDefault(); commitEditing(); addChild(n.id) }
   }
 
-  // 편집 textarea — 자동 높이 + 포커스
+  // 편집 textarea — 자동 높이 + 포커스.
+  // 전체 선택 대신 끝에 캐럿: 여러 줄 메모가 오타 한 방에 증발하지 않게 (갈아엎기는 Ctrl+A)
   function autogrow(el) {
     const fit = () => { el.style.height = '0px'; el.style.height = el.scrollHeight + 'px' }
-    fit(); el.focus(); el.select()
+    fit()
+    el.focus()
+    const end = el.value.length
+    el.setSelectionRange(end, end)
     el.addEventListener('input', fit)
     return { destroy() { el.removeEventListener('input', fit) } }
   }
