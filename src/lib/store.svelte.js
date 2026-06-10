@@ -120,7 +120,8 @@ export function loadData(data) {
   graph.edges.length = 0
   for (const n of data.nodes) {
     const old = prev.get(n.id)
-    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...n })
+    const { w: _w, h: _h, ...rest } = n // 실측값은 포맷 밖 — 손으로 고친 JSON이 앵커를 오염 못 하게
+    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...rest })
   }
   for (const e of data.edges ?? []) {
     if (e && e.a && e.b) graph.edges.push({ id: e.id ?? uid(), a: e.a, b: e.b })
