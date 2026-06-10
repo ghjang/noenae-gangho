@@ -297,7 +297,7 @@
     <button class:armed={armedClear} onclick={onClear}>
       {armedClear ? t.clearConfirm : t.clearButton}
     </button>
-    <button onclick={toggleTone} title={t.toneButtonTitle}>{t.toneButton}</button>
+    <button class="tone" onclick={toggleTone} title={t.toneButtonTitle} aria-label={t.toneButtonAria}>{t.toneButton}</button>
     <button onclick={() => (ui.showHelp = !ui.showHelp)} aria-label={t.helpAria}>?</button>
   </div>
 </header>
