@@ -7,24 +7,30 @@
 
 - `npm run dev` — 개발 서버 (localhost:5173)
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
+- `npm run preview` — 빌드 결과물 로컬 확인
+- 테스트·린트·포매터 없음. 자동 검증은 `npm run build` 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 
 ## 구조와 역할 분담
 
 - `src/lib/store.svelte.js` — 모든 상태(`$state`)·변이 함수·저장 어댑터. **로직은 전부 여기로.** 컴포넌트에 도메인 상태 두지 말 것
+  - `graph`/`ui`는 export된 `$state` 객체 — 재할당 금지, `push`/`splice`/`length = 0` 같은 제자리 변이만
+  - 변이 함수는 반드시 끝에 `scheduleSave()`(500ms 디바운스) 호출. 스토어 밖에서 직접 변이하는 예외(노드 드래그의 `n.x/n.y`)는 호출부가 챙긴다 — 빠뜨리면 새로고침 때 조용히 증발
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
 - `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지
 
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것
 
 1. **저장은 어댑터 패턴** (`setStorageAdapter`): localStorage는 기본값일 뿐. VSCode 웹뷰 이식 시 postMessage 어댑터로 교체 예정 — `load()/save(data)` 시그니처 유지
-2. **데이터 포맷** `{ app: 'noenae-gangho', v: 1, nodes, edges }` — 스키마 바꾸면 `v` 올리고 `loadData()`에 구버전 마이그레이션 추가
+2. **데이터 포맷** `{ app: 'noenae-gangho', v: 1, nodes, edges }` — 스키마 바꾸면 `v` 올리고 `loadData()`에 구버전 마이그레이션 추가. `snapshot()`은 저장 필드를 화이트리스트로 추림(노드 `id,x,y,text,color` / 엣지 `id,a,b`) — 영속 필드를 새로 들이면 `snapshot()`과 `loadData()` 기본값 양쪽을 같이 고칠 것
 3. **좌표계**: 노드 x/y는 world 좌표, 화면 변환은 `ui.pan`/`ui.scale`. 새 인터랙션은 `toWorld()` 경유
 4. **노드 w/h는 실측** (`bind:clientWidth/Height`) — 엣지 앵커 계산에 쓰임. 하드코딩 금지
+5. **엣지는 방향이 있다**: `a`=부모, `b`=자식. Tab 가지치기(`addChild`)와 비급.md 트리 출력(`toMarkdown`)이 이 방향에 의존. 단 중복 판정(`addEdge`)은 무방향 — 같은 두 쪽지 사이 緣은 한 가닥뿐
 
 ## 컨벤션 / 세계관
 
 - UI 문구는 무협 톤 한국어: 念=노드, 緣=엣지, 비급=내보내기, 주화입마=에러. 새 문구도 이 결 유지 (예: "삭제 실패" 대신 "베기에 실패했다")
-- 색 5종은 오행 체계: `muk/cheong/dan/hwang/nam` — 추가·변경 시 `COLORS`(store) · `app.css` 변수 · `COLOR_LABEL`(App) 세 곳 동기화
+- 색 5종은 오행 체계: `muk/cheong/dan/hwang/nam` — 추가·변경 시 `COLORS`(store) · `app.css`(`:root`의 `--c-*` 변수와 `.node[data-color]` 규칙 두 군데) · `COLOR_LABEL`(App) 동기화
+- 조작·단축키를 바꾸면 App 안 도움말 카드와 README '조작 요결' 표도 같이 갱신
 - 커밋 메시지 한국어 환영. 유머 허용, 단 무엇을 왜 바꿨는지는 명확히
 
 ## 로드맵 (우선순위순)
@@ -37,6 +43,6 @@
 
 ## 검증 체크리스트
 
-- 빈 강호 / 시드 데이터 양쪽에서 dev 확인
+- 빈 강호 / 시드 데이터 양쪽에서 dev 확인 — 빈 강호는 '강호 비우기' 또는 localStorage 키 `noenae-gangho-v1` 삭제, 저장본이 없으면 `seed()`가 창세 사연을 심는다
 - 내보내기 → 비우기 → 불러오기 라운드트립 무손실 확인
-- 줌 0.35x/2.5x 양끝에서 드래그·연결 동작 확인
+- 줌 0.35x/2.5x 양끝에서 드래그·연결 동작 확인 (한계값은 `App.svelte`의 `zoomAt()`에 하드코딩)
