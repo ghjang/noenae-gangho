@@ -416,7 +416,7 @@ button.armed {
 .minimap {
   position: fixed;
   right: 14px;
-  bottom: 44px;
+  bottom: 14px; /* 좌하단 줌 위젯과 같은 베이스라인 */
   z-index: 20;
   width: 200px;
   height: 132px;
@@ -512,8 +512,9 @@ button.armed {
 
 .colophon {
   position: fixed;
-  right: 16px;
-  bottom: 14px;
+  left: 50%;
+  translate: -50% 0;
+  bottom: 14px; /* 우하단은 미니맵에게 — 낙관은 하단 중앙으로 */
   z-index: 20;
   font-family: var(--serif);
   font-size: 12.5px;
