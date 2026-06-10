@@ -207,6 +207,10 @@ button.armed {
   overflow: visible;
   pointer-events: none;
 }
+/* 드래그 중 緣 부상층 — 노드들(.node z≤2) 위, 클릭은 통과 */
+.edges.overlay { z-index: 3; }
+.edge.lift .vis { stroke: var(--edge-strong); }
+
 .edge .hit {
   fill: none;
   stroke: transparent;
