@@ -63,8 +63,9 @@ button { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   gap: 14px;
   padding: 0 14px;
-  /* 떠 있는 면은 전부 --panel — 캔버스와 일체화 방지 */
-  background: var(--panel);
+  /* 상단 바는 다크 크롬 — 분리감은 진한 경계선·그림자가 담당
+     (작은 부유 패널들과 달리 전폭 바는 밝으면 떠 보여 천박해진다는 사용자 의견) */
+  background: var(--chrome);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--hairline-strong);
   box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.7);
