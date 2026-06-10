@@ -457,22 +457,24 @@
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
 
-  // 접힌 가지 아래 숨은 쪽지들 — 접힌 노드의 후손을 BFS로 수집 (순환 緣은 seen으로 한 번만)
+  // 접힌 가지 아래 숨은 쪽지들 — 봉문 뿌리를 순서대로 적용한다.
+  // 이미 숨은 뿌리의 봉문은 효력 없음(상호 잠금 방지), 뿌리 자신은 자기
+  // 순환으로 숨지 않음(seen 선등록). 중첩 봉문(접힌 자식)은 정상으로 숨는다
   const hidden = $derived.by(() => {
     const out = new Set()
-    const stack = []
-    for (const n of graph.nodes)
-      if (n.collapsed) for (const e of graph.edges) if (e.a === n.id) stack.push(e.b)
-    while (stack.length) {
-      const id = stack.pop()
-      if (out.has(id)) continue
-      out.add(id)
-      for (const e of graph.edges) if (e.a === id) stack.push(e.b)
+    for (const root of graph.nodes) {
+      if (!root.collapsed || out.has(root.id)) continue
+      const seen = new Set([root.id])
+      const stack = []
+      for (const e of graph.edges) if (e.a === root.id) stack.push(e.b)
+      while (stack.length) {
+        const id = stack.pop()
+        if (seen.has(id)) continue
+        seen.add(id)
+        out.add(id)
+        for (const e of graph.edges) if (e.a === id) stack.push(e.b)
+      }
     }
-    // 불변식: 봉문한 쪽지는 절대 숨지 않는다 — 순환 緣이 BFS를 타고 돌아와
-    // 접은 쪽지 자신(또는 서로)을 가두는 잠금을 원천 차단. 겉 봉문 안의
-    // 속 봉문 쪽지는 '봉인된 상자'로 화면에 남는다 (배지로 항상 복구 가능)
-    for (const n of graph.nodes) if (n.collapsed) out.delete(n.id)
     return out
   })
 
