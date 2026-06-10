@@ -6,11 +6,13 @@
   // ──────────────────────────────────────────────
   import { onMount } from 'svelte'
   import { fade, scale } from 'svelte/transition'
+  import { backOut, cubicIn } from 'svelte/easing'
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
+    markUndo, asOneStep, undo, redo,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
   import { nodeBox, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
@@ -184,6 +186,7 @@
     } else if (drag) {
       const n = byId(drag.id)
       if (n) {
+        if (!drag.moved) markUndo('drag:' + drag.id) // 제스처 시작 시점의 모습을 한 번만
         const w = toWorld(e)
         n.x = w.x - drag.ox
         n.y = w.y - drag.oy
@@ -217,10 +220,12 @@
       if (nodeEl && nodeEl.dataset.nodeId !== from) {
         addEdge(from, nodeEl.dataset.nodeId)
       } else if (!nodeEl && viewportEl?.contains(el)) {
-        // 허공에 놓으면 — 그 자리에 새 쪽지를 피우고 緣을 잇는다
+        // 허공에 놓으면 — 그 자리에 새 쪽지를 피우고 緣을 잇는다 (undo 한 걸음)
         const w = toWorld(e)
-        const child = addNodeAt(w.x - 90, w.y - 24, '', byId(from)?.color ?? 'muk')
-        addEdge(from, child.id)
+        asOneStep(() => {
+          const child = addNodeAt(w.x - 90, w.y - 24, '', byId(from)?.color ?? 'muk')
+          addEdge(from, child.id)
+        })
       }
       ui.linking = null
     }
@@ -253,6 +258,15 @@
       if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
         e.preventDefault(); ui.editingId = ui.selectedId; return // F2와 동일 — 편집 진입
       }
+      if (e.code === 'KeyZ') {
+        e.preventDefault()
+        if (e.shiftKey) redo()
+        else undo()
+        return
+      }
+      if (e.code === 'KeyY') {
+        e.preventDefault(); redo(); return
+      }
       return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
     }
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬)
@@ -261,6 +275,7 @@
       const mult = e.shiftKey ? 4 : 1
       if (selected) {
         const d = 8 * mult
+        markUndo('nudge:' + selected.id) // 꾹 누르면 한 걸음으로 병합
         if (e.key === 'ArrowLeft') selected.x -= d
         else if (e.key === 'ArrowRight') selected.x += d
         else if (e.key === 'ArrowUp') selected.y -= d
@@ -390,7 +405,9 @@
   function applyImport() {
     try {
       const data = JSON.parse(sheetText)
-      if (loadData(data)) { scheduleSave(); ui.overlay = null }
+      let ok = false
+      asOneStep(() => { ok = loadData(data) }) // 흡수도 되돌릴 수 있게
+      if (ok) { scheduleSave(); ui.overlay = null }
       else sheetMsg = 'importBadShape'
     } catch {
       sheetMsg = 'importParseFail'
@@ -530,7 +547,7 @@
         {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
           {@const E = edgeEnd(a, b)}
           {@const d = edgePath(a, E)}
-          <g class="edge" class:sel={ui.selectedEdgeId === e.id} transition:fade={{ duration: dur(130) }}>
+          <g class="edge" class:sel={ui.selectedEdgeId === e.id} transition:fade={{ duration: dur(170) }}>
             <path
               class="hit"
               d={d}
@@ -573,8 +590,8 @@
         bind:offsetWidth={n.w}
         bind:offsetHeight={n.h}
         role="group"
-        in:scale={{ duration: dur(140), start: 0.92, opacity: 0.4 }}
-        out:scale={{ duration: dur(130), start: 0.85 }}
+        in:scale={{ duration: dur(230), start: 0.65, easing: backOut }}
+        out:scale={{ duration: dur(190), start: 0.5, easing: cubicIn }}
         onpointerdown={(e) => onNodeDown(e, n)}
         onpointermove={(e) => onNodeHover(e, n)}
         onpointerleave={() => onNodeLeave(n)}
