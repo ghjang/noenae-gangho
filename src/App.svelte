@@ -378,12 +378,25 @@
       const from = ui.linking.from
       const el = document.elementFromPoint(e.clientX, e.clientY)
       const nodeEl = el?.closest?.('[data-node-id]')
+      // 접힌 쪽지에서 緣을 이으면 개문하고 진행 — 새 식구가 잇자마자 봉문 속으로
+      // 사라지지 않게 (Tab/Enter 가지치기의 collapsed 해제와 같은 관행)
+      const unfold = () => {
+        const f = byId(from)
+        if (f?.collapsed) {
+          f.collapsed = undefined
+          scheduleSave() // 緣 추가가 중복으로 무산돼도 개문만은 저장되게
+        }
+      }
       if (nodeEl && nodeEl.dataset.nodeId !== from) {
-        addEdge(from, nodeEl.dataset.nodeId)
+        asOneStep(() => {
+          unfold()
+          addEdge(from, nodeEl.dataset.nodeId)
+        })
       } else if (!nodeEl && viewportEl?.contains(el)) {
         // 허공에 놓으면 — 그 자리에 새 쪽지를 피우고 緣을 잇는다 (undo 한 걸음)
         const w = toWorld(e)
         asOneStep(() => {
+          unfold()
           const child = addNodeAt(w.x - 90, w.y - 24, '', byId(from)?.color ?? 'muk')
           addEdge(from, child.id)
         })
