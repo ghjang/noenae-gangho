@@ -21,6 +21,7 @@
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
+  let hover = $state({ id: null, side: 'right' }) // 緣 핸들 위치 — 마우스에 가까운 변
 
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
@@ -115,6 +116,19 @@
     e.stopPropagation()
     ui.selectedId = n.id
     ui.editingId = n.id
+  }
+  // 緣 핸들을 마우스와 가장 가까운 변으로 — 제스처 중에는 고정
+  function onNodeHover(e, n) {
+    if (drag || panning || resizing || ui.linking) return
+    const w = toWorld(e)
+    const b = nodeBox(n)
+    const lx = w.x - b.x, ly = w.y - b.y
+    const side = [['left', lx], ['right', b.w - lx], ['top', ly], ['bottom', b.h - ly]]
+      .sort((p, q) => p[1] - q[1])[0][0]
+    if (hover.id !== n.id || hover.side !== side) hover = { id: n.id, side }
+  }
+  function onNodeLeave(n) {
+    if (hover.id === n.id) hover = { id: null, side: 'right' }
   }
   function onHandleDown(e, n) {
     e.stopPropagation()
@@ -404,6 +418,8 @@
         bind:offsetHeight={n.h}
         role="group"
         onpointerdown={(e) => onNodeDown(e, n)}
+        onpointermove={(e) => onNodeHover(e, n)}
+        onpointerleave={() => onNodeLeave(n)}
         ondblclick={(e) => onNodeDbl(e, n)}
       >
         {#if ui.editingId === n.id}
@@ -421,7 +437,7 @@
           <div class="ntext">{n.text || '…'}</div>
         {/if}
         <button
-          class="handle"
+          class={`handle ${hover.id === n.id ? hover.side : 'right'}`}
           title={t.handleTitle}
           aria-label={t.handleAria}
           onpointerdown={(e) => onHandleDown(e, n)}
