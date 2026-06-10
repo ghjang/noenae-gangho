@@ -22,6 +22,7 @@
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
   let hover = $state({ id: null, side: 'right' }) // 緣 핸들 위치 — 마우스에 가까운 변
+  let colorHover = $state(null) // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
 
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
@@ -348,7 +349,10 @@
         style={`--swatch: var(--c-${c})`}
         title={`${t.colorLabel[c]}(${c})`}
         aria-label={fmt(t.paletteSet, { label: t.colorLabel[c] })}
-        disabled={!selected}
+        aria-disabled={!selected}
+        class:dim={!selected}
+        onpointerenter={() => (colorHover = selected ? null : c)}
+        onpointerleave={() => (colorHover = null)}
         onclick={() => selected && setColor(selected.id, c)}
       ></button>
     {/each}
@@ -424,6 +428,8 @@
         class="node"
         class:selected={ui.selectedId === n.id}
         class:resized={!!n.bw}
+        class:lit={!selected && colorHover === n.color}
+        class:fade={!selected && colorHover && colorHover !== n.color}
         data-color={n.color}
         data-node-id={n.id}
         style={`left:${n.x}px; top:${n.y}px;${n.bw ? ` width:${n.bw}px;` : ''}`}
