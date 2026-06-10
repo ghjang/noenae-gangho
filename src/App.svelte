@@ -12,6 +12,7 @@
     snapshot, loadData, scheduleSave, toggleTone,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
+  import { nodeBox, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -30,49 +31,13 @@
   $effect(() => { document.title = t.docTitle })
 
   // ── 좌표 변환 ─────────────────────────────────
+  // (緣 기하 — center/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.js)
   function toWorld(e) {
     const r = viewportEl.getBoundingClientRect()
     return {
       x: (e.clientX - r.left - ui.pan.x) / ui.scale,
       y: (e.clientY - r.top - ui.pan.y) / ui.scale,
     }
-  }
-  function center(n) {
-    return { x: n.x + (n.w || 180) / 2, y: n.y + (n.h || 48) / 2 }
-  }
-  // 緣의 끝점 — 자식 박스 4변 중 부모를 향한 변 (화살촉이 박스 밑에 숨지 않게).
-  // (ax, ay)는 진입 축 단위벡터: 가로 진입 ax=±1 / 세로 진입 ay=±1.
-  // 가로·세로 선택은 중심 간 변위의 우세 축으로.
-  function edgeEnd(a, b) {
-    const A = center(a), B = center(b)
-    const dx = B.x - A.x, dy = B.y - A.y
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      const fromLeft = dx >= 0
-      return { x: fromLeft ? b.x : b.x + (b.w || 180), y: B.y, ax: fromLeft ? 1 : -1, ay: 0 }
-    }
-    const fromTop = dy >= 0
-    return { x: B.x, y: fromTop ? b.y : b.y + (b.h || 48), ax: 0, ay: fromTop ? 1 : -1 }
-  }
-  function edgePath(a, b) {
-    const A = center(a), E = edgeEnd(a, b)
-    // 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게
-    const ex = E.x - 7 * E.ax, ey = E.y - 7 * E.ay
-    if (E.ax !== 0) {
-      const mx = (A.x + ex) / 2
-      return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${ey}, ${ex} ${ey}`
-    }
-    const my = (A.y + ey) / 2
-    return `M ${A.x} ${A.y} C ${A.x} ${my}, ${ex} ${my}, ${ex} ${ey}`
-  }
-  // 방향 화살촉 — a(부모) → b(자식), 진입 축으로 7px·날개 ±4px
-  function arrowPath(a, b) {
-    const E = edgeEnd(a, b)
-    const bx = E.x - 7 * E.ax, by = E.y - 7 * E.ay
-    return `M ${E.x} ${E.y} L ${bx - 4 * E.ay} ${by + 4 * E.ax} L ${bx + 4 * E.ay} ${by - 4 * E.ax} Z`
-  }
-  function ghostPath(s, x, y) {
-    const A = center(s)
-    return `M ${A.x} ${A.y} L ${x} ${y}`
   }
 
   // ── 뷰포트: 팬 / 줌 / 새 쪽지 ─────────────────
@@ -117,8 +82,9 @@
     }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
     for (const n of graph.nodes) {
-      x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y)
-      x1 = Math.max(x1, n.x + (n.w || 180)); y1 = Math.max(y1, n.y + (n.h || 48))
+      const b = nodeBox(n)
+      x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y)
+      x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h)
     }
     const pad = 60
     const r = viewportEl.getBoundingClientRect()
@@ -161,7 +127,7 @@
     ui.selectedId = n.id
     ui.selectedEdgeId = null
     const w = toWorld(e)
-    const sw = n.bw || n.w || 180
+    const sw = n.bw || nodeBox(n).w
     resizing = { id: n.id, edge, sx: w.x, sw, right: n.x + sw }
   }
   function onResizeDbl(e, n) {
@@ -397,8 +363,8 @@
         {@const a = byId(e.a)}
         {@const b = byId(e.b)}
         {#if a && b}
-          {@const d = edgePath(a, b)}
           {@const E = edgeEnd(a, b)}
+          {@const d = edgePath(a, E)}
           <g class="edge" class:sel={ui.selectedEdgeId === e.id}>
             <path
               class="hit"
@@ -412,7 +378,7 @@
             <path class="vis" d={d} />
             <!-- 촉+접점 원은 한 그룹 — 그룹 opacity로 합성해 겹침 부위 알파 중첩 방지 -->
             <g class="cap">
-              <path d={arrowPath(a, b)} />
+              <path d={arrowPath(E)} />
               <circle cx={E.x} cy={E.y} r="3" />
             </g>
           </g>
