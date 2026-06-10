@@ -354,12 +354,20 @@
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
     if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
     if (e.key === 'Escape') {
+      // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
+      // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
+      const hadOpen =
+        ui.linking || ui.overlay || ui.showHelp || armedClear || searchQ !== null || ui.editingId
       ui.linking = null
       ui.overlay = null
       ui.showHelp = false
       armedClear = false
       searchQ = null
       commitEditing()
+      if (!hadOpen) {
+        ui.selectedId = null
+        ui.selectedEdgeId = null
+      }
       return
     }
     if (ui.overlay) return
