@@ -8,7 +8,7 @@
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor,
-    removeNode, addEdge, removeEdge, clearAll,
+    removeNode, addEdge, removeEdge, flipEdge, clearAll,
     snapshot, loadData, scheduleSave, toggleTone,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
@@ -39,10 +39,23 @@
   function center(n) {
     return { x: n.x + (n.w || 180) / 2, y: n.y + (n.h || 48) / 2 }
   }
-  function edgePath(a, b) {
+  // 緣의 끝점 — 자식 박스의 좌/우 변 (화살촉이 박스 밑에 숨지 않게).
+  // 현재 베지어는 끝에서 항상 수평 진입하므로 변의 세로 중앙이 자연스럽다.
+  function edgeEnd(a, b) {
     const A = center(a), B = center(b)
-    const mx = (A.x + B.x) / 2
-    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${B.y}, ${B.x} ${B.y}`
+    const fromLeft = A.x <= B.x
+    return { x: fromLeft ? b.x : b.x + (b.w || 180), y: B.y, dir: fromLeft ? 1 : -1 }
+  }
+  function edgePath(a, b) {
+    const A = center(a), E = edgeEnd(a, b)
+    const mx = (A.x + E.x) / 2
+    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${E.y}, ${E.x} ${E.y}`
+  }
+  // 방향 화살촉 — a(부모) → b(자식), 진입 방향으로 7px
+  function arrowPath(a, b) {
+    const E = edgeEnd(a, b)
+    const s = 7 * E.dir
+    return `M ${E.x} ${E.y} l ${-s} -4 l 0 8 z`
   }
   function ghostPath(s, x, y) {
     const A = center(s)
@@ -171,6 +184,11 @@
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (ui.selectedId) { e.preventDefault(); removeNode(ui.selectedId) }
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
+      return
+    }
+    if (e.code === 'KeyF' && ui.selectedEdgeId) {
+      e.preventDefault()
+      flipEdge(ui.selectedEdgeId)
       return
     }
     if (e.key === 'Tab' && ui.selectedId) {
@@ -337,6 +355,7 @@
               }}
             />
             <path class="vis" d={d} />
+            <path class="tip" d={arrowPath(a, b)} />
           </g>
         {/if}
       {/each}

@@ -174,6 +174,14 @@ export function removeEdge(id) {
   scheduleSave()
 }
 
+// 緣 방향 뒤집기 (a=부모 ↔ b=자식) — 비급.md 트리 모양이 바뀐다
+export function flipEdge(id) {
+  const e = graph.edges.find((x) => x.id === id)
+  if (!e) return
+  ;[e.a, e.b] = [e.b, e.a]
+  scheduleSave()
+}
+
 export function clearAll() {
   graph.nodes.length = 0
   graph.edges.length = 0
