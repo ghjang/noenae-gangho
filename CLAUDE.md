@@ -11,6 +11,7 @@
 - `npm run check` — 정합성 검사 2종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기/순환 시나리오 5종). `npm run build` 때 prebuild로 자동 실행
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
+- 헤드리스 검증(렌더링/조작 버그 재현·수술 확인용): Claude Code 원격 컨테이너엔 전역 playwright가 있다 — `NODE_PATH=/opt/node22/lib/node_modules node 스크립트.cjs` (크로미움 `/opt/pw-browsers`). localhost 접속은 프록시 우회 필수: launch args `--proxy-bypass-list=<-loopback>` + env `NO_PROXY=localhost,127.0.0.1`. 그래프 시드는 `context.addInitScript`로 **로드 전에** localStorage에 심을 것 — 로드 후 setItem은 앱의 500ms 디바운스 저장이 도로 덮는다 (그래프 `noenae-gangho-v1` / 뷰 `noenae-gangho-view` `{x,y,s}`). 드래그 중 상태는 `mouse.down()` 후 `mouse.move()` 반복으로 동결해 검사
 
 ## 구조와 역할 분담
 
