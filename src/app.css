@@ -208,12 +208,15 @@ button.armed {
 }
 .edge:hover .vis { stroke: var(--edge-strong); }
 .edge.sel .vis { stroke: var(--inju); stroke-width: 2.5; }
-.edge .tip {
-  fill: var(--edge);
+.edge .tip,
+.edge .dot {
+  fill: var(--edge-strong);
   transition: fill 0.12s ease;
 }
-.edge:hover .tip { fill: var(--edge-strong); }
-.edge.sel .tip { fill: var(--inju); }
+.edge:hover .tip,
+.edge:hover .dot { fill: var(--hanji); }
+.edge.sel .tip,
+.edge.sel .dot { fill: var(--inju); }
 .ghost {
   fill: none;
   stroke: var(--inju);

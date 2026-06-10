@@ -50,7 +50,10 @@ export const STRINGS = {
 
     zoomOutAria: '축소',
     zoomInAria: '확대',
-    resetViewTitle: '원점 회귀',
+    resetViewTitle: '축경 100% — 보던 자리 그대로',
+    fitButton: '全',
+    fitButtonTitle: '강호 전경 — 모든 쪽지를 한눈에',
+    fitAria: '전체 보기',
 
     helpTitle: '강호 행보 요결',
     helpItems: [
@@ -116,7 +119,10 @@ export const STRINGS = {
 
     zoomOutAria: '축소',
     zoomInAria: '확대',
-    resetViewTitle: '보기 초기화',
+    resetViewTitle: '배율 100% (보던 위치 유지)',
+    fitButton: '전체',
+    fitButtonTitle: '모든 노트가 보이도록 맞춤',
+    fitAria: '전체 보기',
 
     helpTitle: '사용법',
     helpItems: [
