@@ -63,9 +63,11 @@ button { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   gap: 14px;
   padding: 0 14px;
-  background: var(--chrome);
+  /* 떠 있는 면은 전부 --panel — 캔버스와 일체화 방지 */
+  background: var(--panel);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline-strong);
+  box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.7);
 }
 
 .title {
@@ -375,6 +377,12 @@ button.armed {
   z-index: 20;
   display: flex;
   gap: 6px;
+  /* 버튼들이 캔버스 위에 맨몸으로 떠 있지 않게 — 패널 받침 */
+  background: var(--panel);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  padding: 5px;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.85);
 }
 .hud .pct { min-width: 56px; }
 
@@ -414,11 +422,12 @@ button.armed {
   translate: -50% 0;
   z-index: 30;
   width: min(380px, calc(100vw - 28px));
-  background: var(--chrome);
-  border: 1px solid var(--hairline);
+  background: var(--panel);
+  border: 1px solid var(--hairline-strong);
   border-radius: 6px;
   padding: 10px;
   backdrop-filter: blur(6px);
+  box-shadow: 0 16px 36px -14px rgba(0, 0, 0, 0.85);
 }
 .search-card input {
   width: 100%;
