@@ -5,6 +5,7 @@
   // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.js가 담당.
   // ──────────────────────────────────────────────
   import { onMount } from 'svelte'
+  import { fade, scale } from 'svelte/transition'
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor, setNodeWidth,
@@ -18,6 +19,9 @@
   const t = $derived(STRINGS[ui.tone])
 
   let viewportEl
+  // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계)
+  const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  const dur = (ms) => (REDUCED ? 0 : ms)
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
@@ -477,7 +481,7 @@
         {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
           {@const E = edgeEnd(a, b)}
           {@const d = edgePath(a, E)}
-          <g class="edge" class:sel={ui.selectedEdgeId === e.id}>
+          <g class="edge" class:sel={ui.selectedEdgeId === e.id} transition:fade={{ duration: dur(130) }}>
             <path
               class="hit"
               d={d}
@@ -520,6 +524,8 @@
         bind:offsetWidth={n.w}
         bind:offsetHeight={n.h}
         role="group"
+        in:scale={{ duration: dur(140), start: 0.92, opacity: 0.4 }}
+        out:scale={{ duration: dur(130), start: 0.85 }}
         onpointerdown={(e) => onNodeDown(e, n)}
         onpointermove={(e) => onNodeHover(e, n)}
         onpointerleave={() => onNodeLeave(n)}

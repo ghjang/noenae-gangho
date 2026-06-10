@@ -250,8 +250,8 @@ button.armed {
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+  /* 등장/퇴장(도장·봉문)은 Svelte transition이 담당 — App의 in:/out:scale */
   transition: filter 0.15s ease;
-  animation: stamp 0.14s ease-out;
 }
 .node:active { cursor: grabbing; }
 .node[data-color='muk'] { --c: var(--c-muk); }
@@ -274,13 +274,6 @@ button.armed {
 /* 사용자 지정 너비(bw) — 상한 해제, 편집창도 박스에 맞춤 */
 .node.resized { max-width: none; }
 .node.resized textarea { width: 100%; }
-
-@keyframes stamp {
-  from { transform: scale(0.92); opacity: 0.4; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .node { animation: none; }
-}
 
 .ntext {
   white-space: pre-wrap;
