@@ -230,6 +230,16 @@
       }
       return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
     }
+    // 화살표 키 — 강호 유람(팬). Shift면 성큼성큼
+    if (e.key.startsWith('Arrow')) {
+      e.preventDefault()
+      const step = (e.shiftKey ? 4 : 1) * 48
+      if (e.key === 'ArrowLeft') ui.pan.x += step
+      else if (e.key === 'ArrowRight') ui.pan.x -= step
+      else if (e.key === 'ArrowUp') ui.pan.y += step
+      else if (e.key === 'ArrowDown') ui.pan.y -= step
+      return
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (ui.selectedId) { e.preventDefault(); removeNode(ui.selectedId) }
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
