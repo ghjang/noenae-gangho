@@ -4,6 +4,7 @@
 // ──────────────────────────────────────────────
 import { TONES } from './strings.js'
 import { nodeBox } from './geometry.js'
+import { ancestorIds } from './graph.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
@@ -310,6 +311,17 @@ export function removeEdge(id) {
   }
   if (ui.selectedEdgeId === id) ui.selectedEdgeId = null
   scheduleSave()
+}
+
+// 숨은 쪽지를 세상에 드러낸다 — 접힌 조상을 전부 개문 (검색 점프용)
+export function revealNode(id) {
+  const anc = ancestorIds(graph.edges, id)
+  const toOpen = graph.nodes.filter((n) => n.collapsed && anc.has(n.id))
+  if (toOpen.length === 0) return
+  asOneStep(() => {
+    for (const n of toOpen) n.collapsed = undefined
+    scheduleSave()
+  })
 }
 
 // 가지 접기/펼치기 — collapsed는 선택 필드(undefined면 직렬화에서 빠짐)

@@ -12,19 +12,9 @@ export function computeHidden(nodes, edges) {
   const out = new Set()
   for (const root of nodes) {
     if (!root.collapsed || out.has(root.id)) continue
-    // 역방향 BFS — root에 닿을 수 있는 모든 조상 (root 자신 포함)
-    const anc = new Set([root.id])
+    // 정방향 BFS — 조상(ancestorIds)은 숨기지도, 그 너머로 건너가지도 않는다
+    const seen = ancestorIds(edges, root.id)
     let stack = []
-    for (const e of edges) if (e.b === root.id) stack.push(e.a)
-    while (stack.length) {
-      const id = stack.pop()
-      if (anc.has(id)) continue
-      anc.add(id)
-      for (const e of edges) if (e.b === id) stack.push(e.a)
-    }
-    // 정방향 BFS — 조상은 숨기지도, 그 너머로 건너가지도 않는다
-    const seen = anc
-    stack = []
     for (const e of edges) if (e.a === root.id) stack.push(e.b)
     while (stack.length) {
       const id = stack.pop()
@@ -35,6 +25,20 @@ export function computeHidden(nodes, edges) {
     }
   }
   return out
+}
+
+// id의 모든 조상 집합 (자기 자신 포함) — 역방향 BFS, 순환 안전
+export function ancestorIds(edges, id) {
+  const anc = new Set([id])
+  const stack = []
+  for (const e of edges) if (e.b === id) stack.push(e.a)
+  while (stack.length) {
+    const x = stack.pop()
+    if (anc.has(x)) continue
+    anc.add(x)
+    for (const e of edges) if (e.b === x) stack.push(e.a)
+  }
+  return anc
 }
 
 // 자식 id 목록
