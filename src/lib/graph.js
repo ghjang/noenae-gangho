@@ -41,6 +41,11 @@ export function ancestorIds(edges, id) {
   return anc
 }
 
+// 부모 緣 — 여럿이면 첫 가닥 (없으면 null)
+export function parentEdgeOf(edges, id) {
+  return edges.find((e) => e.b === id) ?? null
+}
+
 // 자식 id 목록
 export function childIdsOf(edges, id) {
   const out = []

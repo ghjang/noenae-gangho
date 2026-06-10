@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────
 import { TONES } from './strings.js'
 import { nodeBox } from './geometry.js'
-import { ancestorIds } from './graph.js'
+import { ancestorIds, parentEdgeOf } from './graph.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
@@ -238,7 +238,7 @@ export function addChild(parentId, text = '', edit = true) {
 export function addSibling(id) {
   const n = byId(id)
   if (!n) return null
-  const pe = graph.edges.find((e) => e.b === id)
+  const pe = parentEdgeOf(graph.edges, id)
   const b = nodeBox(n)
   let node = null
   if (pe) {
