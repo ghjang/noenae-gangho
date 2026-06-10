@@ -3,6 +3,7 @@
 // 그래프(念/緣) 데이터와 UI 상태, 영속화 어댑터.
 // ──────────────────────────────────────────────
 import { TONES } from './strings.js'
+import { nodeBox } from './geometry.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
@@ -128,7 +129,8 @@ export function addChild(parentId, text = '', edit = true) {
   const p = byId(parentId)
   if (!p) return null
   const count = graph.edges.filter((e) => e.a === parentId).length
-  const node = addNodeAt(p.x + (p.w || 180) + 90, p.y + count * 92, text, p.color, edit)
+  const pb = nodeBox(p)
+  const node = addNodeAt(pb.x + pb.w + 90, pb.y + count * 92, text, p.color, edit)
   addEdge(parentId, node.id)
   return node
 }

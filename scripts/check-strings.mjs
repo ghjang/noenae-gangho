@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────
 // 문구 팩 정합성 검사 — `npm run check` (build 전 prebuild로도 돈다)
 // 1) 모든 팩이 같은 키 집합인가
-// 2) App.svelte가 쓰는 t.* 키가 모든 팩에 있는가
+// 2) App.svelte가 쓰는 t.* 키가 모든 팩에 있는가 + 그 역(고아 키 금지)
 // 3) 팩이 순수 데이터인가 — 함수가 섞이면 JSON 팩(외부 로드)의 길이 막힌다
 // 4) colorLabel이 store의 COLORS를 전부 덮는가 / helpItems가 [키, 설명] 쌍인가
 // ──────────────────────────────────────────────
@@ -29,6 +29,8 @@ for (const k of ['exportTitle', 'importTitle', 'mdTitle', 'importBadShape', 'imp
 for (const tone of TONES)
   for (const k of used)
     if (!(k in STRINGS[tone])) err(`App이 쓰는 '${k}'가 ${tone} 팩에 없음`)
+// 역방향 — 팩에는 있는데 App이 안 쓰는 고아 키 (문구를 걷어낼 땐 팩에서도 걷어낼 것)
+for (const k of baseKeys) if (!used.has(k)) err(`고아 키 '${k}' — App 어디에서도 안 씀`)
 
 // 3) 순수 데이터 — 함수 금지
 const findFns = (v, path) =>
