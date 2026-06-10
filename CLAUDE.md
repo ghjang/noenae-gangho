@@ -29,7 +29,7 @@
 3. **좌표계**: 노드 x/y는 world 좌표, 화면 변환은 `ui.pan`/`ui.scale`. 새 인터랙션은 `toWorld()` 경유
 4. **노드 w/h는 실측** (`bind:offsetWidth/Height` — 테두리 포함 박스 치수) — 엣지 앵커 계산에 쓰임. 하드코딩 금지. clientWidth로 바꾸면 좌측 7px 띠만큼 우변이 안쪽으로 어긋나 화살촉이 박스에 묻힌다
 5. **엣지는 방향이 있다**: `a`=부모, `b`=자식. Tab 가지치기(`addChild`)와 비급.md 트리 출력(`toMarkdown`)이 이 방향에 의존하고, 화면에는 화살촉으로 표시(F키 = `flipEdge` 방향 뒤집기). 단 중복 판정(`addEdge`)은 무방향 — 같은 두 쪽지 사이 緣은 한 가닥뿐
-6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 무공봉인 토글 — 한자 아이콘 封/武, 접근 라벨은 `toneButtonAria`): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통
+6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 무공봉인 토글 — 한자 아이콘 封/武, 접근 라벨은 `toneButtonAria`): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통. 뷰포트(팬/줌)도 같은 원칙 — 별도 키 `noenae-gangho-view`(`scheduleViewSave`, App의 `$effect`가 감지)
 
 ## 컨벤션 / 세계관
 
@@ -49,3 +49,4 @@
 - 내보내기 → 비우기 → 불러오기 라운드트립 무손실 확인
 - 줌 0.35x/2.5x 양끝에서 드래그·연결 동작 확인 (한계값은 `App.svelte`의 `zoomAt()`에 하드코딩)
 - 무공봉인 토글 왕복 + 새로고침 후 말투 유지 확인 — 열린 시트의 제목·메시지도 즉시 갈리는지
+- 새로고침 후 마지막 뷰(팬/줌) 복원 확인

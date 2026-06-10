@@ -9,7 +9,7 @@
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, clearAll,
-    snapshot, loadData, scheduleSave, toggleTone,
+    snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
   import { nodeBox, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
@@ -32,6 +32,12 @@
   onMount(() => { init() })
 
   $effect(() => { document.title = t.docTitle })
+
+  // 뷰가 움직이면 저장 예약 — 새로고침해도 보던 자리에서 다시 연다
+  $effect(() => {
+    void ui.pan.x; void ui.pan.y; void ui.scale
+    scheduleViewSave()
+  })
 
   // ── 좌표 변환 ─────────────────────────────────
   // (緣 기하 — center/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.js)
@@ -230,14 +236,31 @@
       }
       return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
     }
-    // 화살표 키 — 강호 유람(팬). Shift면 성큼성큼
+    // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬)
     if (e.key.startsWith('Arrow')) {
       e.preventDefault()
-      const step = (e.shiftKey ? 4 : 1) * 48
-      if (e.key === 'ArrowLeft') ui.pan.x += step
-      else if (e.key === 'ArrowRight') ui.pan.x -= step
-      else if (e.key === 'ArrowUp') ui.pan.y += step
-      else if (e.key === 'ArrowDown') ui.pan.y -= step
+      const mult = e.shiftKey ? 4 : 1
+      if (selected) {
+        const d = 8 * mult
+        if (e.key === 'ArrowLeft') selected.x -= d
+        else if (e.key === 'ArrowRight') selected.x += d
+        else if (e.key === 'ArrowUp') selected.y -= d
+        else if (e.key === 'ArrowDown') selected.y += d
+        scheduleSave() // n.x/y 직접 변이 — 저장은 호출부 책임
+      } else {
+        const step = 48 * mult
+        if (e.key === 'ArrowLeft') ui.pan.x += step
+        else if (e.key === 'ArrowRight') ui.pan.x -= step
+        else if (e.key === 'ArrowUp') ui.pan.y += step
+        else if (e.key === 'ArrowDown') ui.pan.y -= step
+      }
+      return
+    }
+    // PgUp/PgDn — 한 화면(80%)씩 세로 이동
+    if (e.key === 'PageUp' || e.key === 'PageDown') {
+      e.preventDefault()
+      const r = viewportEl.getBoundingClientRect()
+      ui.pan.y += (e.key === 'PageUp' ? 1 : -1) * r.height * 0.8
       return
     }
     if (e.key === 'Delete' || e.key === 'Backspace') {
