@@ -241,7 +241,10 @@
   // ── 쪽지(노드) ────────────────────────────────
   function onNodeDown(e, n) {
     e.stopPropagation()
-    if (ui.editingId === n.id) return
+    // 편집 중인 쪽지라도 여백(테두리 안쪽)을 잡으면 확정하고 바로 드래그를 시작한다
+    // — 글자 위 클릭(캐럿 이동)은 textarea 자신의 pointerdown stopPropagation이 지키므로
+    // 여기 오는 pointerdown은 전부 '옮기려는 손'. 예전엔 return으로 무시해서
+    // blur가 편집만 닫고(빈 쪽지는 폭까지 줄며) 잡은 손이 헛도는 증상이 있었다
     if (ui.editingId) commitEditing()
     searchQ = null // 쪽지 직접 선택 = 검색창 닫기
     ui.selectedId = n.id
