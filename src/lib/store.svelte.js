@@ -111,10 +111,15 @@ export function snapshot() {
 
 export function loadData(data) {
   if (!data || !Array.isArray(data.nodes)) return false
+  // 실측 w/h는 스냅샷 밖이라 새 객체는 기본 180×48로 태어난다. 그런데 같은 id면
+  // keyed each가 DOM을 재사용해 ResizeObserver가 다시 안 울린다(크기 불변) —
+  // 언두/리두 후 엣지 앵커가 허공을 찌르는 원인. 직전 실측을 물려받아 해결
+  const prev = new Map(graph.nodes.map((n) => [n.id, n]))
   graph.nodes.length = 0
   graph.edges.length = 0
   for (const n of data.nodes) {
-    graph.nodes.push({ w: 180, h: 48, color: 'muk', text: '', ...n })
+    const old = prev.get(n.id)
+    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...n })
   }
   for (const e of data.edges ?? []) {
     if (e && e.a && e.b) graph.edges.push({ id: e.id ?? uid(), a: e.a, b: e.b })
@@ -224,6 +229,27 @@ export function addChild(parentId, text = '', edit = true) {
     node = addNodeAt(pb.x + pb.w + 90, pb.y + count * 92, text, p.color, edit)
     addEdge(parentId, node.id)
   })
+  return node
+}
+
+// 형제 가지치기 — 같은 부모 밑, 그 쪽지 바로 아래에 (시선이 머무는 곳).
+// 부모가 없으면(뿌리) 바로 아래에 새 뿌리. 부모 여럿이면 첫 緣 기준
+export function addSibling(id) {
+  const n = byId(id)
+  if (!n) return null
+  const pe = graph.edges.find((e) => e.b === id)
+  const b = nodeBox(n)
+  let node = null
+  if (pe) {
+    asOneStep(() => {
+      const p = byId(pe.a)
+      if (p?.collapsed) p.collapsed = undefined
+      node = addNodeAt(b.x, b.y + b.h + 24, '', n.color)
+      addEdge(pe.a, node.id)
+    })
+  } else {
+    node = addNodeAt(b.x, b.y + b.h + 44, '', n.color)
+  }
   return node
 }
 
