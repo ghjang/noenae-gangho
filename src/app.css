@@ -208,15 +208,14 @@ button.armed {
 }
 .edge:hover .vis { stroke: var(--edge-strong); }
 .edge.sel .vis { stroke: var(--inju); stroke-width: 2.5; }
-.edge .tip,
-.edge .dot {
-  fill: var(--edge-strong);
-  transition: fill 0.12s ease;
+/* 화살촉+접점 원 — 자식은 불투명, 그룹에만 투명도: 겹쳐도 농도가 균일하다 */
+.edge .cap {
+  fill: var(--hanji);
+  opacity: 0.55; /* --edge-strong과 같은 농도 */
+  transition: opacity 0.12s ease, fill 0.12s ease;
 }
-.edge:hover .tip,
-.edge:hover .dot { fill: var(--hanji); }
-.edge.sel .tip,
-.edge.sel .dot { fill: var(--inju); }
+.edge:hover .cap { opacity: 1; }
+.edge.sel .cap { fill: var(--inju); opacity: 1; }
 .ghost {
   fill: none;
   stroke: var(--inju);
