@@ -405,6 +405,12 @@
       ui.pan.y += (e.key === 'PageUp' ? 1 : -1) * r.height * 0.8
       return
     }
+    // Shift+1 — 전체 보기 (Figma 국룰, 좌하단 全 버튼과 동일)
+    if (e.code === 'Digit1' && e.shiftKey) {
+      e.preventDefault()
+      fitAll()
+      return
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (ui.selectedId) { e.preventDefault(); removeNode(ui.selectedId) }
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
