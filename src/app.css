@@ -224,7 +224,8 @@ button.armed {
   font-size: 14.5px;
   line-height: 1.45;
   border-radius: 3px;
-  border-left: 3px solid var(--c, var(--c-muk));
+  /* 태그색 띠 — 얇으면 안 보인다는 피드백으로 3px→7px (#12) */
+  border-left: 7px solid var(--c, var(--c-muk));
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35), 0 9px 22px -10px rgba(0, 0, 0, 0.75);
   cursor: grab;
   user-select: none;
