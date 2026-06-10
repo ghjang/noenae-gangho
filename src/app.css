@@ -304,23 +304,19 @@ button.armed {
 .node:hover .handle,
 .node.selected .handle { opacity: 1; }
 
-/* 우하단 — 너비 조절 손잡이 (둥근 緣 핸들과 구분되는 각진 모양) */
-.rhandle {
+/* 좌/우 변 — 보이지 않는 너비 조절 띠 (호버하면 커서가 ↔ 로) */
+.rsz {
   position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--hanji);
-  border: 2px solid var(--c, var(--c-muk));
-  opacity: 0;
-  transition: opacity 0.12s;
-  cursor: ew-resize;
+  top: 0;
+  bottom: 0;
+  width: 9px;
   padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
 }
-.node:hover .rhandle,
-.node.selected .rhandle { opacity: 1; }
+.rsz.left { left: -2px; }
+.rsz.right { right: -2px; }
 
 /* 빈 강호 */
 .empty {
