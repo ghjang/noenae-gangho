@@ -71,10 +71,10 @@ button { -webkit-tap-highlight-color: transparent; }
   white-space: nowrap;
 }
 .title .hanja {
-  font-family: var(--serif);
-  font-weight: 700;
+  font-family: var(--sans);
+  font-weight: 800;
   font-size: 19px;
-  letter-spacing: 5px;
+  letter-spacing: 4px;
   color: var(--hanji);
 }
 .title .ko {
@@ -128,6 +128,15 @@ button.armed {
   background: var(--c-dan);
   border-color: var(--c-dan);
   color: #fff6ea;
+}
+
+/* 무공봉인 토글 — 한자 한 글자 낙관 (封: 봉인, 武: 무협으로) */
+.bar .tone {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.2;
+  padding: 4px 10px;
+  min-width: 36px;
 }
 
 /* 오행 팔레트 */

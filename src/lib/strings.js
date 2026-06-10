@@ -33,7 +33,8 @@ export const STRINGS = {
     importButton: '불러오기',
     clearButton: '강호 비우기',
     clearConfirm: '진짜 비움?',
-    toneButton: '무공봉인',
+    toneButton: '封',
+    toneButtonAria: '무공봉인',
     toneButtonTitle: '무공을 봉인하고 일반 말투로 전환',
     helpAria: '도움말',
 
@@ -94,7 +95,8 @@ export const STRINGS = {
     importButton: '가져오기',
     clearButton: '모두 지우기',
     clearConfirm: '정말 지울까요?',
-    toneButton: '무협모드',
+    toneButton: '武',
+    toneButtonAria: '무협모드',
     toneButtonTitle: '무협 말투로 전환',
     helpAria: '도움말',
 

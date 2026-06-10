@@ -28,7 +28,7 @@
 3. **좌표계**: 노드 x/y는 world 좌표, 화면 변환은 `ui.pan`/`ui.scale`. 새 인터랙션은 `toWorld()` 경유
 4. **노드 w/h는 실측** (`bind:clientWidth/Height`) — 엣지 앵커 계산에 쓰임. 하드코딩 금지
 5. **엣지는 방향이 있다**: `a`=부모, `b`=자식. Tab 가지치기(`addChild`)와 비급.md 트리 출력(`toMarkdown`)이 이 방향에 의존. 단 중복 판정(`addEdge`)은 무방향 — 같은 두 쪽지 사이 緣은 한 가닥뿐
-6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 '무공봉인' 토글): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통
+6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 무공봉인 토글 — 한자 아이콘 封/武, 접근 라벨은 `toneButtonAria`): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통
 
 ## 컨벤션 / 세계관
 
@@ -40,7 +40,7 @@
 ## 로드맵
 
 할일·우선순위·설계 메모는 GitHub 이슈로 관리: https://github.com/ghjang/noenae-gangho/issues
-새 할일을 이 문서나 README에 쌓지 말고 이슈로 등록할 것 (각 이슈 본문에 '우선순위: N/총수' 표기). Claude Code 세션은 GitHub 도구로 이슈를 직접 읽고 쓸 수 있다 — 커밋/PR에 `closes #N`을 달면 머지 때 자동으로 닫힌다.
+새 할일을 이 문서나 README에 쌓지 말고 이슈로 등록할 것 (각 이슈 본문에 '우선순위: N' 표기 — 숫자 낮을수록 먼저). Claude Code 세션은 GitHub 도구로 이슈를 직접 읽고 쓸 수 있다 — 커밋/PR에 `closes #N`을 달면 머지 때 자동으로 닫힌다.
 
 ## 검증 체크리스트
 
