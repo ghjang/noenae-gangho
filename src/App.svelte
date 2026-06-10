@@ -539,6 +539,15 @@
       ui.editingId = ui.selectedId
     }
   }
+  function onKeyUp(e) {
+    // Alt 단독으로 눌렀다 떼면 브라우저 메뉴바가 포커스를 훔쳐간다(Windows 관행)
+    // — 緣 타기(Alt+화살표) 도중 끊기는 원인. keyup preventDefault로 차단
+    if (e.key === 'Alt') {
+      const el = e.target
+      const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')
+      if (!inField) e.preventDefault()
+    }
+  }
   function onEditorKey(e, n) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEditing() }
     else if (e.key === 'Escape') { e.stopPropagation(); commitEditing() }
@@ -647,7 +656,7 @@
   })
 </script>
 
-<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} />
+<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} onkeyup={onKeyUp} />
 
 <!-- ── 상단 바 ── -->
 <header class="bar">
