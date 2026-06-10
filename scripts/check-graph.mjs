@@ -3,7 +3,7 @@
 // 하루에 세 번 규칙이 바뀐 사고 다발 지역이라 시나리오로 못 박는다.
 // 규칙 본체는 src/lib/graph.js의 computeHidden().
 // ──────────────────────────────────────────────
-import { computeHidden } from '../src/lib/graph.js'
+import { computeHidden, tidyLayout } from '../src/lib/graph.js'
 
 let fail = 0
 const err = (m) => { console.error('✗ ' + m); fail++ }
@@ -46,8 +46,25 @@ const ids = (s) => [...s].sort().join(',')
   if (h.has('x') || h.has('b')) err('다이아몬드: 무관한 쪽지가 숨었다')
 }
 
+// 6) 정돈(Tidy) 레이아웃 — 뿌리 제자리, 자식은 오른쪽(+부모폭+90),
+//    형제는 현재 y 순서 유지, 부모는 자식 블록의 세로 중앙
+{
+  const nodes = [
+    { id: 'r', x: 100, y: 100, w: 100, h: 40 },
+    { id: 'a', x: 0, y: 0, w: 80, h: 40 },
+    { id: 'b', x: 0, y: 999, w: 80, h: 40 },
+  ]
+  const pos = tidyLayout(nodes, [E('r', 'a'), E('r', 'b')])
+  const r = pos.get('r'), a = pos.get('a'), b = pos.get('b')
+  if (!r || r.x !== 100 || r.y !== 100) err(`정돈: 뿌리가 제자리를 떠남 (${r?.x},${r?.y})`)
+  if (a?.x !== 290) err(`정돈: 자식 x 기대 290, 실제 ${a?.x}`)
+  if (!(a && b && a.y < b.y)) err('정돈: 형제 y 순서(현재 배치 존중) 깨짐')
+  const mid = (a.y + b.y + 40) / 2
+  if (Math.abs(mid - (r.y + 20)) > 1) err('정돈: 부모가 자식 블록 세로 중앙이 아님')
+}
+
 if (fail) {
   console.error(`봉문 검사 실패 — ${fail}건`)
   process.exit(1)
 }
-console.log('봉문 검사 통과 — 시나리오 5종')
+console.log('봉문 검사 통과 — 시나리오 6종 (접기 5 + 정돈 1)')

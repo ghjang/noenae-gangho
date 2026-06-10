@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────
 import { TONES } from './strings.js'
 import { nodeBox } from './geometry.js'
-import { ancestorIds, parentEdgeOf } from './graph.js'
+import { ancestorIds, parentEdgeOf, tidyLayout } from './graph.js'
 
 const KEY = 'noenae-gangho-v1'
 const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
@@ -310,6 +310,18 @@ export function removeEdge(id) {
     graph.edges.splice(i, 1)
   }
   if (ui.selectedEdgeId === id) ui.selectedEdgeId = null
+  scheduleSave()
+}
+
+// 가지런히(Tidy) — rootId의 하위 트리(없으면 전체)를 정돈. undo 한 걸음
+export function arrange(rootId = null) {
+  const pos = tidyLayout(graph.nodes, graph.edges, rootId)
+  if (pos.size === 0) return
+  markUndo()
+  for (const n of graph.nodes) {
+    const p = pos.get(n.id)
+    if (p) { n.x = p.x; n.y = p.y }
+  }
   scheduleSave()
 }
 

@@ -10,7 +10,7 @@
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, addSibling, updateText, setColor, setNodeWidth,
-    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, clearAll,
+    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo,
   } from './lib/store.svelte.js'
@@ -42,6 +42,8 @@
   let searchJumped = false       // Enter 의미 분기: 처음엔 현재 항목, 그 뒤엔 전진 후 점프
   let searchEl = null            // 검색 input — 재호출 시 전체 선택용
   let vpW = $state(0), vpH = $state(0) // 뷰포트 실측 — 미니맵 뷰 사각형용
+  let tidying = $state(false)    // 정돈(R) 직후 잠깐 — 쪽지가 미끄러지는 트랜지션
+  let tidyTimer = null
   let mmDrag = false             // 미니맵 스크럽 중
   let mmEl = null                // 미니맵 svg (스크럽 좌표 변환용)
 
@@ -471,6 +473,15 @@
       toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만 (Space는 FreeMind 혈통 별칭)
       return
     }
+    // R — 가지런히(Tidy): 선택한 가지(없으면 전체) 정돈, 0.25초 슬라이드
+    if (e.code === 'KeyR') {
+      e.preventDefault()
+      tidying = true
+      clearTimeout(tidyTimer)
+      tidyTimer = setTimeout(() => (tidying = false), 300)
+      arrange(selected?.id ?? null)
+      return
+    }
     // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
     if (e.altKey && e.key.startsWith('Arrow') && selected) {
       e.preventDefault()
@@ -685,7 +696,7 @@
     </div>
   {/if}
 
-  <div class="world" style={`transform: translate(${ui.pan.x}px, ${ui.pan.y}px) scale(${ui.scale})`}>
+  <div class="world" class:tidying style={`transform: translate(${ui.pan.x}px, ${ui.pan.y}px) scale(${ui.scale})`}>
     <svg class="edges" aria-hidden="true">
       {#each graph.edges as e (e.id)}
         {@const a = byId(e.a)}
