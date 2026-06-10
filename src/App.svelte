@@ -160,6 +160,8 @@
     revealNode(n.id) // 접힌 가지 속이면 조상 봉문을 열며 데려간다
     ui.selectedId = n.id
     ui.selectedEdgeId = null
+    // 멀리서 보던 중이면 읽기 배율로 — 이미 가까우면(≥0.9x) 건드리지 않는다
+    if (ui.scale < 0.9) ui.scale = 1
     centerOn(n)
   }
   function onSearchKey(e) {
