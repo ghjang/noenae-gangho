@@ -28,6 +28,8 @@
   let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
+  let touchPts = new Map() // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
+  let pinch = null    // { d, mx, my } — 직전 두 손가락 거리·중점 (화면 좌표)
   let hover = $state({ id: null, side: 'right' }) // 緣 핸들 위치 — 마우스에 가까운 변
   let colorHover = $state(null) // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
   let edgeHover = null // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
@@ -62,7 +64,15 @@
     commitEditing()
     ui.selectedId = null
     ui.selectedEdgeId = null
-    panning = { sx: e.clientX, sy: e.clientY, px: ui.pan.x, py: ui.pan.y }
+    touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (touchPts.size === 2) {
+      // 두 번째 손가락 — 팬을 끊고 핀치로 (#6)
+      panning = null
+      const [p, q] = [...touchPts.values()]
+      pinch = { d: Math.hypot(p.x - q.x, p.y - q.y), mx: (p.x + q.x) / 2, my: (p.y + q.y) / 2 }
+    } else if (touchPts.size === 1) {
+      panning = { sx: e.clientX, sy: e.clientY, px: ui.pan.x, py: ui.pan.y }
+    }
     e.currentTarget.setPointerCapture?.(e.pointerId)
   }
   function onViewportDbl(e) {
@@ -182,6 +192,21 @@
 
   // ── 전역 포인터: 드래그 진행/마무리 ────────────
   function onWinMove(e) {
+    if (pinch && touchPts.has(e.pointerId)) {
+      // 핀치 — 거리비만큼 중점 기준 축경, 중점 이동만큼 팬
+      touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (touchPts.size >= 2) {
+        const [p, q] = [...touchPts.values()]
+        const d = Math.hypot(p.x - q.x, p.y - q.y)
+        const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2
+        const r = viewportEl.getBoundingClientRect()
+        ui.pan.x += mx - pinch.mx
+        ui.pan.y += my - pinch.my
+        if (pinch.d > 0) zoomAt(mx - r.left, my - r.top, d / pinch.d)
+        pinch = { d, mx, my }
+      }
+      return
+    }
     if (panning) {
       ui.pan.x = panning.px + (e.clientX - panning.sx)
       ui.pan.y = panning.py + (e.clientY - panning.sy)
@@ -209,6 +234,8 @@
     }
   }
   function onWinUp(e) {
+    touchPts.delete(e.pointerId)
+    if (touchPts.size < 2) pinch = null
     if (drag) {
       if (drag.moved) scheduleSave()
       drag = null
@@ -471,7 +498,7 @@
   })
 </script>
 
-<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onkeydown={onKey} />
+<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} />
 
 <!-- ── 상단 바 ── -->
 <header class="bar">
