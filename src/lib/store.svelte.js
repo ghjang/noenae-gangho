@@ -102,9 +102,9 @@ export function scheduleViewSave() {
 export function snapshot() {
   return {
     app: 'noenae-gangho',
-    // v2: bw(사용자 지정 너비, 선택적) 추가 — v1 데이터는 bw 없음(자동 너비)으로 그대로 읽힌다
-    v: 2,
-    nodes: graph.nodes.map(({ id, x, y, text, color, bw }) => ({ id, x, y, text, color, bw })),
+    // v2: bw(사용자 지정 너비) / v3: collapsed(가지 접힘) — 모두 선택 필드라 구버전 그대로 읽힌다
+    v: 3,
+    nodes: graph.nodes.map(({ id, x, y, text, color, bw, collapsed }) => ({ id, x, y, text, color, bw, collapsed })),
     edges: graph.edges.map(({ id, a, b }) => ({ id, a, b })),
   }
 }
@@ -154,6 +154,7 @@ export function addNodeAt(x, y, text = '', color = 'muk', edit = true) {
 export function addChild(parentId, text = '', edit = true) {
   const p = byId(parentId)
   if (!p) return null
+  if (p.collapsed) p.collapsed = undefined // 접힌 채 가지치면 새 가지가 숨는다 — 펼치고 진행
   const count = graph.edges.filter((e) => e.a === parentId).length
   const pb = nodeBox(p)
   const node = addNodeAt(pb.x + pb.w + 90, pb.y + count * 92, text, p.color, edit)
@@ -209,6 +210,14 @@ export function removeEdge(id) {
   const i = graph.edges.findIndex((e) => e.id === id)
   if (i !== -1) graph.edges.splice(i, 1)
   if (ui.selectedEdgeId === id) ui.selectedEdgeId = null
+  scheduleSave()
+}
+
+// 가지 접기/펼치기 — collapsed는 선택 필드(undefined면 직렬화에서 빠짐)
+export function toggleCollapse(id) {
+  const n = byId(id)
+  if (!n) return
+  n.collapsed = n.collapsed ? undefined : true
   scheduleSave()
 }
 

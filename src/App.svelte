@@ -8,7 +8,7 @@
   import {
     graph, ui, COLORS, byId, init,
     addNodeAt, addChild, updateText, setColor, setNodeWidth,
-    removeNode, addEdge, removeEdge, flipEdge, clearAll,
+    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
   } from './lib/store.svelte.js'
   import { STRINGS, fmt } from './lib/strings.js'
@@ -273,6 +273,11 @@
       flipEdge(edgeHover ?? ui.selectedEdgeId) // 가리키는 緣이 선택보다 우선
       return
     }
+    if (e.code === 'KeyC' && selected && graph.edges.some((ed) => ed.a === selected.id)) {
+      e.preventDefault()
+      toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만
+      return
+    }
     if (e.key === 'Tab' && ui.selectedId) {
       e.preventDefault()
       addChild(ui.selectedId)
@@ -369,6 +374,27 @@
 
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
+
+  // 접힌 가지 아래 숨은 쪽지들 — 접힌 노드의 후손을 BFS로 수집 (순환 緣은 seen으로 한 번만)
+  const hidden = $derived.by(() => {
+    const out = new Set()
+    const stack = []
+    for (const n of graph.nodes)
+      if (n.collapsed) for (const e of graph.edges) if (e.a === n.id) stack.push(e.b)
+    while (stack.length) {
+      const id = stack.pop()
+      if (out.has(id)) continue
+      out.add(id)
+      for (const e of graph.edges) if (e.a === id) stack.push(e.b)
+    }
+    return out
+  })
+
+  // 숨은 쪽지가 선택/편집 상태로 남지 않게
+  $effect(() => {
+    if (ui.selectedId && hidden.has(ui.selectedId)) ui.selectedId = null
+    if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null
+  })
 </script>
 
 <svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onkeydown={onKey} />
@@ -432,7 +458,7 @@
       {#each graph.edges as e (e.id)}
         {@const a = byId(e.a)}
         {@const b = byId(e.b)}
-        {#if a && b}
+        {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
           {@const E = edgeEnd(a, b)}
           {@const d = edgePath(a, E)}
           <g class="edge" class:sel={ui.selectedEdgeId === e.id}>
@@ -464,7 +490,8 @@
       {/if}
     </svg>
 
-    {#each graph.nodes as n (n.id)}
+    {#each graph.nodes.filter((nd) => !hidden.has(nd.id)) as n (n.id)}
+      {@const kids = graph.edges.filter((ed) => ed.a === n.id).length}
       <div
         class="node"
         class:selected={ui.selectedId === n.id}
@@ -517,6 +544,17 @@
           onpointerdown={(e) => onResizeDown(e, n, 'right')}
           ondblclick={(e) => onResizeDbl(e, n)}
         ></button>
+        {#if kids > 0}
+          <button
+            class="fold"
+            class:on={n.collapsed}
+            title={t.foldBadgeTitle}
+            aria-label={t.foldBadgeAria}
+            onpointerdown={(e) => e.stopPropagation()}
+            ondblclick={(e) => e.stopPropagation()}
+            onclick={(e) => { e.stopPropagation(); toggleCollapse(n.id) }}
+          >{n.collapsed ? `▸${kids}` : '▾'}</button>
+        {/if}
       </div>
     {/each}
   </div>

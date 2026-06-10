@@ -29,6 +29,7 @@ npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
 | Tab | 선택한 쪽지에 자식 가지치기 |
 | Delete | 선택한 쪽지/緣 삭제 |
 | F | 가리키거나(호버) 선택한 緣 방향 뒤집기 — 한 가닥씩 |
+| C 또는 ▾ 배지 | 가지(하위 쪽지) 접기/펼치기 — 접힌 쪽지엔 ▸숫자 배지 |
 | Ctrl + ± / Ctrl + 0 | 앱 자체 줌 / 100% 복귀 (글 입력·시트 중엔 브라우저에 양보) |
 | 화살표 키 | 화면 이동 · 쪽지 선택 중엔 쪽지 이동 (Shift = 성큼) |
 | PgUp / PgDn | 한 화면씩 세로 이동 |
@@ -51,12 +52,12 @@ src/
 저장은 기본 localStorage (`noenae-gangho-v1`), 말투 선택은 `noenae-gangho-tone`에 따로. 데이터 포맷:
 
 ```json
-{ "app": "noenae-gangho", "v": 2,
-  "nodes": [{ "id", "x", "y", "text", "color", "bw?" }],
+{ "app": "noenae-gangho", "v": 3,
+  "nodes": [{ "id", "x", "y", "text", "color", "bw?", "collapsed?" }],
   "edges": [{ "id", "a", "b" }] }
 ```
 
-`bw`는 사용자 지정 너비(px, 선택) — 없으면 내용 따라 자동. v1 데이터도 그대로 읽힌다.
+`bw`는 사용자 지정 너비(px), `collapsed`는 가지 접힘 — 둘 다 선택 필드라 구버전 데이터도 그대로 읽힌다.
 
 ## 내 GitHub 프라이빗 레포에 올리기
 
