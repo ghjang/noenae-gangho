@@ -328,6 +328,7 @@ button.armed {
 
 .node textarea {
   width: 200px;
+  max-width: 100%; /* max-content 박스가 상한(230)에 닿아도 글이 변 밖으로 안 샌다 */
   display: block;
   font: inherit;
   color: inherit;
