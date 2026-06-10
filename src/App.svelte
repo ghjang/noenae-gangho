@@ -351,6 +351,7 @@
         aria-label={fmt(t.paletteSet, { label: t.colorLabel[c] })}
         aria-disabled={!selected}
         class:dim={!selected}
+        class:cur={!!selected && selected.color === c}
         onpointerenter={() => (colorHover = selected ? null : c)}
         onpointerleave={() => (colorHover = null)}
         onclick={() => selected && setColor(selected.id, c)}

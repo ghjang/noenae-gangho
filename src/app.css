@@ -160,6 +160,11 @@ button.armed {
 }
 .palette button.dim { opacity: 0.25; }
 .palette button.dim:hover { opacity: 1; } /* 범례 모드 — 호버한 색은 제 색으로 */
+.palette button.cur {
+  /* 선택한 쪽지의 현재 색 — 한지빛 링 */
+  border-color: var(--hanji);
+  box-shadow: 0 0 0 2px var(--paper-dim);
+}
 .palette button:hover {
   transform: scale(1.18);
   background: var(--swatch); /* .bar button:hover의 회색 배경이 오행색을 덮지 않게 */
