@@ -410,8 +410,11 @@
               }}
             />
             <path class="vis" d={d} />
-            <path class="tip" d={arrowPath(a, b)} />
-            <circle class="dot" cx={E.x} cy={E.y} r="3" />
+            <!-- 촉+접점 원은 한 그룹 — 그룹 opacity로 합성해 겹침 부위 알파 중첩 방지 -->
+            <g class="cap">
+              <path d={arrowPath(a, b)} />
+              <circle cx={E.x} cy={E.y} r="3" />
+            </g>
           </g>
         {/if}
       {/each}
