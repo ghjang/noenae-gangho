@@ -7,7 +7,9 @@
   /* 바탕 */
   --muk-void: #1b1712;        /* 먹 — 벼루 바닥 같은 어둠 */
   --chrome: rgba(33, 27, 20, 0.88);
+  --panel: rgba(54, 45, 34, 0.94);  /* 떠 있는 패널 — 캔버스보다 한 톤 밝게 */
   --hairline: rgba(242, 233, 214, 0.1);
+  --hairline-strong: rgba(242, 233, 214, 0.3);
 
   /* 종이와 글씨 */
   --hanji: #f2e9d6;
@@ -384,9 +386,11 @@ button.armed {
   z-index: 20;
   width: 200px;
   height: 132px;
-  background: var(--chrome);
-  border: 1px solid var(--hairline);
+  /* 캔버스와 일체화되지 않게 — 패널 면 + 뚜렷한 보더 + 그림자 (Figma류 관행) */
+  background: var(--panel);
+  border: 1px solid var(--hairline-strong);
   border-radius: 6px;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.85);
   cursor: crosshair;
   touch-action: none;
 }
@@ -454,6 +458,11 @@ button.armed {
   cursor: pointer;
 }
 .search-card li button:hover { background: rgba(242, 233, 214, 0.1); }
+.search-card li.sel button {
+  /* ↓↑ 하이라이트 — 현재 Enter가 점프할 항목 */
+  background: rgba(242, 233, 214, 0.14);
+  box-shadow: inset 2px 0 0 var(--inju);
+}
 .search-card li button i {
   flex: none;
   width: 10px;

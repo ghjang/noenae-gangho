@@ -157,11 +157,18 @@
     centerOn(n)
   }
   function onSearchKey(e) {
+    const len = matches.length
     if (e.key === 'Escape') {
       searchQ = null
-    } else if (e.key === 'Enter' && matches.length) {
-      jumpTo(matches[searchIdx % matches.length])
-      searchIdx++
+    } else if (e.key === 'ArrowDown' && len) {
+      e.preventDefault()
+      searchIdx = (searchIdx + 1) % len
+    } else if (e.key === 'ArrowUp' && len) {
+      e.preventDefault()
+      searchIdx = (searchIdx - 1 + len) % len
+    } else if (e.key === 'Enter' && len) {
+      jumpTo(matches[searchIdx % len])
+      searchIdx = (searchIdx + 1) % len // 연타하면 다음 결과로 — 순회 유지
     }
   }
   const focusit = (el) => { el.focus() }
@@ -785,9 +792,9 @@
     />
     {#if searchQ.trim()}
       <ul>
-        {#each matches as m (m.id)}
-          <li>
-            <button onclick={() => jumpTo(m)}>
+        {#each matches as m, i (m.id)}
+          <li class:sel={i === searchIdx % matches.length}>
+            <button onclick={() => jumpTo(m)} onpointerenter={() => (searchIdx = i)}>
               <i style={`background: var(--c-${m.color})`}></i>
               <span>{m.text}</span>
             </button>
