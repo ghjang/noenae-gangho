@@ -23,6 +23,7 @@
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
   let hover = $state({ id: null, side: 'right' }) // 緣 핸들 위치 — 마우스에 가까운 변
   let colorHover = $state(null) // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
+  let edgeHover = null // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
 
   let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
@@ -234,9 +235,9 @@
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
       return
     }
-    if (e.code === 'KeyF' && ui.selectedEdgeId) {
+    if (e.code === 'KeyF' && (edgeHover || ui.selectedEdgeId)) {
       e.preventDefault()
-      flipEdge(ui.selectedEdgeId)
+      flipEdge(edgeHover ?? ui.selectedEdgeId) // 가리키는 緣이 선택보다 우선
       return
     }
     if (e.key === 'Tab' && ui.selectedId) {
@@ -401,6 +402,8 @@
             <path
               class="hit"
               d={d}
+              onpointerenter={() => (edgeHover = e.id)}
+              onpointerleave={() => (edgeHover = null)}
               onpointerdown={(ev) => {
                 ev.stopPropagation()
                 ui.selectedEdgeId = e.id
