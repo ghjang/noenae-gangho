@@ -260,9 +260,10 @@ button.armed {
   padding: 10px 13px 11px;
   background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
   color: var(--ink);
-  font-family: var(--serif);
-  font-size: 14.5px;
-  line-height: 1.45;
+  /* 본문은 고딕 — 노트 앱 국룰(시스템 산세리프). 명조는 장식(낙관·콜로폰·제목)에만 */
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
   border-radius: 3px;
   /* 태그색 띠 — 얇으면 안 보인다는 피드백으로 3px→7px (#12) */
   border-left: 7px solid var(--c, var(--c-muk));
