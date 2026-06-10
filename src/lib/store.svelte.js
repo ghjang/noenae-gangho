@@ -111,10 +111,15 @@ export function snapshot() {
 
 export function loadData(data) {
   if (!data || !Array.isArray(data.nodes)) return false
+  // 실측 w/h는 스냅샷 밖이라 새 객체는 기본 180×48로 태어난다. 그런데 같은 id면
+  // keyed each가 DOM을 재사용해 ResizeObserver가 다시 안 울린다(크기 불변) —
+  // 언두/리두 후 엣지 앵커가 허공을 찌르는 원인. 직전 실측을 물려받아 해결
+  const prev = new Map(graph.nodes.map((n) => [n.id, n]))
   graph.nodes.length = 0
   graph.edges.length = 0
   for (const n of data.nodes) {
-    graph.nodes.push({ w: 180, h: 48, color: 'muk', text: '', ...n })
+    const old = prev.get(n.id)
+    graph.nodes.push({ w: old?.w ?? 180, h: old?.h ?? 48, color: 'muk', text: '', ...n })
   }
   for (const e of data.edges ?? []) {
     if (e && e.a && e.b) graph.edges.push({ id: e.id ?? uid(), a: e.a, b: e.b })
