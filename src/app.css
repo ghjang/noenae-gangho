@@ -266,6 +266,10 @@ button.armed {
 /* 念 — 노드 */
 .node {
   position: absolute;
+  /* 자동 폭은 내용 기준(max-content) — 절대배치 shrink-to-fit이 0폭 .world를
+     기준 삼아 'x>0이면 min-width로 짓눌리고 x<0이면 위치 따라 변신'하던 버그의 처방.
+     상한(--node-max-w)에서 줄바꿈, 사용자 지정 폭(bw)은 인라인 width가 이긴다 */
+  width: max-content;
   max-width: var(--node-max-w);
   min-width: 84px;
   padding: 10px 13px 11px;
