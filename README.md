@@ -5,6 +5,8 @@
 
 > 시작은 '깨다름'이라는 오타 하나였다. 자세한 사연은 첫 실행 시드 데이터 참고 ㅋ
 
+**바로 써보기 → <https://ghjang.github.io/noenae-gangho/>** (main 머지마다 자동 배포)
+
 ## 빠른 시작
 
 ```bash

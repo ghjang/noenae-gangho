@@ -9,6 +9,7 @@
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
 - `npm run check` — 문구 팩 정합성 검사(`scripts/check-strings.mjs`): 팩 간 키 일치 · App 사용 키 존재 · 팩 순수 데이터(함수 금지). `npm run build` 때 prebuild로 자동 실행
+- 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 
 ## 구조와 역할 분담
