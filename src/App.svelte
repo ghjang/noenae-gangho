@@ -215,6 +215,19 @@
       return
     }
     if (ui.overlay) return
+    // Ctrl/Cmd + ± / 0 — 브라우저 줌 대신 앱 자체 축경 (입력 중·시트 열림엔 양보)
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+        e.preventDefault(); zoomCenter(1.18); return
+      }
+      if (e.key === '-' || e.code === 'NumpadSubtract') {
+        e.preventDefault(); zoomCenter(1 / 1.18); return
+      }
+      if (e.key === '0' || e.code === 'Numpad0') {
+        e.preventDefault(); resetView(); return
+      }
+      return // 나머지 Ctrl 조합(찾기·새로고침 등)은 브라우저 몫
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (ui.selectedId) { e.preventDefault(); removeNode(ui.selectedId) }
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
