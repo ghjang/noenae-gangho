@@ -10,6 +10,8 @@ const KEY = 'noenae-gangho-v1' // 레거시 단일 문서 본문 — 첫 이주 
 const DOCS_KEY = 'noenae-gangho-docs' // 문서(강호) 인덱스 — { current, list: [{ id, title, updatedAt }] } (#62)
 const docKey = (id) => 'noenae-gangho-doc-' + id // 문서별 본문 (v3 snapshot — 포맷은 문서 단위로 불변)
 const viewKey = (id) => 'noenae-gangho-view-' + id // 문서별 뷰(팬/줌)
+const viewModeKey = (id) => 'noenae-gangho-viewmode-' + id // 문서별 뷰 모드 (#42)
+const VIEW_MODES = ['canvas', 'kanban']
 
 // 줌 한계 — zoomAt/fitAll/뷰 복원이 같은 값을 쓴다. 하한 0.1: 큰 강호도
 // 전체 보기(全)가 한 화면에 다 담을 수 있게 (0.35는 잘림 사고의 원인이었다)
@@ -40,6 +42,26 @@ function loadView(docId) {
   return null
 }
 
+// 문서별 뷰 모드 (#42) — 칸반용 문서·마인드맵용 문서가 갈릴 테니 뷰포트와 같은 결
+function loadViewMode(docId) {
+  try {
+    const m = localStorage.getItem(viewModeKey(docId))
+    return VIEW_MODES.includes(m) ? m : 'canvas'
+  } catch {
+    return 'canvas'
+  }
+}
+
+export function setViewMode(mode) {
+  if (!VIEW_MODES.includes(mode)) return
+  ui.viewMode = mode
+  try {
+    localStorage.setItem(viewModeKey(docs.current), mode)
+  } catch {
+    /* 취향 저장 실패는 조용히 */
+  }
+}
+
 export const graph = $state({ nodes: [], edges: [] })
 
 export const ui = $state({
@@ -55,6 +77,7 @@ export const ui = $state({
   focusId: null, // 집중(포커스) 표적 — 세션 전용 뷰 상태: snapshot/undo 밖 (#47)
   focusDepth: 1, // 집중 반경(촌수) — [ ]로 조절
   docSwitching: false, // 문서 전환 중 — 퇴장/입장 애니를 꺼서 두 강호가 겹쳐 보이지 않게
+  viewMode: 'canvas', // 'canvas' | 'kanban'(오행진) — 문서별 취향(#42), snapshot/undo 밖
   tone: loadTone(), // 'muhyeop'(무협, 기본) | 'plain'(일반) — strings.js 팩 선택
   ink: 'muk', // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 })
@@ -388,6 +411,7 @@ async function activateDoc(id) {
     ui.pan.x = v?.x ?? 40
     ui.pan.y = v?.y ?? 40
     ui.scale = v?.s ?? 1
+    ui.viewMode = loadViewMode(id) // 그 문서가 보던 모드로
   } finally {
     setTimeout(() => (ui.docSwitching = false), 60) // 교체 플러시가 지나간 뒤 애니 복권
   }
@@ -402,6 +426,11 @@ export async function init() {
   }
 }
 
+// 새 문서 기본 이름의 N — 꼬리 숫자 최댓값+1 (삭제 후 개창해도 이름 중복 안 남)
+function nextDocN() {
+  return docs.list.reduce((m, d) => Math.max(m, parseInt(d.title.match(/(\d+)\s*$/)?.[1] ?? '0', 10) || 0), 0) + 1
+}
+
 // ── 문서(강호) 다루기 (#62) ───────────────────
 export async function switchDoc(id) {
   if (id === docs.current || !docs.list.some((d) => d.id === id)) return
@@ -414,7 +443,7 @@ export async function createDoc() {
   const id = uid()
   docs.list.push({
     id,
-    title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: docs.list.length + 1 }),
+    title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: nextDocN() }),
     updatedAt: Date.now(),
   })
   await activateDoc(id) // 본문 없음 → 빈 강호로 시작
@@ -424,7 +453,16 @@ export async function createDoc() {
 export function renameDoc(id, title) {
   const d = docs.list.find((x) => x.id === id)
   if (!d) return
-  d.title = title.trim() || STRINGS[ui.tone].docUntitled
+  let tt = title.trim() || STRINGS[ui.tone].docUntitled
+  // 제목은 식별자가 아니라(정체는 id — 겹쳐도 데이터 무사) 사람 눈이 문제 —
+  // 같은 이름이 이미 있으면 꼬리표 ' (2)' (파일 복사 관행, 조용한 비충돌)
+  const taken = (name) => docs.list.some((x) => x.id !== id && x.title === name)
+  if (taken(tt)) {
+    let n = 2
+    while (taken(`${tt} (${n})`)) n++
+    tt = `${tt} (${n})`
+  }
+  d.title = tt
   d.updatedAt = Date.now()
   persistDocs()
 }
@@ -438,6 +476,7 @@ export async function removeDoc(id) {
   try {
     localStorage.removeItem(docKey(id))
     localStorage.removeItem(viewKey(id))
+    localStorage.removeItem(viewModeKey(id))
   } catch {
     /* 조용히 */
   }

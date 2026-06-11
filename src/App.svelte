@@ -4,7 +4,8 @@
   // 먹빛 허공에 念(쪽지)을 띄우고 緣(연결)으로 잇는다.
   // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.js가 담당.
   // ──────────────────────────────────────────────
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
+  import BoardView from './BoardView.svelte'
   import { fade, scale } from 'svelte/transition'
   import { backOut, cubicIn } from 'svelte/easing'
   import {
@@ -12,7 +13,7 @@
     addToSelection, selectMany, isSelected, pruneSelection,
     addNodeAt, addChild, addSibling, updateText, setColorMany, setInk, setNodeWidth,
     removeNodes, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
-    docs, switchDoc, createDoc, renameDoc, removeDoc,
+    docs, switchDoc, createDoc, renameDoc, removeDoc, setViewMode,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo, flushSave, clampScale,
   } from './lib/store.svelte.js'
@@ -477,6 +478,18 @@
     // Ctrl/Cmd 조합 — 줌(±/0)과 검색(F)은 입력 필드에 포커스가 있어도 캔버스 몫
     // (검색창 띄운 채 Ctrl+±로 찾은 쪽지 확대). 나머지는 필드 네이티브에 양보
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      // 오행진(보드)에선 되돌리기만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
+      if (ui.viewMode !== 'canvas') {
+        if (e.code === 'KeyZ') {
+          e.preventDefault()
+          if (e.shiftKey) redo()
+          else undo()
+        } else if (e.code === 'KeyY') {
+          e.preventDefault()
+          redo()
+        }
+        return
+      }
       if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
         e.preventDefault(); zoomCenter(1.18); return
       }
@@ -530,6 +543,7 @@
       return
     }
     if (inField) return
+    if (ui.viewMode !== 'canvas') return // 캔버스 단축키(이동/가지/집중/올가미…)는 오행진에선 침묵
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
     if (e.key.startsWith('Arrow') && !e.altKey) {
@@ -811,6 +825,20 @@
     docEditId = null
   }
 
+  // ── 뷰 모드 (#42) — 캔버스 ↔ 오행진(칸반) ────
+  function toggleView() {
+    commitEditing()
+    searchQ = null
+    ui.linking = null
+    setViewMode(ui.viewMode === 'canvas' ? 'kanban' : 'canvas')
+  }
+  // 오행진 카드 더블클릭 — 강호의 그 자리로 (모드 전환 후 viewport가 서야 점프 가능)
+  async function boardJump(n) {
+    setViewMode('canvas')
+    await tick()
+    jumpTo(n)
+  }
+
   // ── 비우기 (확인 카드) ────────────────────────
   // 네이티브 confirm()은 VSCode 웹뷰에서 차단 — 시트/배경막 패턴 재사용이 이식 안전
   function onClear() {
@@ -875,6 +903,19 @@
     <button class="icon" onclick={openDocs} title={fmt(t.docsButtonTitle, { title: curDoc?.title ?? '' })} aria-label={t.docsButtonAria}>
       <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M231.65,194.55,198.46,36.75a16,16,0,0,0-19-12.39L132.65,34.42a16.08,16.08,0,0,0-12.3,19l33.19,157.8A16,16,0,0,0,169.16,224a16.25,16.25,0,0,0,3.38-.36l46.81-10.06A16.09,16.09,0,0,0,231.65,194.55ZM136,50.15c0-.06,0-.09,0-.09l46.8-10,3.33,15.87L139.33,66Zm6.62,31.47,46.82-10.05,3.34,15.9L146,97.53Zm6.64,31.57,46.82-10.06,13.3,63.24-46.82,10.06ZM216,197.94l-46.8,10-3.33-15.87L212.67,182,216,197.85C216,197.91,216,197.94,216,197.94ZM104,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V48A16,16,0,0,0,104,32ZM56,48h48V64H56Zm0,32h48v96H56Zm48,128H56V192h48v16Z"/></svg>
     </button>
+    <!-- 뷰 모드 토글 — Phosphor 'kanban'/'graph' (MIT). 캔버스에선 오행진으로, 오행진에선 강호로 -->
+    <button
+      class="icon"
+      onclick={toggleView}
+      title={ui.viewMode === 'canvas' ? t.viewKanbanTitle : t.viewCanvasTitle}
+      aria-label={ui.viewMode === 'canvas' ? t.viewKanbanAria : t.viewCanvasAria}
+    >
+      {#if ui.viewMode === 'canvas'}
+        <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M216,48H40a8,8,0,0,0-8,8V208a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V160h48v16a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V56A8,8,0,0,0,216,48ZM88,208H48V128H88Zm0-96H48V64H88Zm64,32H104V64h48Zm56,32H168V128h40Zm0-64H168V64h40Z"/></svg>
+      {:else}
+        <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M200,152a31.84,31.84,0,0,0-19.53,6.68l-23.11-18A31.65,31.65,0,0,0,160,128c0-.74,0-1.48-.08-2.21l13.23-4.41A32,32,0,1,0,168,104c0,.74,0,1.48.08,2.21l-13.23,4.41A32,32,0,0,0,128,96a32.59,32.59,0,0,0-5.27.44L115.89,81A32,32,0,1,0,96,88a32.59,32.59,0,0,0,5.27-.44l6.84,15.4a31.92,31.92,0,0,0-8.57,39.64L73.83,165.44a32.06,32.06,0,1,0,10.63,12l25.71-22.84a31.91,31.91,0,0,0,37.36-1.24l23.11,18A31.65,31.65,0,0,0,168,184a32,32,0,1,0,32-32Zm0-64a16,16,0,1,1-16,16A16,16,0,0,1,200,88ZM80,56A16,16,0,1,1,96,72,16,16,0,0,1,80,56ZM56,208a16,16,0,1,1,16-16A16,16,0,0,1,56,208Zm56-80a16,16,0,1,1,16,16A16,16,0,0,1,112,128Zm88,72a16,16,0,1,1,16-16A16,16,0,0,1,200,200Z"/></svg>
+      {/if}
+    </button>
   </div>
 
   <div class="palette" aria-label={t.paletteAria}>
@@ -915,7 +956,10 @@
   </div>
 </header>
 
-<!-- ── 캔버스 ── -->
+<!-- ── 캔버스 ↔ 오행진 (#42: 데이터 불변, 표현만 교체) ── -->
+{#if ui.viewMode !== 'canvas'}
+  <BoardView onJump={boardJump} />
+{:else}
 <div
   class="viewport"
   class:lasso={shiftHeld || marquee}
@@ -1067,7 +1111,9 @@
     {/if}
   </div>
 </div>
+{/if}
 
+{#if ui.viewMode === 'canvas'}
 <!-- ── 집중(포커스) 배지 — 켜진 동안 상단 중앙, 클릭 = 해제 ── -->
 {#if ui.focusId}
   <button
@@ -1137,6 +1183,7 @@
       </ul>
     {/if}
   </aside>
+{/if}
 {/if}
 
 <!-- ── 도움말 ── -->
