@@ -204,7 +204,7 @@ export function loadData(data) {
   const eids = new Set()
   for (const e of data.edges ?? []) {
     if (!e || !e.a || !e.b || e.a === e.b || !ids.has(e.a) || !ids.has(e.b)) continue
-    const pair = [e.a, e.b].sort().join(' ')
+    const pair = [e.a, e.b].sort().join('\0') // 구분자 NUL — id에 못 들어가는 글자라 쌍 충돌 원천 차단
     if (pairs.has(pair)) continue
     pairs.add(pair)
     const id = e.id != null && !eids.has(e.id) ? e.id : uid()
