@@ -21,12 +21,12 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   // 전부 보기 → 전체 요결 시트 (스크롤)
   await page.locator('.help-card .close-row button').first().click()
   ok(await page.locator('.sheet.help').count() === 1, '전부 보기 → 전체 시트 등장')
-  ok(await page.locator('.sheet.help dt').count() === 29, "전체 시트: 요결 29수")
+  ok(await page.locator('.sheet.help dt').count() === 31, "전체 시트: 요결 31수")
   // PR #89/#97 이후: 시트는 고정, 본문(.cols — 6묶음 다단)만 스크롤
   const dlScroll = await page.locator('.sheet.help .cols').evaluate((el) => el.scrollHeight > el.clientHeight)
   const sheetFixed = await page.locator('.sheet.help').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)
   ok(dlScroll && sheetFixed, '전체 시트: 본문만 스크롤(시트 고정)')
-  ok((await page.locator('.sheet.help h3').count()) === 6, '묶음 6개')
+  ok((await page.locator('.sheet.help h3').count()) === 7, '묶음 7개')
   await page.screenshot({ path: '/tmp/help-full.png' })
   await page.keyboard.press('Escape')
   ok(await page.locator('.sheet.help').count() === 0, 'Esc → 시트 닫힘')
@@ -37,7 +37,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   ok(await page.locator('.help-card dt').count() === 8, 'plain 퀵 카드: 8수')
   ok((await page.locator('.help-card .close-row button').first().textContent()) === '전체 도움말', 'plain 버튼 문구')
   await page.locator('.help-card .close-row button').first().click()
-  ok(await page.locator('.sheet.help dt').count() === 29, "plain 전체 시트: 29수")
+  ok(await page.locator('.sheet.help dt').count() === 31, "plain 전체 시트: 31수")
   await page.keyboard.press('Escape')
 
   await browser.close()

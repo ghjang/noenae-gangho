@@ -641,9 +641,11 @@ export function arrange(rootId = null) {
   scheduleSave()
 }
 
-// 숨은 쪽지를 세상에 드러낸다 — 접힌 조상을 전부 개문 (검색 점프용)
+// 숨은 쪽지를 세상에 드러낸다 — 접힌 '조상'만 개문 (검색/오행진 점프용).
+// 자기 자신의 봉문은 보존: 점프는 데려가기지 펼치기가 아니다 — 접어둔 의지 존중
 export function revealNode(id) {
   const anc = ancestorIds(graph.edges, id)
+  anc.delete(id) // ancestorIds는 자기 포함 — 내 가지 봉문까지 열리는 사고 방지
   const toOpen = graph.nodes.filter((n) => n.collapsed && anc.has(n.id))
   if (toOpen.length === 0) return
   asOneStep(() => {

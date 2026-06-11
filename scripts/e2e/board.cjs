@@ -65,6 +65,27 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const cBack = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
   ok(cBack[0] === '1' && cBack[4] === '0', 'Ctrl+Z → 귀환 비행')
 
+  // 접힌 쪽지 카드 더블클릭 — 점프는 데려가기지 펼치기가 아니다 (봉문 보존)
+  // difference(자식 둘)를 접고 보드에서 그 카드를 두드린다
+  await p.locator('.board .card', { hasText: 'difference' }).dblclick()
+  await p.waitForTimeout(400)
+  await p.keyboard.press('Escape') // 점프 후 선택 정리... 편집 아님 — 캔버스 복귀 상태
+  await p.locator('.node', { hasText: 'difference' }).click()
+  await p.keyboard.press('c') // 봉문
+  await p.waitForTimeout(350)
+  const foldedNodes = await p.locator('.node').count()
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+  await p.locator('.board .card', { hasText: 'difference' }).dblclick()
+  await p.waitForTimeout(400)
+  ok((await p.locator('.node').count()) === foldedNodes, `접힌 카드 점프 → 봉문 보존 (쪽지 ${foldedNodes} 그대로)`)
+  ok((await p.locator('.node .fold.on').count()) === 1, '▸ 접힘 배지 건재')
+  await p.locator('.node', { hasText: 'difference' }).click()
+  await p.keyboard.press('c') // 개문 원복
+  await p.waitForTimeout(350)
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+
   // 더블클릭 점프 — 캔버스로 + 그 쪽지 선택
   await p.locator('.board .card', { hasText: '깨다름' }).dblclick()
   await p.waitForTimeout(400)
