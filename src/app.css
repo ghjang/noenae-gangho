@@ -359,9 +359,10 @@ button.primary:hover { background: #d6552f; }
 .node.focal::after {
   content: '';
   position: absolute;
-  inset: -9px;
-  border: 2px dashed var(--inju);
-  border-radius: 10px;
+  inset: -14px; /* 선택 실선(offset 2+2px)·후광(6px)보다 한 발 밖 — 겹쳐도 갑갑하지 않게 */
+  border: 1.5px dashed var(--inju);
+  border-radius: 14px;
+  opacity: 0.85;
   pointer-events: none;
 }
 
