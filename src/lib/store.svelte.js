@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────
 import { STRINGS, TONES, fmt } from './strings.js'
 import { nodeBox } from './geometry.js'
-import { ancestorIds, parentEdgeOf, tidyLayout } from './graph.js'
+import { ancestorIds, computeHidden, parentEdgeOf, tidyLayout } from './graph.js'
 
 const KEY = 'noenae-gangho-v1' // 레거시 단일 문서 본문 — 첫 이주 후엔 읽지 않는다 (화석 백업, 지우지 않음)
 const DOCS_KEY = 'noenae-gangho-docs' // 문서(강호) 인덱스 — { current, list: [{ id, title, updatedAt }] } (#62)
@@ -603,10 +603,22 @@ export function removeNode(id) {
   scheduleSave()
 }
 
-// 무리 베기 — undo 한 걸음
+// 무리 베기 — undo 한 걸음. "베기는 보이는 것을 벤다"(사용자 결정):
+// 접힌 쪽지를 베면 그 봉문이 숨기던 후손도 동반 — 닫힌 상자의 내용물이
+// 쏟아져 나오는 놀람 방지. 다른 경로로 보이던 쪽지는 computeHidden이
+// 애초에 안 숨겼으니(다중 부모 안전) 그늘에 없다 = 살아남는다
 export function removeNodes(ids) {
+  const sel = new Set(ids)
+  const all = [...sel]
+  if (graph.nodes.some((n) => sel.has(n.id) && n.collapsed)) {
+    const h1 = computeHidden(graph.nodes, graph.edges)
+    // 베일 쪽지들의 봉문만 풀어본 가상 세계 — 차집합이 곧 '그 봉문의 그늘'
+    const probe = graph.nodes.map((n) => (sel.has(n.id) && n.collapsed ? { ...n, collapsed: undefined } : n))
+    const h2 = computeHidden(probe, graph.edges)
+    for (const hid of h1) if (!h2.has(hid) && !sel.has(hid)) all.push(hid)
+  }
   asOneStep(() => {
-    for (const id of [...ids]) removeNode(id)
+    for (const id of all) removeNode(id)
   })
 }
 
