@@ -198,6 +198,14 @@ button.primary:hover { background: #d6552f; }
 }
 
 /* 오행 팔레트 */
+/* 서가 자리 — 문서 항법은 맥락의 출발점이라 도구들 왼쪽에 따로 (구분선 동반) */
+.docbar {
+  display: flex;
+  align-items: center;
+  padding-right: 10px;
+  border-right: 1px solid var(--hairline);
+}
+
 .palette {
   display: flex;
   gap: 6px;

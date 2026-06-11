@@ -126,7 +126,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
     await p2.keyboard.press('Escape')
     ok((await p2.locator('.node').count()) === 1, 'C 재건: 일권 본문 적재')
     // 가져오기 격리 — 일권에 비급을 흡수해도 이권은 무사
-    await p2.locator('.bar button.icon').nth(1).click()
+    await p2.locator('.bar button[aria-label="불러오기"]').click()
     await p2.locator('.code-wrap textarea').fill('- 흡수 갑\n  - 흡수 을\n- 흡수 병')
     await p2.locator('.sheet button.primary').click()
     await p2.waitForTimeout(700)

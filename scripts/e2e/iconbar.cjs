@@ -14,7 +14,7 @@ const ok = (cond, m) => { if (cond) console.log('✓ ' + m); else fail(m) }
   ok(await icons.count() === 4, '아이콘 버튼 4종')
   const arias = []
   for (let i = 0; i < 4; i++) arias.push(await icons.nth(i).getAttribute('aria-label'))
-  ok(JSON.stringify(arias) === JSON.stringify(['내보내기', '불러오기', '강호 비우기', '서가']), `aria 4종: ${arias}`)
+  ok(JSON.stringify(arias) === JSON.stringify(['서가', '내보내기', '불러오기', '강호 비우기']), `aria 4종: ${arias}`)
   const hs = []
   for (const sel of ['.bar button.icon', '.bar button.md', '.bar .actions > button.primary']) {
     hs.push((await page.locator(sel).first().boundingBox()).height)
@@ -23,18 +23,18 @@ const ok = (cond, m) => { if (cond) console.log('✓ ' + m); else fail(m) }
   await page.locator('.bar').screenshot({ path: '/tmp/iconbar-muhyeop.png' })
 
   // 비우기 확인 카드 플로우
-  await page.locator('.bar button.icon').nth(2).click()
+  await page.locator('.bar button.icon').nth(3).click()
   ok(await page.locator('.sheet.confirm').count() === 1, '빗자루 → 확인 카드 등장')
   ok((await page.locator('.sheet.confirm h2').textContent()) === '진짜 비움?', '카드 제목 = 진짜 비움?')
   await page.screenshot({ path: '/tmp/confirm-card.png' })
   await page.locator('.sheet.confirm .row button').first().click() // 취소
   ok(await page.locator('.sheet.confirm').count() === 0 && (await page.locator('.node').count()) === 4, '취소 → 강호 무사')
 
-  await page.locator('.bar button.icon').nth(2).click()
+  await page.locator('.bar button.icon').nth(3).click()
   await page.keyboard.press('Escape')
   ok(await page.locator('.sheet.confirm').count() === 0, 'Esc → 카드 닫힘')
 
-  await page.locator('.bar button.icon').nth(2).click()
+  await page.locator('.bar button.icon').nth(3).click()
   await page.locator('.sheet.confirm button.armed').click() // 강호 비우기
   await page.waitForTimeout(300)
   ok((await page.locator('.node').count()) === 0, '실행 → 강호 비워짐')
@@ -45,8 +45,8 @@ const ok = (cond, m) => { if (cond) console.log('✓ ' + m); else fail(m) }
   // plain 톤 — 문구 전환
   await page.locator('.bar button.tone').click()
   await page.waitForTimeout(200)
-  ok((await page.locator('.bar button.icon').nth(2).getAttribute('aria-label')) === '모두 지우기', 'plain 톤 aria 전환')
-  await page.locator('.bar button.icon').nth(2).click()
+  ok((await page.locator('.bar button.icon').nth(3).getAttribute('aria-label')) === '모두 지우기', 'plain 톤 aria 전환')
+  await page.locator('.bar button.icon').nth(3).click()
   ok((await page.locator('.sheet.confirm h2').textContent()) === '정말 지울까요?', 'plain 카드 제목')
   await page.locator('.bar').screenshot({ path: '/tmp/iconbar-plain.png' }).catch(() => {})
   await page.keyboard.press('Escape')
