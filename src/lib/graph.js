@@ -42,6 +42,23 @@ export function ancestorIds(edges, id) {
   return anc
 }
 
+// 이웃 집합 — id에서 무방향 BFS로 depth촌까지 (자기 자신 포함, 순환 안전).
+// 포커스 모드(#47)용: 緣 방향은 혈연이 아니라 인연이므로 무시한다
+export function neighborhood(edges, id, depth = 1) {
+  let ring = new Set([id])
+  const out = new Set(ring)
+  for (let d = 0; d < depth && ring.size; d++) {
+    const next = new Set()
+    for (const e of edges) {
+      if (ring.has(e.a) && !out.has(e.b)) next.add(e.b)
+      if (ring.has(e.b) && !out.has(e.a)) next.add(e.a)
+    }
+    for (const x of next) out.add(x)
+    ring = next
+  }
+  return out
+}
+
 // 부모 緣 — 여럿이면 첫 가닥 (없으면 null)
 export function parentEdgeOf(edges, id) {
   return edges.find((e) => e.b === id) ?? null

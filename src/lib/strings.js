@@ -83,6 +83,7 @@ export const STRINGS = {
       ['Delete', '선택한 쪽지/緣 베기'],
       ['F', '가리키거나 선택한 緣 방향 뒤집기 (한 가닥씩)'],
       ['C·Space / 배지', '선택한 쪽지의 가지 봉문/개문'],
+      ['L · [ ]', '집중 — 선택한 쪽지 둘레만 보기 · 반경 조절'],
       ['R / Shift+R', '가지런히 — 강호 전체 / 선택한 가지만'],
       ['Z / Shift+Z', '선택 쪽지 기준 확대/축소 — 한 손 줌'],
       ['Alt+화살표', '緣 타고 이동 — ←부모 →자식 ↑↓형제'],
@@ -100,6 +101,8 @@ export const STRINGS = {
     // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
     helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
     helpMoreButton: '요결 전부 보기',
+    focusPill: '集中 {depth}촌 — [ ] 반경 · L 해제',
+    focusPillAria: '집중 해제',
     closeButton: '닫기',
 
     exportTitle: '내공 내보내기 — JSON',
@@ -184,6 +187,7 @@ export const STRINGS = {
       ['Delete', '선택한 노트/연결 삭제'],
       ['F', '마우스로 가리키거나 선택한 연결 방향 뒤집기'],
       ['C·Space / 배지', '선택한 노트의 하위 접기/펼치기'],
+      ['L · [ ]', '포커스 — 선택한 노트 주변만 보기 · 반경 조절'],
       ['R / Shift+R', '자동 정렬 — 전체 / 선택한 가지만'],
       ['Z / Shift+Z', '선택 노트 기준 확대/축소'],
       ['Alt+화살표', '연결 따라 이동 — ←부모 →자식 ↑↓형제'],
@@ -200,6 +204,8 @@ export const STRINGS = {
     ],
     helpQuick: ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '빨간 점 드래그', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
     helpMoreButton: '전체 도움말',
+    focusPill: '포커스 {depth}촌 — [ ] 반경 · L 해제',
+    focusPillAria: '포커스 해제',
     closeButton: '닫기',
 
     exportTitle: '내보내기 — JSON',

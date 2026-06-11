@@ -514,6 +514,31 @@ button.primary:hover { background: #d6552f; }
   .hud { left: 50%; translate: -50% 0; } /* 줌 위젯은 하단 중앙 — 콜로폰이 비운 자리, 엄지 닿기 좋게 */
 }
 
+/* 집중(포커스) 배지 — 켜진 동안 상단 중앙 알림 겸 해제 버튼 */
+.focus-pill {
+  position: fixed;
+  top: calc(var(--bar-h) + 10px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 30;
+  font: 12px/1 var(--sans);
+  color: var(--hanji);
+  background: var(--panel);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  padding: 7px 13px;
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.7);
+  cursor: var(--cursor-pointer), pointer;
+}
+.focus-pill i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--inju);
+  margin-right: 7px;
+}
+
 /* ── 검색 카드 (Ctrl+F) ── */
 .search-card {
   position: fixed;
