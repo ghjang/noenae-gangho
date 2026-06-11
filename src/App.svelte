@@ -15,7 +15,7 @@
     markUndo, asOneStep, undo, redo, flushSave, SCALE_MIN, SCALE_MAX,
   } from './lib/store.svelte.js'
   import { STRINGS, TONES, fmt } from './lib/strings.js'
-  import { nodeBox, center, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
+  import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
   import { computeHidden, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
   import { fromMarkdown } from './lib/markdown.js'
 
@@ -60,7 +60,7 @@
   })
 
   // ── 좌표 변환 ─────────────────────────────────
-  // (緣 기하 — center/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.js)
+  // (緣 기하 — center/edgeStart/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.js)
   function toWorld(e) {
     const r = viewportEl.getBoundingClientRect()
     return {
@@ -825,7 +825,7 @@
         {@const b = byId(e.b)}
         {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
           {@const E = edgeEnd(a, b)}
-          {@const d = edgePath(a, E)}
+          {@const d = edgePath(edgeStart(a, center(b)), E)}
           <g class="edge" class:sel={ui.selectedEdgeId === e.id} transition:fade={{ duration: dur(170) }}>
             <path
               class="hit"
@@ -866,7 +866,7 @@
           {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
             {@const E = edgeEnd(a, b)}
             <g class="edge lift">
-              <path class="vis" d={edgePath(a, E)} />
+              <path class="vis" d={edgePath(edgeStart(a, center(b)), E)} />
               <g class="cap"><path d={arrowPath(E)} /><circle cx={E.x} cy={E.y} r="3" /></g>
             </g>
           {/if}
