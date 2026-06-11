@@ -21,11 +21,13 @@ for (const tone of rest) {
   for (const k of keys) if (!baseKeys.includes(k)) err(`${base} 팩에 '${k}' 없음`)
 }
 
-// 2) App 사용 키 — 정적 t.xxx + 코드가 합성하는 동적 키
+// 2) 사용 키 — App의 정적 t.xxx + store의 STRINGS[톤].xxx (#62부터 store도 팩 소비) + 동적 합성 키
 const app = read('../src/App.svelte')
+const storeSrc = read('../src/lib/store.svelte.js')
 const used = new Set([...app.matchAll(/\bt\.([A-Za-z]+)/g)].map((m) => m[1]))
+for (const m of storeSrc.matchAll(/STRINGS\[[^\]]+\]\.([A-Za-z]+)/g)) used.add(m[1])
 // t[ui.overlay.mode + 'Title']와 sheetMsg(strings 키 보관)의 간접 참조분 — App 쪽을 바꾸면 여기도 갱신
-for (const k of ['exportTitle', 'importTitle', 'mdTitle', 'importBadShape', 'importParseFail', 'copyOk', 'copyFail']) used.add(k)
+for (const k of ['exportTitle', 'importTitle', 'mdTitle', 'docsTitle', 'importBadShape', 'importParseFail', 'copyOk', 'copyFail']) used.add(k)
 for (const tone of TONES)
   for (const k of used)
     if (!(k in STRINGS[tone])) err(`App이 쓰는 '${k}'가 ${tone} 팩에 없음`)

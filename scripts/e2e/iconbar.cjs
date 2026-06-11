@@ -9,12 +9,12 @@ const ok = (cond, m) => { if (cond) console.log('✓ ' + m); else fail(m) }
   await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
   await page.waitForTimeout(400)
 
-  // 아이콘 버튼 3종 — 라벨/툴팁/키(높이) 정렬
+  // 아이콘 버튼 4종(내보내기/불러오기/비우기/서가) — 라벨/키(높이) 정렬
   const icons = page.locator('.bar button.icon')
-  ok(await icons.count() === 3, '아이콘 버튼 3종')
+  ok(await icons.count() === 4, '아이콘 버튼 4종')
   const arias = []
-  for (let i = 0; i < 3; i++) arias.push(await icons.nth(i).getAttribute('aria-label'))
-  ok(JSON.stringify(arias) === JSON.stringify(['내보내기', '불러오기', '강호 비우기']), `aria 3종: ${arias}`)
+  for (let i = 0; i < 4; i++) arias.push(await icons.nth(i).getAttribute('aria-label'))
+  ok(JSON.stringify(arias) === JSON.stringify(['내보내기', '불러오기', '강호 비우기', '서가']), `aria 4종: ${arias}`)
   const hs = []
   for (const sel of ['.bar button.icon', '.bar button.md', '.bar .actions > button.primary']) {
     hs.push((await page.locator(sel).first().boundingBox()).height)
