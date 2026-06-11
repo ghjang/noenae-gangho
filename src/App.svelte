@@ -804,6 +804,13 @@
   }
 
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
+  // 집중 표적의 이름표 — 배지에 '누구 중심인지'를 글로도 (첫 줄, 12자 갈무리)
+  const focalLabel = $derived.by(() => {
+    const n = ui.focusId ? byId(ui.focusId) : null
+    if (!n) return ''
+    const s = (n.text || t.mdEmptyNode).split('\n')[0]
+    return s.length > 12 ? s.slice(0, 12) + '…' : s
+  })
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '')
 
   // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.js computeHidden
@@ -961,6 +968,7 @@
       <div
         class="node"
         class:selected={ui.selectedIds.includes(n.id)}
+        class:focal={ui.focusId === n.id}
         class:resized={!!n.bw}
         class:lit={!selected && colorHover === n.color}
         class:fade={!selected && colorHover && colorHover !== n.color}
@@ -1041,7 +1049,7 @@
     title={t.focusPillAria}
     aria-label={t.focusPillAria}
     transition:fade={{ duration: dur(150) }}
-  ><i></i>{fmt(t.focusPill, { depth: ui.focusDepth })}</button>
+  ><i></i>{fmt(t.focusPill, { label: focalLabel, depth: ui.focusDepth })}</button>
 {/if}
 
 <!-- ── 하단 HUD + 콜로폰 ── -->
