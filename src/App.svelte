@@ -11,7 +11,7 @@
     graph, ui, COLORS, byId, init, selectNode, selectEdge, clearSelection,
     addToSelection, selectMany, isSelected, pruneSelection,
     addNodeAt, addChild, addSibling, updateText, setColorMany, setInk, setNodeWidth,
-    removeNode, removeNodes, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
+    removeNodes, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo, flushSave, clampScale,
   } from './lib/store.svelte.js'
@@ -790,10 +790,10 @@
     ui.showHelp = false
     ui.overlay = { mode: 'help' }
   }
-  // 퀵 카드 목록 — helpQuick 키 순서대로 helpItems에서 추림 (본문 중복 없이)
-  const quickHelp = $derived(t.helpQuick.map((k) => t.helpItems.find((it) => it[0] === k)).filter(Boolean))
-  // 전체 요결 시트 — 묶음(helpSections) 렌더용 키→설명 사전
+  // 전체 요결 시트·퀵 카드 공용 — 키→설명 사전
   const helpMap = $derived(new Map(t.helpItems))
+  // 퀵 카드 목록 — helpQuick 키 순서대로 (본문 중복 없이)
+  const quickHelp = $derived(t.helpQuick.map((k) => [k, helpMap.get(k)]).filter(([, d]) => d))
 
   // ── 비우기 (확인 카드) ────────────────────────
   // 네이티브 confirm()은 VSCode 웹뷰에서 차단 — 시트/배경막 패턴 재사용이 이식 안전
