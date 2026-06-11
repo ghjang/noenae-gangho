@@ -33,6 +33,19 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.locator('.board .card', { hasText: '깨다름' }).click()
   ok((await p.locator('.board .card.sel').count()) === 1, '카드 클릭 → 선택 링')
 
+  // 집중 × 오행진 — 렌즈 끄고 입장: 버블 밖 카드 선택이 증발하지 않는다 (3차 체크포인트 버그)
+  await p.locator('button[aria-label="강호 캔버스"]').click()
+  await p.waitForTimeout(300)
+  await p.locator('.node', { hasText: 'difference' }).click()
+  await p.keyboard.press('l')
+  await p.waitForTimeout(350)
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .card').count()) >= 4, '오행진 입장 시 집중 해제 — 전 카드 보임')
+  await p.locator('.board .card', { hasText: '브로' }).click()
+  await p.waitForTimeout(200)
+  ok((await p.locator('.board .card.sel').count()) === 1, '버블 밖이던 카드 선택 생존 (증발 버그 수술)')
+
   // 키 가드 — Tab/L 침묵
   const cardCount = await p.locator('.board .card').count()
   await p.keyboard.press('Tab')
@@ -77,6 +90,11 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.locator('button[aria-label="오행진"]').click()
   await p.waitForTimeout(300)
   ok((await p.locator('.board .card .fold').textContent()) === '▸1', '접힌 카드에 ▸1 배지 (직계 수 — 캔버스와 같은 표기)')
+  {
+    const cb = await p.locator('.board .card', { hasText: 'difference' }).boundingBox()
+    const fb = await p.locator('.board .card .fold').boundingBox()
+    ok(fb && fb.x >= cb.x && fb.x + fb.width <= cb.x + cb.width + 1 && fb.y >= cb.y, '배지가 카드 안에 실재 (순간이동·투명화 보초)')
+  }
   await p.locator('.board .card', { hasText: 'difference' }).dblclick()
   await p.waitForTimeout(400)
   ok((await p.locator('.node').count()) === foldedNodes, `접힌 카드 점프 → 봉문 보존 (쪽지 ${foldedNodes} 그대로)`)
