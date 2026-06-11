@@ -10,7 +10,7 @@
   import { flip } from 'svelte/animate'
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.js'
   import { STRINGS } from './lib/strings.js'
-  import { computeHidden } from './lib/graph.js'
+  import { computeHidden, childCounts } from './lib/graph.js'
 
   let { onJump } = $props()
   // 색을 갈아입으면 카드가 옛 종대에서 새 종대로 날아간다(crossfade) —
@@ -20,6 +20,7 @@
   const t = $derived(STRINGS[ui.tone])
   // 봉문은 오행진에서도 존중 — '치웠다'는 의지는 뷰를 가리지 않는다 (집중은 캔버스 전용)
   const hidden = $derived(computeHidden(graph.nodes, graph.edges))
+  const kidCount = $derived(childCounts(graph.edges)) // 접힌 카드의 ▸N 배지용 — 캔버스와 같은 표기
   const cols = $derived(
     COLORS.map((c) => [
       c,
@@ -46,7 +47,7 @@
             out:send={{ key: n.id }}
             onclick={() => selectNode(n.id)}
             ondblclick={() => onJump(n)}
-          >{n.text || t.mdEmptyNode}</button>
+          ><span class="txt">{n.text || t.mdEmptyNode}</span>{#if n.collapsed && (kidCount.get(n.id) ?? 0) > 0}<i class="fold" title={t.foldBadgeTitle}>▸{kidCount.get(n.id)}</i>{/if}</button>
         {/each}
         {#if nodes.length === 0}<p class="none">—</p>{/if}
       </div>

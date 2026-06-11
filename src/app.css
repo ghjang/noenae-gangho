@@ -593,13 +593,25 @@ button.primary:hover { background: #d6552f; }
   border-left: 5px solid var(--c, var(--c-muk)); /* 오행 띠 — 캔버스 쪽지와 같은 어휘 */
   border-radius: 4px;
   padding: 9px 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: var(--cursor-pointer), pointer;
+}
+.board .card .txt {
+  flex: 1;
   white-space: pre-wrap;
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 4; /* 긴 메모는 4줄 갈무리 — 전문은 캔버스에서 */
   -webkit-box-orient: vertical;
   overflow: hidden;
-  cursor: var(--cursor-pointer), pointer;
+}
+.board .card .fold {
+  flex: none;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--ink-dim); /* 캔버스의 ▸N 봉문 배지와 같은 어휘 — 카드에선 정보 표기만 */
 }
 .board .card.sel {
   outline: 2px solid var(--inju);
