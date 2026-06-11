@@ -56,6 +56,17 @@ for (const tone of TONES) {
   else
     for (const k of STRINGS[tone].helpQuick)
       if (!itemKeys.has(k)) err(`${tone}.helpQuick의 '${k}'가 helpItems에 없음`)
+  // helpSections(전체 시트 묶음) — 전수 분배: 합집합=전체, 중복 0, 실존 키만
+  const secs = STRINGS[tone].helpSections
+  if (!Array.isArray(secs) || !secs.every((s) => Array.isArray(s) && s.length === 2 && typeof s[0] === 'string' && Array.isArray(s[1])))
+    err(`${tone}.helpSections가 [제목, 키 배열] 쌍 목록이 아님`)
+  else {
+    const flat = secs.flatMap((s) => s[1])
+    const fset = new Set(flat)
+    if (flat.length !== fset.size) err(`${tone}.helpSections에 중복 키`)
+    for (const k of flat) if (!itemKeys.has(k)) err(`${tone}.helpSections의 '${k}'가 helpItems에 없음`)
+    for (const k of itemKeys) if (!fset.has(k)) err(`${tone}.helpItems '${k}'가 어느 묶음에도 없음 — 시트에서 증발한다`)
+  }
 }
 
 if (fail) {
