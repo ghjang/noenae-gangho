@@ -9,8 +9,9 @@
   import { backOut, cubicIn } from 'svelte/easing'
   import {
     graph, ui, COLORS, byId, init, selectNode, selectEdge, clearSelection,
-    addNodeAt, addChild, addSibling, updateText, setColor, setInk, setNodeWidth,
-    removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
+    addToSelection, selectMany, isSelected, pruneSelection,
+    addNodeAt, addChild, addSibling, updateText, setColorMany, setInk, setNodeWidth,
+    removeNode, removeNodes, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo, flushSave, clampScale,
   } from './lib/store.svelte.js'
@@ -27,8 +28,9 @@
   // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계)
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const dur = (ms) => (REDUCED ? 0 : ms)
-  let drag = null     // { id, ox, oy, moved } — 쪽지 드래그
-  let dragId = $state(null) // 실제 이동 중인 쪽지 id — 그 緣을 위층에 띄우는 용도
+  let drag = null     // { grabbed, items: [{id, ox, oy}], moved, plain } — 쪽지(무리) 드래그
+  let dragIds = $state(null) // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
+  let marquee = $state(null) // { x0, y0, x1, y1, base } — 올가미(Shift+빈 곳 드래그), world 좌표
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
   let touchPts = new Map() // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
@@ -75,6 +77,13 @@
     if (e.target !== e.currentTarget) return
     commitEditing()
     searchQ = null // 캔버스 직접 조작 = 검색창 닫기 (팝오버 국룰)
+    if (e.shiftKey) {
+      // 올가미(러버밴드) — 기존 무리에 더해 담는다. 맨 드래그(팬)와 Shift로 구분
+      const w = toWorld(e)
+      marquee = { x0: w.x, y0: w.y, x1: w.x, y1: w.y, base: [...ui.selectedIds] }
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+      return
+    }
     clearSelection()
     touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (touchPts.size === 2) {
@@ -252,9 +261,22 @@
     if (ui.editingId === n.id) e.preventDefault()
     else if (ui.editingId) commitEditing()
     searchQ = null // 쪽지 직접 선택 = 검색창 닫기
-    selectNode(n.id)
+    const toggling = e.shiftKey || e.ctrlKey || e.metaKey
+    if (toggling) {
+      addToSelection(n.id) // 무리에 넣고 빼기
+      if (!isSelected(n.id)) return // 방금 뺀 쪽지를 끌진 않는다
+    } else if (!isSelected(n.id)) {
+      selectNode(n.id)
+    }
+    // 이미 무리에 든 쪽지를 맨손으로 잡으면 무리째 끈다 — 클릭만(이동 없음)이면
+    // onWinUp에서 단독 선택으로 수렴 (Figma 관행)
     const w = toWorld(e)
-    drag = { id: n.id, ox: w.x - n.x, oy: w.y - n.y, moved: false }
+    drag = {
+      grabbed: n.id, moved: false, plain: !toggling,
+      items: ui.selectedIds
+        .map((id) => { const m = byId(id); return m && { id, ox: w.x - m.x, oy: w.y - m.y } })
+        .filter(Boolean),
+    }
   }
   // 더블클릭 좌표 → 표시 텍스트의 오프셋 (편집 진입 시 그 자리에 캐럿)
   let pendingCaret = null
@@ -314,9 +336,29 @@
   }
 
   // ── 전역 포인터: 드래그 진행/마무리 ────────────
+  // 올가미 사각형 정규화 — 어느 방향으로 그어도 양수 폭
+  const normRect = (m) => ({
+    x: Math.min(m.x0, m.x1), y: Math.min(m.y0, m.y1),
+    w: Math.abs(m.x1 - m.x0), h: Math.abs(m.y1 - m.y0),
+  })
   function onWinMove(e) {
     if (mmDrag) {
       mmJump(e)
+      return
+    }
+    if (marquee) {
+      const w = toWorld(e)
+      marquee.x1 = w.x
+      marquee.y1 = w.y
+      const r = normRect(marquee)
+      const hit = graph.nodes
+        .filter((n) => {
+          if (hidden.has(n.id)) return false
+          const b = nodeBox(n)
+          return r.x < b.x + b.w && b.x < r.x + r.w && r.y < b.y + b.h && b.y < r.y + r.h
+        })
+        .map((n) => n.id)
+      selectMany([...new Set([...marquee.base, ...hit])])
       return
     }
     if (pinch && touchPts.has(e.pointerId)) {
@@ -338,17 +380,16 @@
       ui.pan.x = panning.px + (e.clientX - panning.sx)
       ui.pan.y = panning.py + (e.clientY - panning.sy)
     } else if (drag) {
-      const n = byId(drag.id)
-      if (n) {
-        if (!drag.moved) {
-          markUndo('drag:' + drag.id) // 제스처 시작 시점의 모습을 한 번만
-          dragId = drag.id // 이동 시작 — 이 쪽지의 緣을 위층에
-        }
-        const w = toWorld(e)
-        n.x = w.x - drag.ox
-        n.y = w.y - drag.oy
-        drag.moved = true
+      if (!drag.moved) {
+        markUndo('drag:' + drag.grabbed) // 제스처 시작 시점의 모습을 한 번만
+        dragIds = new Set(drag.items.map((it) => it.id)) // 이동 시작 — 무리의 緣을 위층에
       }
+      const w = toWorld(e)
+      for (const it of drag.items) {
+        const m = byId(it.id)
+        if (m) { m.x = w.x - it.ox; m.y = w.y - it.oy }
+      }
+      drag.moved = true
     } else if (resizing) {
       const w = toWorld(e)
       const dx = w.x - resizing.sx
@@ -365,12 +406,14 @@
   }
   function onWinUp(e) {
     mmDrag = false
+    marquee = null
     touchPts.delete(e.pointerId)
     if (touchPts.size < 2) pinch = null
     if (drag) {
       if (drag.moved) scheduleSave()
+      else if (drag.plain && ui.selectedIds.length > 1) selectNode(drag.grabbed) // 무리 클릭(이동 없음) → 단독
       drag = null
-      dragId = null // 이동 끝 — 緣은 다시 뒤로
+      dragIds = null // 이동 끝 — 緣은 다시 뒤로
     }
     panning = null
     resizing = null
@@ -445,6 +488,11 @@
         return
       }
       if (inField) return // Ctrl+Z/A/C/V 등은 입력 필드의 몫
+      if (e.code === 'KeyA') {
+        e.preventDefault() // 보이는 쪽지 전부 무리로 (#39) — 봉문 속은 빼고
+        selectMany(graph.nodes.filter((n) => !hidden.has(n.id)).map((n) => n.id))
+        return
+      }
       if (e.key === 'Enter' && ui.selectedId && !ui.editingId) {
         e.preventDefault(); ui.editingId = ui.selectedId; return // F2와 동일 — 편집 진입
       }
@@ -483,11 +531,13 @@
       const mult = e.shiftKey ? 4 : 1
       if (selected) {
         const d = 8 * mult
-        markUndo('nudge:' + selected.id) // 꾹 누르면 한 걸음으로 병합
-        if (e.key === 'ArrowLeft') selected.x -= d
-        else if (e.key === 'ArrowRight') selected.x += d
-        else if (e.key === 'ArrowUp') selected.y -= d
-        else if (e.key === 'ArrowDown') selected.y += d
+        const dx = e.key === 'ArrowLeft' ? -d : e.key === 'ArrowRight' ? d : 0
+        const dy = e.key === 'ArrowUp' ? -d : e.key === 'ArrowDown' ? d : 0
+        markUndo('nudge:' + selected.id) // 꾹 누르면 한 걸음으로 병합 (무리째)
+        for (const id of ui.selectedIds) {
+          const m = byId(id)
+          if (m) { m.x += dx; m.y += dy }
+        }
         scheduleSave() // n.x/y 직접 변이 — 저장은 호출부 책임
       } else {
         const step = 48 * mult
@@ -518,7 +568,7 @@
       return
     }
     if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (ui.selectedId) { e.preventDefault(); removeNode(ui.selectedId) }
+      if (ui.selectedIds.length) { e.preventDefault(); removeNodes(ui.selectedIds) } // 무리째 베기 — undo 한 걸음
       else if (ui.selectedEdgeId) { e.preventDefault(); removeEdge(ui.selectedEdgeId) }
       return
     }
@@ -743,10 +793,10 @@
   // 자식 수 — 봉문 배지용 (노드마다 edges를 다시 돌지 않게 한 번에)
   const kidCount = $derived(childCounts(graph.edges))
 
-  // 숨은 쪽지/緣이 선택·편집 상태로 남지 않게 (쪽지/緣 선택은 상호 배타 —
-  // 한쪽이 무효면 clearSelection으로 둘 다 비워도 결과는 같다)
+  // 숨은(봉문) 쪽지가 무리·편집 상태로 남지 않게, 끊긴 緣 선택도 정리
   $effect(() => {
-    if (ui.selectedId && hidden.has(ui.selectedId)) clearSelection()
+    const dead = new Set(ui.selectedIds.filter((id) => hidden.has(id)))
+    if (dead.size) pruneSelection(dead)
     if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null
     if (ui.selectedEdgeId) {
       const ed = graph.edges.find((x) => x.id === ui.selectedEdgeId)
@@ -775,7 +825,7 @@
         class:cur={selected ? selected.color === c : ui.ink === c}
         onpointerenter={() => (colorHover = selected ? null : c)}
         onpointerleave={() => (colorHover = null)}
-        onclick={() => (selected ? setColor(selected.id, c) : setInk(c))}
+        onclick={() => (selected ? setColorMany(ui.selectedIds, c) : setInk(c))}
       ></button>
     {/each}
   </div>
@@ -858,11 +908,11 @@
       {/if}
     </svg>
 
-    {#if dragId}
-      <!-- 이동 중인 쪽지의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로.
+    {#if dragIds}
+      <!-- 이동 중인 무리의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로.
            주의: 'overlay'라는 클래스명은 입출력 시트 배경막(.overlay)과 충돌한다 -->
       <svg class="edges lift-layer" aria-hidden="true">
-        {#each graph.edges.filter((ed) => ed.a === dragId || ed.b === dragId) as e (e.id)}
+        {#each graph.edges.filter((ed) => dragIds.has(ed.a) || dragIds.has(ed.b)) as e (e.id)}
           {@const a = byId(e.a)}
           {@const b = byId(e.b)}
           {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
@@ -880,7 +930,7 @@
       {@const kids = kidCount.get(n.id) ?? 0}
       <div
         class="node"
-        class:selected={ui.selectedId === n.id}
+        class:selected={ui.selectedIds.includes(n.id)}
         class:resized={!!n.bw}
         class:lit={!selected && colorHover === n.color}
         class:fade={!selected && colorHover && colorHover !== n.color}
@@ -945,6 +995,11 @@
         {/if}
       </div>
     {/each}
+
+    {#if marquee}
+      {@const r = normRect(marquee)}
+      <div class="marquee" style={`left:${r.x}px; top:${r.y}px; width:${r.w}px; height:${r.h}px`}></div>
+    {/if}
   </div>
 </div>
 

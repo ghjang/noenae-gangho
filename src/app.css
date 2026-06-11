@@ -326,6 +326,15 @@ button.primary:hover { background: #d6552f; }
 /* 겹침에서는 만지는 놈이 위로 — 호버/선택 부상 (캔버스 앱 관행) */
 .node:hover { z-index: 1; }
 .node.selected { z-index: 2; }
+/* 올가미(러버밴드, Shift+빈 곳 드래그) — 인주 점선 사각 */
+.marquee {
+  position: absolute;
+  border: 1px dashed var(--inju);
+  border-radius: 2px;
+  background: rgba(200, 71, 43, 0.08); /* 인주 박명 */
+  pointer-events: none;
+}
+
 /* 정돈(R) 직후 잠깐만 — 쪽지가 새 자리로 미끄러진다 (드래그엔 무영향) */
 .world.tidying .node {
   transition: left 0.25s ease, top 0.25s ease, filter 0.15s ease;
