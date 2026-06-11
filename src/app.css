@@ -156,6 +156,10 @@ button.armed {
   color: #fff6ea;
 }
 
+/* 비급.md 버튼 — Markdown 마크(M↓) 아이콘. svg 13px + 패딩 8px = 글자 버튼(줄높이 17px + 6px)과 같은 31px 키 */
+.bar .md { padding-block: 8px; }
+.bar .md svg { display: block; }
+
 /* 무공봉인 토글 — 한자 한 글자 낙관 (封: 봉인, 武: 무협으로) */
 .bar .tone {
   font-family: var(--serif);

@@ -20,8 +20,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -29,7 +29,7 @@ jobs:
       # prebuild 훅으로 scripts/check-strings.mjs(문구 팩 정합성)가 먼저 돈다
       - run: npm run build
       - if: github.event_name == 'push'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -42,8 +42,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       # enablement: 저장소에 Pages가 아직 안 켜져 있으면 켜기를 시도
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
