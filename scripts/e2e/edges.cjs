@@ -57,6 +57,35 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.waitForTimeout(300)
   ok((await posX('미분')) === x1, 'redo 보존: 중복 시도 후에도 Ctrl+Y 동작')
 
+  // '베기는 보이는 것을 벤다'(사용자 결정) — 접힌 쪽지 삭제 = 봉문 그늘 동반
+  await dragBy('미분', -60) // (undo 깨끗이) — 위 redo 검증 잔재 정리용 한 걸음
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(200)
+  await p.locator('.node', { hasText: 'difference' }).first().click()
+  await p.keyboard.press('c') // 봉문 — 미분·브로가 그늘로
+  await p.waitForTimeout(350)
+  ok((await p.locator('.node').count()) === 2, '봉문: 보이는 쪽지 2')
+  await p.keyboard.press('Delete')
+  await p.waitForTimeout(350)
+  ok((await p.locator('.node').count()) === 1, '접힌 쪽지 베기 → 그늘(미분·브로)까지 동반 (깨다름만 생존)')
+  const dataN = await p.evaluate(() => {
+    const docs = JSON.parse(localStorage.getItem('noenae-gangho-docs'))
+    return JSON.parse(localStorage.getItem('noenae-gangho-doc-' + docs.current))?.nodes.length
+  }).catch(() => -1)
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(350)
+  ok((await p.locator('.node').count()) === 2, 'Ctrl+Z 한 방 → 가지째 환생 (접힌 채 — collapsed도 역사 소관)')
+  await p.locator('.node', { hasText: 'difference' }).first().click()
+  await p.keyboard.press('c') // 개문
+  await p.waitForTimeout(350)
+  ok((await p.locator('.node').count()) === 4, '개문 → 후손 4 무사')
+  // 펼친 마디는 마디만
+  await p.locator('.node', { hasText: 'difference' }).first().click()
+  await p.keyboard.press('Delete')
+  await p.waitForTimeout(350)
+  ok((await p.locator('.node').count()) === 3, '펼친 마디 베기 → 마디만 (후손 생존)')
+  await p.keyboard.press('Control+z')
+
   await b.close()
   console.log(process.exitCode ? '검증 실패' : '緣 중복/역사 내부 처리 — 통과')
 })().catch((e) => { console.error(e); process.exit(1) })
