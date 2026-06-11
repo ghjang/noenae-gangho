@@ -76,6 +76,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const foldedNodes = await p.locator('.node').count()
   await p.locator('button[aria-label="오행진"]').click()
   await p.waitForTimeout(300)
+  ok((await p.locator('.board .card .fold').textContent()) === '▸1', '접힌 카드에 ▸1 배지 (직계 수 — 캔버스와 같은 표기)')
   await p.locator('.board .card', { hasText: 'difference' }).dblclick()
   await p.waitForTimeout(400)
   ok((await p.locator('.node').count()) === foldedNodes, `접힌 카드 점프 → 봉문 보존 (쪽지 ${foldedNodes} 그대로)`)
