@@ -36,7 +36,6 @@
   let colorHover = $state(null) // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
   let edgeHover = null // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
 
-  let armedClear = $state(false) // '비우기' 2단 확인
   let sheetText = $state('')     // 입출력 시트 본문
   let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let searchQ = $state(null)     // 검색 질의 — null이면 닫힘
@@ -416,11 +415,10 @@
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
       // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
       const hadOpen =
-        ui.linking || ui.overlay || ui.showHelp || armedClear || searchQ !== null || ui.editingId
+        ui.linking || ui.overlay || ui.showHelp || searchQ !== null || ui.editingId
       ui.linking = null
       ui.overlay = null
       ui.showHelp = false
-      armedClear = false
       searchQ = null
       commitEditing()
       if (!hadOpen) {
@@ -724,17 +722,14 @@
     return out.join('\n')
   }
 
-  // ── 비우기 (2단 확인) ─────────────────────────
-  let disarmTimer = null
+  // ── 비우기 (확인 카드) ────────────────────────
+  // 네이티브 confirm()은 VSCode 웹뷰에서 차단 — 시트/배경막 패턴 재사용이 이식 안전
   function onClear() {
-    if (!armedClear) {
-      armedClear = true
-      clearTimeout(disarmTimer)
-      disarmTimer = setTimeout(() => (armedClear = false), 2600)
-      return
-    }
+    ui.overlay = { mode: 'confirmClear' }
+  }
+  function confirmClear() {
     clearAll()
-    armedClear = false
+    ui.overlay = null
   }
 
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null)
@@ -789,10 +784,15 @@
       <!-- 공식 Markdown 마크(M↓) — dcurtis/markdown-mark, 퍼블릭 도메인 헌정(저장소 LICENSE 확인) -->
       <svg viewBox="0 0 208 128" width="21" height="13" aria-hidden="true"><g fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m15 10c-2.7614 0-5 2.2386-5 5v98c0 2.761 2.2386 5 5 5h178c2.761 0 5-2.239 5-5v-98c0-2.7614-2.239-5-5-5zm-15 5c0-8.28427 6.71573-15 15-15h178c8.284 0 15 6.71573 15 15v98c0 8.284-6.716 15-15 15h-178c-8.28427 0-15-6.716-15-15z"/><path d="m30 98v-68h20l20 25 20-25h20v68h-20v-39l-20 25-20-25v39zm125 0-30-33h20v-35h20v35h20z"/></g></svg>
     </button>
-    <button onclick={openExport}>{t.exportButton}</button>
-    <button onclick={openImport}>{t.importButton}</button>
-    <button class:armed={armedClear} onclick={onClear}>
-      {armedClear ? t.clearConfirm : t.clearButton}
+    <!-- 아이콘 3종: Phosphor Icons regular (MIT, phosphor-icons/core) — export / download-simple / broom -->
+    <button class="icon" onclick={openExport} title={t.exportButtonTitle} aria-label={t.exportButtonAria}>
+      <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M216,112v96a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V112A16,16,0,0,1,56,96H80a8,8,0,0,1,0,16H56v96H200V112H176a8,8,0,0,1,0-16h24A16,16,0,0,1,216,112ZM93.66,69.66,120,43.31V136a8,8,0,0,0,16,0V43.31l26.34,26.35a8,8,0,0,0,11.32-11.32l-40-40a8,8,0,0,0-11.32,0l-40,40A8,8,0,0,0,93.66,69.66Z"/></svg>
+    </button>
+    <button class="icon" onclick={openImport} title={t.importButtonTitle} aria-label={t.importButtonAria}>
+      <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></svg>
+    </button>
+    <button class="icon" onclick={onClear} title={t.clearButtonTitle} aria-label={t.clearButtonAria}>
+      <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M235.5,216.81c-22.56-11-35.5-34.58-35.5-64.8V134.73a15.94,15.94,0,0,0-10.09-14.87L165,110a8,8,0,0,1-4.48-10.34l21.32-53a28,28,0,0,0-16.1-37,28.14,28.14,0,0,0-35.82,16,.61.61,0,0,0,0,.12L108.9,79a8,8,0,0,1-10.37,4.49L73.11,73.14A15.89,15.89,0,0,0,55.74,76.8C34.68,98.45,24,123.75,24,152a111.45,111.45,0,0,0,31.18,77.53A8,8,0,0,0,61,232H232a8,8,0,0,0,3.5-15.19ZM67.14,88l25.41,10.3a24,24,0,0,0,31.23-13.45l21-53c2.56-6.11,9.47-9.27,15.43-7a12,12,0,0,1,6.88,15.92L145.69,93.76a24,24,0,0,0,13.43,31.14L184,134.73V152c0,.33,0,.66,0,1L55.77,101.71A108.84,108.84,0,0,1,67.14,88Zm48,128a87.53,87.53,0,0,1-24.34-42,8,8,0,0,0-15.49,4,105.16,105.16,0,0,0,18.36,38H64.44A95.54,95.54,0,0,1,40,152a85.9,85.9,0,0,1,7.73-36.29l137.8,55.12c3,18,10.56,33.48,21.89,45.16Z"/></svg>
     </button>
     <button class="tone" onclick={toggleTone} title={t.toneButtonTitle} aria-label={t.toneButtonAria}>{t.toneButton}</button>
     <button onclick={() => (ui.showHelp = !ui.showHelp)} aria-label={t.helpAria}>?</button>
@@ -1025,20 +1025,31 @@
     role="presentation"
     onpointerdown={(e) => { if (e.target === e.currentTarget) ui.overlay = null }}
   >
-    <div class="sheet" role="dialog" aria-label={sheetTitle}>
-      <h2>{sheetTitle}</h2>
-      {#if ui.overlay.mode === 'import'}<p class="hint">{t.importHint}</p>{/if}
-      <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
-      {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
-      <div class="row">
-        {#if ui.overlay.mode === 'import'}
+    {#if ui.overlay.mode === 'confirmClear'}
+      <div class="sheet confirm" role="alertdialog" aria-label={t.clearConfirm}>
+        <h2>{t.clearConfirm}</h2>
+        <p class="hint">{t.clearHint}</p>
+        <div class="row">
           <button onclick={() => (ui.overlay = null)}>{t.cancelButton}</button>
-          <button class="primary" onclick={applyImport}>{t.applyImportButton}</button>
-        {:else}
-          <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
-          <button class="primary" onclick={copySheet}>{t.copyButton}</button>
-        {/if}
+          <button class="armed" onclick={confirmClear}>{t.clearButton}</button>
+        </div>
       </div>
-    </div>
+    {:else}
+      <div class="sheet" role="dialog" aria-label={sheetTitle}>
+        <h2>{sheetTitle}</h2>
+        {#if ui.overlay.mode === 'import'}<p class="hint">{t.importHint}</p>{/if}
+        <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
+        {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
+        <div class="row">
+          {#if ui.overlay.mode === 'import'}
+            <button onclick={() => (ui.overlay = null)}>{t.cancelButton}</button>
+            <button class="primary" onclick={applyImport}>{t.applyImportButton}</button>
+          {:else}
+            <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
+            <button class="primary" onclick={copySheet}>{t.copyButton}</button>
+          {/if}
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
