@@ -951,7 +951,10 @@
   <button onclick={() => zoomCenter(1 / 1.18)} aria-label={t.zoomOutAria}>−</button>
   <button class="pct" onclick={resetView} title={t.resetViewTitle}>{Math.round(ui.scale * 100)}%</button>
   <button onclick={() => zoomCenter(1.18)} aria-label={t.zoomInAria}>+</button>
-  <button onclick={fitAll} title={t.fitButtonTitle} aria-label={t.fitAria}>{t.fitButton}</button>
+  <!-- 화면 맞춤(全) — Phosphor 'frame-corners' (MIT, phosphor-icons/core) -->
+  <button class="icon" onclick={fitAll} title={t.fitButtonTitle} aria-label={t.fitAria}>
+    <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M200,80v32a8,8,0,0,1-16,0V88H160a8,8,0,0,1,0-16h32A8,8,0,0,1,200,80ZM96,168H72V144a8,8,0,0,0-16,0v32a8,8,0,0,0,8,8H96a8,8,0,0,0,0-16ZM232,56V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Z"/></svg>
+  </button>
 </div>
 {#if t.colophon}<div class="colophon">{t.colophon}</div>{/if}
 

@@ -59,8 +59,7 @@ export const STRINGS = {
     zoomOutAria: '축소',
     zoomInAria: '확대',
     resetViewTitle: '축경 100% — 보던 자리 그대로',
-    fitButton: '全',
-    fitButtonTitle: '강호 전경 — 모든 쪽지를 한눈에 (Shift+1)',
+    fitButtonTitle: '강호 전경(全) — 모든 쪽지를 한눈에 (Shift+1)',
     fitAria: '전체 보기',
 
     searchPlaceholder: '念 수소문 — 글자 일부로 찾기',
@@ -155,7 +154,6 @@ export const STRINGS = {
     zoomOutAria: '축소',
     zoomInAria: '확대',
     resetViewTitle: '배율 100% (보던 위치 유지)',
-    fitButton: '전체',
     fitButtonTitle: '모든 노트가 보이도록 맞춤 (Shift+1)',
     fitAria: '전체 보기',
 
