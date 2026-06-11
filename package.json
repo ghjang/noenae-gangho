@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "node scripts/check-strings.mjs && node scripts/check-graph.mjs",
+    "check": "node scripts/check-strings.mjs && node scripts/check-graph.mjs && node scripts/check-markdown.mjs",
     "prebuild": "npm run check",
     "build": "vite build",
     "preview": "vite preview"
