@@ -28,7 +28,8 @@ export const STRINGS = {
     paletteSet: '선택한 쪽지를 {label} 색으로',
 
     newNode: '새 쪽지 — 지금 붓 색으로 핀다',
-    mdButton: '비급.md',
+    mdButtonTitle: '비급.md — 강호를 트리 개요로 펴낸다',
+    mdButtonAria: '비급.md 출력',
     exportButton: '내보내기',
     importButton: '불러오기',
     clearButton: '강호 비우기',
@@ -117,7 +118,8 @@ export const STRINGS = {
     paletteSet: '선택한 노트를 {label} 색으로',
 
     newNode: '새 노트 — 현재 선택 색으로 추가',
-    mdButton: 'Markdown',
+    mdButtonTitle: 'Markdown 출력 — 트리 개요',
+    mdButtonAria: 'Markdown 출력',
     exportButton: '내보내기',
     importButton: '가져오기',
     clearButton: '모두 지우기',
