@@ -792,6 +792,8 @@
   }
   // 퀵 카드 목록 — helpQuick 키 순서대로 helpItems에서 추림 (본문 중복 없이)
   const quickHelp = $derived(t.helpQuick.map((k) => t.helpItems.find((it) => it[0] === k)).filter(Boolean))
+  // 전체 요결 시트 — 묶음(helpSections) 렌더용 키→설명 사전
+  const helpMap = $derived(new Map(t.helpItems))
 
   // ── 비우기 (확인 카드) ────────────────────────
   // 네이티브 confirm()은 VSCode 웹뷰에서 차단 — 시트/배경막 패턴 재사용이 이식 안전
@@ -1150,11 +1152,18 @@
     {:else if ui.overlay.mode === 'help'}
       <div class="sheet help" role="dialog" aria-label={t.helpTitle}>
         <h2>{t.helpTitle}</h2>
-        <dl>
-          {#each t.helpItems as [key, desc] (key)}
-            <dt>{key}</dt><dd>{desc}</dd>
+        <div class="cols">
+          {#each t.helpSections as [title, keys] (title)}
+            <section>
+              <h3>{title}</h3>
+              <dl>
+                {#each keys as k (k)}
+                  <dt>{k}</dt><dd>{helpMap.get(k)}</dd>
+                {/each}
+              </dl>
+            </section>
           {/each}
-        </dl>
+        </div>
         <div class="row">
           <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
         </div>

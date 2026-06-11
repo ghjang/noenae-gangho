@@ -100,6 +100,15 @@ export const STRINGS = {
     ],
     // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
     helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
+    // 전체 요결 시트의 묶음 — helpItems 키 전수 분배 (check-strings가 합집합=전체·중복 0 검증)
+    helpSections: [
+      ['쪽지', ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '좌·우 변 끌기', '오행 팔레트']],
+      ['緣과 가지', ['붉은 점 끌기', 'Tab', 'Enter', 'F', 'F2', 'Delete']],
+      ['무리 짓기', ['Shift+클릭', 'Shift+빈 곳 끌기', 'Ctrl+A']],
+      ['봉문·집중·정돈', ['C·Space / 배지', 'L · [ ]', 'R / Shift+R']],
+      ['강호 유람', ['빈 곳 끌기', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn']],
+      ['항법·수소문·되돌리기', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
+    ],
     helpMoreButton: '요결 전부 보기',
     focusPill: "集中 '{label}' {depth}촌 — [ ] 반경 · L 해제",
     focusPillAria: '집중 해제',
@@ -203,6 +212,14 @@ export const STRINGS = {
       ['두 손가락', '핀치 줌 · 화면 이동 (터치)'],
     ],
     helpQuick: ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '빨간 점 드래그', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
+    helpSections: [
+      ['노트', ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '좌/우 변 드래그', '색 팔레트']],
+      ['연결과 가지', ['빨간 점 드래그', 'Tab', 'Enter', 'F', 'F2', 'Delete']],
+      ['다중 선택', ['Shift+클릭', 'Shift+빈 곳 드래그', 'Ctrl+A']],
+      ['접기·포커스·정렬', ['C·Space / 배지', 'L · [ ]', 'R / Shift+R']],
+      ['화면 이동·줌', ['빈 곳 드래그', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn']],
+      ['탐색·검색·실행 취소', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
+    ],
     helpMoreButton: '전체 도움말',
     focusPill: "포커스 '{label}' {depth}촌 — [ ] 반경 · L 해제",
     focusPillAria: '포커스 해제',
