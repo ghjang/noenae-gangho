@@ -505,6 +505,7 @@ button.armed {
   }
   .bar .title { flex: 1 0 100%; }
   .colophon { display: none; } /* 낙관(콜로폰)은 폰 화면에선 자리만 차지 */
+  .hud { left: 50%; translate: -50% 0; } /* 줌 위젯은 하단 중앙 — 콜로폰이 비운 자리, 엄지 닿기 좋게 */
 }
 
 /* ── 검색 카드 (Ctrl+F) ── */
