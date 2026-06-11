@@ -240,6 +240,8 @@ button.primary:hover { background: #d6552f; }
   background-size: auto, 26px 26px, auto;
 }
 .viewport:active { cursor: var(--cursor-grabbing), grabbing; }
+/* Shift = 올가미 예고/진행 — 영역 선택의 국룰 커서, 조준 레티클 (:active의 주먹도 덮는다) */
+.viewport.lasso, .viewport.lasso:active { cursor: var(--cursor-cross), crosshair; }
 
 .world {
   position: absolute;

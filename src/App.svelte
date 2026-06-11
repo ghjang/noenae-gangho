@@ -31,6 +31,7 @@
   let drag = null     // { grabbed, items: [{id, ox, oy}], moved, plain } — 쪽지(무리) 드래그
   let dragIds = $state(null) // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
   let marquee = $state(null) // { x0, y0, x1, y1, base } — 올가미(Shift+빈 곳 드래그), world 좌표
+  let shiftHeld = $state(false) // Shift 누름 — 캔버스 커서를 조준 레티클로 (올가미 예고)
   let panning = null  // { sx, sy, px, py } — 강호 유람(팬)
   let resizing = null // { id, sx, sw } — 쪽지 너비 조절
   let touchPts = new Map() // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
@@ -452,6 +453,7 @@
   function onKey(e) {
     const el = e.target
     const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')
+    if (e.key === 'Shift' && !inField) shiftHeld = true // 올가미 예고 커서 (글 입력 중엔 무시)
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
     if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
     if (e.key === 'Escape') {
@@ -673,6 +675,7 @@
     }
   }
   function onKeyUp(e) {
+    if (e.key === 'Shift') shiftHeld = false
     // Alt 단독으로 눌렀다 떼면 브라우저 메뉴바가 포커스를 훔쳐간다(Windows 관행)
     // — 緣 타기(Alt+화살표) 도중 끊기는 원인. keyup preventDefault로 차단
     if (e.key === 'Alt') {
@@ -805,7 +808,7 @@
   })
 </script>
 
-<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} onkeyup={onKeyUp} onpagehide={flushSave} />
+<svelte:window onpointermove={onWinMove} onpointerup={onWinUp} onpointercancel={onWinUp} onkeydown={onKey} onkeyup={onKeyUp} onblur={() => (shiftHeld = false)} onpagehide={flushSave} />
 
 <!-- ── 상단 바 ── -->
 <header class="bar">
@@ -855,6 +858,7 @@
 <!-- ── 캔버스 ── -->
 <div
   class="viewport"
+  class:lasso={shiftHeld || marquee}
   bind:this={viewportEl}
   bind:clientWidth={vpW}
   bind:clientHeight={vpH}
