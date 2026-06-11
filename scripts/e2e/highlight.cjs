@@ -9,7 +9,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await page.waitForTimeout(400)
 
   // 내보내기(JSON) — PC 확대 + 토큰
-  await page.locator('.bar button.icon').nth(0).click()
+  await page.locator('.bar button[aria-label="내보내기"]').click()
   const sb = await page.locator('.sheet').boundingBox()
   ok(Math.round(sb.width) === 840, `PC 내보내기 시트 폭 840 (실측 ${Math.round(sb.width)})`)
   const ch = await page.locator('.sheet .code').boundingBox()
@@ -29,7 +29,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await page.keyboard.press('Escape')
 
   // 가져오기 — 편집 overlay: 입력하면 pre가 따라 색칠 + 스크롤 동기화 + 흡수 동작
-  await page.locator('.bar button.icon').nth(1).click()
+  await page.locator('.bar button[aria-label="불러오기"]').click()
   const ta = page.locator('.code-wrap textarea')
   await ta.fill('# 비급\n\n- 갑\n  - 을\n- 병')
   await page.waitForTimeout(100)
