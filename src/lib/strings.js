@@ -94,6 +94,7 @@ export const STRINGS = {
 
     exportTitle: '내공 내보내기 — JSON',
     importTitle: '내공 흡수 — JSON / 비급.md 붙여넣기',
+    importHint: '내보낸 JSON이든 비급.md(들여쓰기 불릿 개요)든 그대로 붙여넣으시게 — 양식은 알아서 알아본다.',
     mdTitle: '비급으로 출력 — Markdown',
     cancelButton: '취소',
     applyImportButton: '흡수',
@@ -184,6 +185,7 @@ export const STRINGS = {
 
     exportTitle: '내보내기 — JSON',
     importTitle: '가져오기 — JSON / Markdown 붙여넣기',
+    importHint: '내보내기한 JSON 또는 들여쓰기 목록(Markdown)을 붙여넣으면 형식을 자동으로 인식합니다.',
     mdTitle: 'Markdown 출력',
     cancelButton: '취소',
     applyImportButton: '가져오기',

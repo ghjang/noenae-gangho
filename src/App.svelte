@@ -1027,6 +1027,7 @@
   >
     <div class="sheet" role="dialog" aria-label={sheetTitle}>
       <h2>{sheetTitle}</h2>
+      {#if ui.overlay.mode === 'import'}<p class="hint">{t.importHint}</p>{/if}
       <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
       {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
       <div class="row">
