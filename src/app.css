@@ -351,11 +351,12 @@ button.primary:hover { background: #d6552f; }
   transition: left 0.25s ease, top 0.25s ease, filter 0.15s ease;
 }
 .node:active { cursor: var(--cursor-grabbing), grabbing; }
-.node[data-color='muk'] { --c: var(--c-muk); }
-.node[data-color='cheong'] { --c: var(--c-cheong); }
-.node[data-color='dan'] { --c: var(--c-dan); }
-.node[data-color='hwang'] { --c: var(--c-hwang); }
-.node[data-color='nam'] { --c: var(--c-nam); }
+/* 오행 매핑 — 쪽지(.node)와 오행진 카드(.card)가 공유. 색 추가 시 여기 한 곳 */
+[data-color='muk'] { --c: var(--c-muk); }
+[data-color='cheong'] { --c: var(--c-cheong); }
+[data-color='dan'] { --c: var(--c-dan); }
+[data-color='hwang'] { --c: var(--c-hwang); }
+[data-color='nam'] { --c: var(--c-nam); }
 
 .node.selected {
   outline: 2px solid var(--inju);
@@ -531,6 +532,82 @@ button.primary:hover { background: #d6552f; }
   .bar .title { flex: 1 0 100%; }
   .colophon { display: none; } /* 낙관(콜로폰)은 폰 화면에선 자리만 차지 */
   .hud { left: 50%; translate: -50% 0; } /* 줌 위젯은 하단 중앙 — 콜로폰이 비운 자리, 엄지 닿기 좋게 */
+}
+
+/* ── 오행진(五行陣) — 색별 종대 칸반 (#42 v1, 읽기 전용) ── */
+.board {
+  position: absolute;
+  inset: var(--bar-h) 0 0 0;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  background: var(--muk-void);
+}
+.board .col {
+  flex: 1 0 200px;
+  max-width: 320px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+}
+.board .col h3 {
+  margin: 0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 13px var(--serif);
+  color: var(--hanji);
+  border-bottom: 1px solid var(--hairline);
+}
+.board .col h3 i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.board .col h3 em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.board .cards {
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.board .card {
+  text-align: left;
+  font: 13px/1.45 var(--sans);
+  color: var(--ink);
+  background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+  border: 1px solid rgba(42, 36, 28, 0.25);
+  border-left: 5px solid var(--c, var(--c-muk)); /* 오행 띠 — 캔버스 쪽지와 같은 어휘 */
+  border-radius: 4px;
+  padding: 9px 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* 긴 메모는 4줄 갈무리 — 전문은 캔버스에서 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: var(--cursor-pointer), pointer;
+}
+.board .card.sel {
+  outline: 2px solid var(--inju);
+  outline-offset: 1px;
+}
+.board .none {
+  margin: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--paper-dim);
 }
 
 /* 집중(포커스) 배지 — 켜진 동안 상단 중앙 알림 겸 해제 버튼 */

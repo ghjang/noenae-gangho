@@ -122,6 +122,11 @@ export const STRINGS = {
     docDeleteYes: '벤다',
     docDefaultTitle: '강호 {n}',
     docUntitled: '무명 강호',
+    viewKanbanTitle: '오행진(五行陣) — 색별 종대로 본다 (읽기 전용)',
+    viewKanbanAria: '오행진',
+    viewCanvasTitle: '강호 캔버스로 — 마인드맵',
+    viewCanvasAria: '강호 캔버스',
+    boardCardTitle: '두 번 두드리면 강호의 그 자리로',
     closeButton: '닫기',
 
     exportTitle: '내공 내보내기 — JSON',
@@ -243,6 +248,11 @@ export const STRINGS = {
     docDeleteYes: '삭제',
     docDefaultTitle: '캔버스 {n}',
     docUntitled: '이름 없음',
+    viewKanbanTitle: '칸반 보기 — 색별 컬럼 (읽기 전용)',
+    viewKanbanAria: '칸반 보기',
+    viewCanvasTitle: '캔버스 보기 — 마인드맵',
+    viewCanvasAria: '캔버스 보기',
+    boardCardTitle: '더블클릭 = 캔버스에서 보기',
     closeButton: '닫기',
 
     exportTitle: '내보내기 — JSON',

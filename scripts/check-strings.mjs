@@ -21,8 +21,8 @@ for (const tone of rest) {
   for (const k of keys) if (!baseKeys.includes(k)) err(`${base} 팩에 '${k}' 없음`)
 }
 
-// 2) 사용 키 — App의 정적 t.xxx + store의 STRINGS[톤].xxx (#62부터 store도 팩 소비) + 동적 합성 키
-const app = read('../src/App.svelte')
+// 2) 사용 키 — 컴포넌트(App/BoardView)의 정적 t.xxx + store의 STRINGS[톤].xxx + 동적 합성 키
+const app = read('../src/App.svelte') + read('../src/BoardView.svelte')
 const storeSrc = read('../src/lib/store.svelte.js')
 const used = new Set([...app.matchAll(/\bt\.([A-Za-z]+)/g)].map((m) => m[1]))
 for (const m of storeSrc.matchAll(/STRINGS\[[^\]]+\]\.([A-Za-z]+)/g)) used.add(m[1])
