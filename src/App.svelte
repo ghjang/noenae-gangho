@@ -830,6 +830,9 @@
     commitEditing()
     searchQ = null
     ui.linking = null
+    // 집중(L)은 캔버스 전용 렌즈 — 켠 채 들어가면 선택 정리 effect가 집중으로
+    // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
+    ui.focusId = null
     setViewMode(ui.viewMode === 'canvas' ? 'kanban' : 'canvas')
   }
   // 오행진 카드 더블클릭 — 강호의 그 자리로 (모드 전환 후 viewport가 서야 점프 가능)

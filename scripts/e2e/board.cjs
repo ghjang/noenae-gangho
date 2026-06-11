@@ -33,6 +33,19 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.locator('.board .card', { hasText: '깨다름' }).click()
   ok((await p.locator('.board .card.sel').count()) === 1, '카드 클릭 → 선택 링')
 
+  // 집중 × 오행진 — 렌즈 끄고 입장: 버블 밖 카드 선택이 증발하지 않는다 (3차 체크포인트 버그)
+  await p.locator('button[aria-label="강호 캔버스"]').click()
+  await p.waitForTimeout(300)
+  await p.locator('.node', { hasText: 'difference' }).click()
+  await p.keyboard.press('l')
+  await p.waitForTimeout(350)
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .card').count()) >= 4, '오행진 입장 시 집중 해제 — 전 카드 보임')
+  await p.locator('.board .card', { hasText: '브로' }).click()
+  await p.waitForTimeout(200)
+  ok((await p.locator('.board .card.sel').count()) === 1, '버블 밖이던 카드 선택 생존 (증발 버그 수술)')
+
   // 키 가드 — Tab/L 침묵
   const cardCount = await p.locator('.board .card').count()
   await p.keyboard.press('Tab')
