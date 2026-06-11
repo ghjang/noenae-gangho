@@ -14,9 +14,10 @@
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
     markUndo, asOneStep, undo, redo, flushSave, SCALE_MIN, SCALE_MAX,
   } from './lib/store.svelte.js'
-  import { STRINGS, fmt } from './lib/strings.js'
+  import { STRINGS, TONES, fmt } from './lib/strings.js'
   import { nodeBox, center, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
   import { computeHidden, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
+  import { fromMarkdown } from './lib/markdown.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -674,15 +675,26 @@
     ui.overlay = { mode: 'md' }
   }
   function applyImport() {
-    try {
-      const data = JSON.parse(sheetText)
-      let ok = false
-      asOneStep(() => { ok = loadData(data) }) // 흡수도 되돌릴 수 있게
-      if (ok) { scheduleSave(); ui.overlay = null }
-      else sheetMsg = 'importBadShape'
-    } catch {
-      sheetMsg = 'importParseFail'
+    const raw = sheetText.trim()
+    // 양식 자동 판별 (#5) — JSON은 반드시 {/[로 시작. 그 외는 비급.md(들여쓰기 불릿)로 해석
+    if (raw.startsWith('{') || raw.startsWith('[')) {
+      try {
+        const data = JSON.parse(raw)
+        let ok = false
+        asOneStep(() => { ok = loadData(data) }) // 흡수도 되돌릴 수 있게
+        if (ok) { scheduleSave(); ui.overlay = null }
+        else sheetMsg = 'importBadShape'
+      } catch {
+        sheetMsg = 'importParseFail' // 깨진 JSON을 md로 오인해 외쪽지 한 장 만들지 않게
+      }
+      return
     }
+    const data = fromMarkdown(raw, TONES.map((k) => STRINGS[k].mdEmptyNode))
+    if (!data) { sheetMsg = 'importBadShape'; return }
+    asOneStep(() => loadData(data))
+    scheduleSave()
+    ui.overlay = null
+    fitAll() // 좌표 없이 격자로 태어난 강호 — 전경을 한눈에
   }
   async function copySheet() {
     try {
@@ -1015,6 +1027,7 @@
   >
     <div class="sheet" role="dialog" aria-label={sheetTitle}>
       <h2>{sheetTitle}</h2>
+      {#if ui.overlay.mode === 'import'}<p class="hint">{t.importHint}</p>{/if}
       <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
       {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
       <div class="row">

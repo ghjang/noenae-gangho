@@ -8,7 +8,7 @@
 - `npm run dev` — 개발 서버 (localhost:5173)
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
-- `npm run check` — 정합성 검사 2종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기/순환 시나리오 5종). `npm run build` 때 prebuild로 자동 실행
+- `npm run check` — 정합성 검사 3종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기/순환 시나리오 5종) + 비급 역해석(`scripts/check-markdown.mjs` — 불릿 파서 시나리오 7종). `npm run build` 때 prebuild로 자동 실행
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 - 헤드리스 검증(렌더링/조작 버그 재현·수술 확인용): Claude Code 원격 컨테이너엔 전역 playwright가 있다 — `NODE_PATH=/opt/node22/lib/node_modules node 스크립트.cjs` (크로미움 `/opt/pw-browsers`). localhost 접속은 프록시 우회 필수: launch args `--proxy-bypass-list=<-loopback>` + env `NO_PROXY=localhost,127.0.0.1`. 그래프 시드는 `context.addInitScript`로 **로드 전에** localStorage에 심을 것 — 로드 후 setItem은 앱의 500ms 디바운스 저장이 도로 덮는다 (그래프 `noenae-gangho-v1` / 뷰 `noenae-gangho-view` `{x,y,s}`). 드래그 중 상태는 `mouse.down()` 후 `mouse.move()` 반복으로 동결해 검사
@@ -21,6 +21,7 @@
 - `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
 - `src/lib/geometry.js` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만
 - `src/lib/graph.js` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
+- `src/lib/markdown.js` — 비급.md 역해석 순수 함수(`fromMarkdown` — 들여쓰기 불릿 → 트리, 격자 배치 행=줄·열=깊이). 스토어 import 금지: runes 탓에 맨 node(검사 스크립트)가 못 읽는다 — id 생성기를 자체로 갖는 이유. 규칙 바꾸면 `scripts/check-markdown.mjs`도 같이
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
 - `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙
 
