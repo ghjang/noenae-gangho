@@ -48,6 +48,23 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const counts2 = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
   ok(counts2[0] === '1', `보드에서 Ctrl+Z → 먹 종대 2→1 (실측 ${counts2[0]})`)
 
+  // 종대 초과 — 머리 고정 + 카드 영역만 내부 스크롤 (트렐로 국룰), 카드 짜부 금지
+  const colScroll = await p.locator('.board .col:first-child .cards').evaluate((el) => el.scrollHeight >= el.clientHeight)
+  const cardH = await p.locator('.board .col:first-child .card').first().evaluate((el) => el.getBoundingClientRect().height)
+  ok(colScroll && cardH > 30, `종대 카드 영역 스크롤 가능·카드 정상 키 (${Math.round(cardH)}px)`)
+
+  // 색 갈아입기 = 종대 비행 (crossfade) — 카드 선택 → 팔레트 남
+  await p.locator('.board .card', { hasText: '깨다름' }).click()
+  await p.locator('.palette button').nth(4).click()
+  await p.waitForTimeout(600)
+  const cFly = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
+  ok(cFly[0] === '0' && cFly[4] === '1', `색 갈아입기 → 먹→남 종대 이동 (실측 ${cFly})`)
+  ok((await p.locator('.board .card.sel').count()) === 1, '선택 링 동행')
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(600)
+  const cBack = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
+  ok(cBack[0] === '1' && cBack[4] === '0', 'Ctrl+Z → 귀환 비행')
+
   // 더블클릭 점프 — 캔버스로 + 그 쪽지 선택
   await p.locator('.board .card', { hasText: '깨다름' }).dblclick()
   await p.waitForTimeout(400)

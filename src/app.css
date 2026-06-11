@@ -578,11 +578,13 @@ button.primary:hover { background: #d6552f; }
 .board .cards {
   padding: 10px;
   overflow-y: auto;
+  min-height: 0; /* 플렉스 자식 스크롤의 그 규칙 — 없으면 카드가 종대 밖으로 유출 (도움말 시트와 같은 함정) */
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .board .card {
+  flex: none; /* 수축 금지 — 안 그러면 카드가 짜부되며 '다 들어간 척'한다 (스크롤 불발의 진범) */
   text-align: left;
   font: 13px/1.45 var(--sans);
   color: var(--ink);

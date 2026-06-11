@@ -6,11 +6,17 @@
   // (캔버스에서 위에 둔 쪽지가 여기서도 위 — 무연결 쪽지의 순서 규칙).
   // 편집·색칠·삭제는 캔버스 몫: 카드 클릭=선택, 두 번=강호의 그 자리로 점프(onJump).
   // ──────────────────────────────────────────────
+  import { crossfade } from 'svelte/transition'
+  import { flip } from 'svelte/animate'
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.js'
   import { STRINGS } from './lib/strings.js'
   import { computeHidden } from './lib/graph.js'
 
   let { onJump } = $props()
+  // 색을 갈아입으면 카드가 옛 종대에서 새 종대로 날아간다(crossfade) —
+  // 같은 종대 안 자리 이동은 flip. 첫 등장은 무음(fallback 0ms): 진열이 아니라 이동만 연출
+  const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [send, receive] = crossfade({ duration: REDUCED ? 0 : 280, fallback: () => ({ duration: 0 }) })
   const t = $derived(STRINGS[ui.tone])
   // 봉문은 오행진에서도 존중 — '치웠다'는 의지는 뷰를 가리지 않는다 (집중은 캔버스 전용)
   const hidden = $derived(computeHidden(graph.nodes, graph.edges))
@@ -35,6 +41,9 @@
             class:sel={ui.selectedIds.includes(n.id)}
             data-color={n.color}
             title={t.boardCardTitle}
+            animate:flip={{ duration: REDUCED ? 0 : 220 }}
+            in:receive={{ key: n.id }}
+            out:send={{ key: n.id }}
             onclick={() => selectNode(n.id)}
             ondblclick={() => onJump(n)}
           >{n.text || t.mdEmptyNode}</button>
