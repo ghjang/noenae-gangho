@@ -2,19 +2,22 @@
 // 뇌내강호 상태 저장소 (Svelte 5 runes)
 // 그래프(念/緣) 데이터와 UI 상태, 영속화 어댑터.
 // ──────────────────────────────────────────────
-import { TONES } from './strings.js'
+import { STRINGS, TONES, fmt } from './strings.js'
 import { nodeBox } from './geometry.js'
 import { ancestorIds, parentEdgeOf, tidyLayout } from './graph.js'
 
-const KEY = 'noenae-gangho-v1'
+const KEY = 'noenae-gangho-v1' // 레거시 단일 문서 본문 — 첫 이주 후엔 읽지 않는다 (화석 백업, 지우지 않음)
+const DOCS_KEY = 'noenae-gangho-docs' // 문서(강호) 인덱스 — { current, list: [{ id, title, updatedAt }] } (#62)
+const docKey = (id) => 'noenae-gangho-doc-' + id // 문서별 본문 (v3 snapshot — 포맷은 문서 단위로 불변)
+const viewKey = (id) => 'noenae-gangho-view-' + id // 문서별 뷰(팬/줌)
 
 // 줌 한계 — zoomAt/fitAll/뷰 복원이 같은 값을 쓴다. 하한 0.1: 큰 강호도
 // 전체 보기(全)가 한 화면에 다 담을 수 있게 (0.35는 잘림 사고의 원인이었다)
 export const SCALE_MIN = 0.1
 export const SCALE_MAX = 2.5
 export const clampScale = (s) => Math.min(SCALE_MAX, Math.max(SCALE_MIN, s))
-const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개로 저장
-const VIEW_KEY = 'noenae-gangho-view' // 마지막 뷰(팬/줌) — 역시 로컬 취향, snapshot 밖
+const TONE_KEY = 'noenae-gangho-tone' // 말투 취향 — 그래프 데이터(snapshot)와 별개, 문서와 무관하게 전역
+const LEGACY_VIEW_KEY = 'noenae-gangho-view' // 단일 문서 시절의 뷰 키 — 이주 때 한 번만 읽는다
 
 function loadTone() {
   try {
@@ -25,23 +28,23 @@ function loadTone() {
   }
 }
 
-function loadView() {
+// 문서별 뷰(팬/줌) 읽기 — 깨진 저장값은 무시
+function loadView(docId) {
   try {
-    const v = JSON.parse(localStorage.getItem(VIEW_KEY))
+    const v = JSON.parse(localStorage.getItem(viewKey(docId)))
     if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.s))
       return { x: v.x, y: v.y, s: clampScale(v.s) }
   } catch {
-    /* 깨진 저장값은 무시 */
+    /* 무시 */
   }
   return null
 }
-const view = loadView()
 
 export const graph = $state({ nodes: [], edges: [] })
 
 export const ui = $state({
-  pan: { x: view?.x ?? 0, y: view?.y ?? 0 },
-  scale: view?.s ?? 1,
+  pan: { x: 0, y: 0 }, // 부팅 시 init()이 현재 문서의 뷰를 입힌다
+  scale: 1,
   selectedId: null, // 앵커 — 단일 표적 작업(Tab/F2/Z/Alt+화살표)의 기준. 항상 selectedIds 안에 있다
   selectedIds: [], // 선택 무리 (#39 다중 선택) — 재할당 금지, 제자리 변이만
   selectedEdgeId: null,
@@ -114,22 +117,91 @@ export function pruneSelection(dead) {
   if (!keep.includes(ui.selectedId)) ui.selectedId = keep.at(-1) ?? null
 }
 
+// ── 문서(강호) 서가 — 다중 캔버스 인덱스 (#62) ──
+// list/current는 제자리 변이만. 인덱스 영속은 persistDocs() 경유 —
+// VSCode 이식 때 본문 어댑터와 함께 갈아끼우는 항구(港口)다
+export const docs = $state({ current: null, list: [] })
+
+function persistDocs() {
+  try {
+    localStorage.setItem(DOCS_KEY, JSON.stringify({ current: docs.current, list: docs.list }))
+  } catch {
+    /* 조용히 */
+  }
+}
+
+// 인덱스 적재 — 없으면 레거시(단일 문서) 이주 또는 첫 문서 창건.
+// 반환: 갓 태어난 빈 강호면 true (init이 창세 시드를 심는 신호)
+function ensureDocs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DOCS_KEY))
+    if (raw && Array.isArray(raw.list) && raw.list.length) {
+      docs.list.push(...raw.list.filter((d) => d && d.id != null && typeof d.title === 'string'))
+      docs.current = docs.list.some((d) => d.id === raw.current) ? raw.current : docs.list[0].id
+      if (docs.list.length) return false
+    }
+  } catch {
+    /* 깨진 인덱스 — 아래에서 재건 */
+  }
+  // 인덱스가 없거나 깨졌어도 본문 키가 남아 있으면 서가를 재건 — 문서 유실 방지
+  try {
+    const orphans = Object.keys(localStorage)
+      .filter((k) => k.startsWith('noenae-gangho-doc-'))
+      .map((k) => k.slice('noenae-gangho-doc-'.length))
+    if (orphans.length) {
+      orphans.forEach((oid, i) =>
+        docs.list.push({ id: oid, title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: i + 1 }), updatedAt: Date.now() })
+      )
+      docs.current = docs.list[0].id
+      persistDocs()
+      return false
+    }
+  } catch {
+    /* 조용히 — 아래 창건 경로로 */
+  }
+  const id = uid()
+  docs.list.push({ id, title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: 1 }), updatedAt: Date.now() })
+  docs.current = id
+  let legacy = null
+  try {
+    legacy = localStorage.getItem(KEY)
+    if (legacy) {
+      // 단일 문서 시절의 저장본을 '강호 1'로 편입 — 원본 키는 화석으로 남긴다
+      localStorage.setItem(docKey(id), legacy)
+      const lv = localStorage.getItem(LEGACY_VIEW_KEY)
+      if (lv) localStorage.setItem(viewKey(id), lv)
+    }
+  } catch {
+    /* 조용히 */
+  }
+  persistDocs()
+  return !legacy
+}
+
+// 인덱스의 시간 도장 — 본문이 저장될 때마다
+function touchDoc(id) {
+  const d = docs.list.find((x) => x.id === id)
+  if (d) {
+    d.updatedAt = Date.now()
+    persistDocs()
+  }
+}
+
 // ── 저장 어댑터 ──────────────────────────────
-// 웹 버전은 localStorage. VSCode 웹뷰로 이식할 때는
-// 이 어댑터만 postMessage 기반으로 갈아끼우면 된다.
-// (확장 호스트가 workspaceState나 *.noegang.json 파일에 저장)
+// 웹 버전은 localStorage. VSCode 웹뷰로 이식할 때는 이 어댑터만
+// postMessage 기반으로 갈아끼우면 된다 (파일 하나 = 문서 하나).
 let adapter = {
-  async load() {
+  async load(docId) {
     try {
-      const raw = localStorage.getItem(KEY)
+      const raw = localStorage.getItem(docKey(docId))
       return raw ? JSON.parse(raw) : null
     } catch {
       return null
     }
   },
-  async save(data) {
+  async save(docId, data) {
     try {
-      localStorage.setItem(KEY, JSON.stringify(data))
+      localStorage.setItem(docKey(docId), JSON.stringify(data))
     } catch {
       /* 저장 실패는 조용히 — 내보내기로 보관 가능 */
     }
@@ -143,16 +215,21 @@ export function setStorageAdapter(a) {
 let saveTimer = null
 export function scheduleSave() {
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => adapter.save(snapshot()), 500)
+  saveTimer = setTimeout(() => {
+    adapter.save(docs.current, snapshot())
+    touchDoc(docs.current)
+  }, 500)
 }
 
-// 즉시 저장 — 탭 닫힘/숨김 직전(pagehide), 디바운스 500ms를 못 기다릴 때
+// 즉시 저장 — 탭 닫힘/숨김 직전(pagehide)과 문서 전환 직전.
+// 디바운스 타이머를 걷어내고 현재 문서의 본문+뷰를 그 자리에서 적는다
 export function flushSave() {
   clearTimeout(saveTimer)
-  adapter.save(snapshot())
+  adapter.save(docs.current, snapshot())
+  touchDoc(docs.current)
   clearTimeout(viewTimer)
   try {
-    localStorage.setItem(VIEW_KEY, JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
+    localStorage.setItem(viewKey(docs.current), JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
   } catch {
     /* 조용히 */
   }
@@ -164,7 +241,7 @@ export function scheduleViewSave() {
   clearTimeout(viewTimer)
   viewTimer = setTimeout(() => {
     try {
-      localStorage.setItem(VIEW_KEY, JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
+      localStorage.setItem(viewKey(docs.current), JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }))
     } catch {
       /* 실패는 조용히 */
     }
@@ -275,14 +352,89 @@ function resetHistory() {
   lastMark = { key: null, t: 0 }
 }
 
+// 문서 활성화 — 본문+뷰 적재, 역사 리셋. 전환/삭제 후/부팅이 공용으로 쓴다.
+// (직전 문서의 저장은 호출부 몫 — 디바운스 잔당이 새 문서에 적히는 사고 방지)
+async function activateDoc(id) {
+  docs.current = id
+  persistDocs()
+  const saved = await adapter.load(id)
+  if (!saved || !loadData(saved)) {
+    graph.nodes.length = 0
+    graph.edges.length = 0
+    clearSelection()
+    ui.editingId = null
+    ui.focusId = null
+  }
+  resetHistory() // 문서 전환은 역사를 가르는 일 — undo는 문서 안에서만
+  const v = loadView(id)
+  ui.pan.x = v?.x ?? 40
+  ui.pan.y = v?.y ?? 40
+  ui.scale = v?.s ?? 1
+}
+
 export async function init() {
-  const saved = await adapter.load()
-  if (saved && loadData(saved)) {
+  const fresh = ensureDocs() // 인덱스 적재 — 레거시 이주/창건 포함
+  await activateDoc(docs.current)
+  if (fresh && graph.nodes.length === 0) {
+    seed() // 갓 태어난 강호에만 창세 사연을
     resetHistory() // 부팅/시드 과정은 역사에 남기지 않는다
+  }
+}
+
+// ── 문서(강호) 다루기 (#62) ───────────────────
+export async function switchDoc(id) {
+  if (id === docs.current || !docs.list.some((d) => d.id === id)) return
+  flushSave() // 떠나는 문서의 본문+뷰를 그 자리에서 봉인
+  await activateDoc(id)
+}
+
+export async function createDoc() {
+  flushSave()
+  const id = uid()
+  docs.list.push({
+    id,
+    title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: docs.list.length + 1 }),
+    updatedAt: Date.now(),
+  })
+  await activateDoc(id) // 본문 없음 → 빈 강호로 시작
+  adapter.save(id, snapshot()) // 신생 문서도 즉시 실존 — 새로고침해도 안 사라진다
+}
+
+export function renameDoc(id, title) {
+  const d = docs.list.find((x) => x.id === id)
+  if (!d) return
+  d.title = title.trim() || STRINGS[ui.tone].docUntitled
+  d.updatedAt = Date.now()
+  persistDocs()
+}
+
+// 문서 베기 — 마지막 문서를 베면 빈 강호를 새로 창건한다
+export async function removeDoc(id) {
+  const i = docs.list.findIndex((d) => d.id === id)
+  if (i === -1) return
+  const wasCurrent = docs.current === id
+  docs.list.splice(i, 1)
+  try {
+    localStorage.removeItem(docKey(id))
+    localStorage.removeItem(viewKey(id))
+  } catch {
+    /* 조용히 */
+  }
+  if (!wasCurrent) {
+    persistDocs()
     return
   }
-  seed()
-  resetHistory()
+  // 베인 문서의 디바운스 유작이 부활하지 않게 — 타이머부터 무장 해제
+  clearTimeout(saveTimer)
+  clearTimeout(viewTimer)
+  if (docs.list.length === 0) {
+    const nid = uid()
+    docs.list.push({ id: nid, title: fmt(STRINGS[ui.tone].docDefaultTitle, { n: 1 }), updatedAt: Date.now() })
+    await activateDoc(nid)
+    adapter.save(nid, snapshot())
+  } else {
+    await activateDoc(docs.list[Math.min(i, docs.list.length - 1)].id)
+  }
 }
 
 // 첫 방문 시 — 이 강호가 태어난 사연을 그대로 심어둔다 ㅋ

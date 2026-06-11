@@ -726,6 +726,64 @@ button.primary:hover { background: #d6552f; }
 /* 비우기 확인 카드 — 시트의 미니 변형 (textarea 없음) */
 .sheet.confirm { width: min(380px, 92vw); }
 
+/* 서가(다중 문서) 시트 — 문서 목록 + 인라인 이름 고치기/베기 확인 */
+.sheet.docs { width: min(440px, 92vw); }
+.doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 56vh;
+  overflow-y: auto;
+}
+.doc-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+.doc-list .open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-color: transparent; /* 평소엔 민무늬 — 호버에서 줄이 선다 */
+  background: transparent;
+}
+.doc-list .open:hover { border-color: rgba(42, 36, 28, 0.25); background: rgba(42, 36, 28, 0.05); }
+.doc-list .open span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-list .open i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(42, 36, 28, 0.35); /* 빈 고리 — 현재 문서만 인주로 찬다 */
+}
+.doc-list li.cur .open i { background: var(--inju); border-color: var(--inju); }
+.doc-list li.cur .open { font-weight: 600; }
+.doc-list .mini {
+  flex: none;
+  font-size: 12px;
+  padding: 6px 9px;
+}
+.doc-list .ask {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--c-dan);
+  padding-left: 10px;
+}
+.doc-list input {
+  flex: 1;
+  font: 13px var(--sans);
+  color: var(--ink);
+  background: rgba(255, 252, 244, 0.7);
+  border: 1px solid rgba(42, 36, 28, 0.35);
+  border-radius: 4px;
+  padding: 7px 10px;
+}
+
 .sheet h2 {
   margin: 0 0 10px;
   font-family: var(--serif);
