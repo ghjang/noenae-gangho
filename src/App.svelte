@@ -8,11 +8,11 @@
   import { fade, scale } from 'svelte/transition'
   import { backOut, cubicIn } from 'svelte/easing'
   import {
-    graph, ui, COLORS, byId, init,
+    graph, ui, COLORS, byId, init, selectNode, selectEdge, clearSelection,
     addNodeAt, addChild, addSibling, updateText, setColor, setInk, setNodeWidth,
     removeNode, addEdge, removeEdge, flipEdge, toggleCollapse, revealNode, arrange, clearAll,
     snapshot, loadData, scheduleSave, scheduleViewSave, toggleTone,
-    markUndo, asOneStep, undo, redo, flushSave, SCALE_MIN, SCALE_MAX,
+    markUndo, asOneStep, undo, redo, flushSave, clampScale,
   } from './lib/store.svelte.js'
   import { STRINGS, TONES, fmt } from './lib/strings.js'
   import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
@@ -75,8 +75,7 @@
     if (e.target !== e.currentTarget) return
     commitEditing()
     searchQ = null // 캔버스 직접 조작 = 검색창 닫기 (팝오버 국룰)
-    ui.selectedId = null
-    ui.selectedEdgeId = null
+    clearSelection()
     touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (touchPts.size === 2) {
       // 두 번째 손가락 — 팬을 끊고 핀치로 (#6)
@@ -99,7 +98,7 @@
     zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12)
   }
   function zoomAt(cx, cy, factor) {
-    const ns = Math.min(SCALE_MAX, Math.max(SCALE_MIN, ui.scale * factor))
+    const ns = clampScale(ui.scale * factor)
     const k = ns / ui.scale
     ui.pan.x = cx - (cx - ui.pan.x) * k
     ui.pan.y = cy - (cy - ui.pan.y) * k
@@ -113,34 +112,39 @@
   function resetView() {
     zoomCenter(1 / ui.scale)
   }
-  // 강호 전경 — 모든 쪽지를 화면에 맞춤. 빈 강호면 원점 100%
-  function fitAll() {
-    if (graph.nodes.length === 0) {
-      ui.pan.x = 40; ui.pan.y = 40; ui.scale = 1
-      return
-    }
+  // 보이는(접히지 않은) 쪽지들의 world 바운딩 — 전경 맞춤(全)과 전도(미니맵)가 공유.
+  // 빈 강호면 null (뿌리는 절대 안 숨으니 '전부 숨음'은 없다)
+  function visibleBounds() {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
     for (const n of graph.nodes) {
-      if (hidden.has(n.id)) continue // 접혀 숨은 쪽지는 측량 밖 — 보이는 강호만 맞춘다
+      if (hidden.has(n.id)) continue
       const b = nodeBox(n)
       x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y)
       x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h)
     }
+    return x1 === -Infinity ? null : { x0, y0, x1, y1 }
+  }
+  // 강호 전경 — 모든 쪽지를 화면에 맞춤. 빈 강호면 원점 100%
+  function fitAll() {
+    const bb = visibleBounds()
+    if (!bb) {
+      ui.pan.x = 40; ui.pan.y = 40; ui.scale = 1
+      return
+    }
     const pad = 60
     const r = viewportEl.getBoundingClientRect()
-    const s = Math.min(SCALE_MAX, Math.max(SCALE_MIN,
-      Math.min(r.width / (x1 - x0 + pad * 2), r.height / (y1 - y0 + pad * 2))))
+    const s = clampScale(
+      Math.min(r.width / (bb.x1 - bb.x0 + pad * 2), r.height / (bb.y1 - bb.y0 + pad * 2)))
     ui.scale = s
-    ui.pan.x = (r.width - (x0 + x1) * s) / 2
-    ui.pan.y = (r.height - (y0 + y1) * s) / 2
+    ui.pan.x = (r.width - (bb.x0 + bb.x1) * s) / 2
+    ui.pan.y = (r.height - (bb.y0 + bb.y1) * s) / 2
   }
   // 선택한 쪽지를 화면 가득히 (Shift+2 — Figma 'Zoom to Selection' 국룰)
   function fitSelection(n) {
     const b = nodeBox(n)
     const pad = 48
     const r = viewportEl.getBoundingClientRect()
-    const s = Math.min(SCALE_MAX, Math.max(SCALE_MIN,
-      Math.min(r.width / (b.w + pad * 2), r.height / (b.h + pad * 2))))
+    const s = clampScale(Math.min(r.width / (b.w + pad * 2), r.height / (b.h + pad * 2)))
     ui.scale = s
     ui.pan.x = (r.width - (b.x * 2 + b.w) * s) / 2
     ui.pan.y = (r.height - (b.y * 2 + b.h) * s) / 2
@@ -171,8 +175,7 @@
   })
   function jumpTo(n) {
     revealNode(n.id) // 접힌 가지 속이면 조상 봉문을 열며 데려간다
-    ui.selectedId = n.id
-    ui.selectedEdgeId = null
+    selectNode(n.id)
     // 멀리서 보던 중이면 읽기 배율로 — 이미 가까우면(≥0.9x) 건드리지 않는다
     if (ui.scale < 0.9) ui.scale = 1
     centerOn(n)
@@ -210,14 +213,11 @@
   })
   // 전도 범위 — 보이는 쪽지들 + 현재 뷰 사각형의 합집합 (+여백)
   const minimapBox = $derived.by(() => {
-    let x0 = viewRect.x, y0 = viewRect.y
-    let x1 = viewRect.x + viewRect.w, y1 = viewRect.y + viewRect.h
-    for (const n of graph.nodes) {
-      if (hidden.has(n.id)) continue
-      const b = nodeBox(n)
-      x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y)
-      x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h)
-    }
+    const bb = visibleBounds()
+    const x0 = Math.min(viewRect.x, bb?.x0 ?? Infinity)
+    const y0 = Math.min(viewRect.y, bb?.y0 ?? Infinity)
+    const x1 = Math.max(viewRect.x + viewRect.w, bb?.x1 ?? -Infinity)
+    const y1 = Math.max(viewRect.y + viewRect.h, bb?.y1 ?? -Infinity)
     const pad = 60
     return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 }
   })
@@ -252,8 +252,7 @@
     if (ui.editingId === n.id) e.preventDefault()
     else if (ui.editingId) commitEditing()
     searchQ = null // 쪽지 직접 선택 = 검색창 닫기
-    ui.selectedId = n.id
-    ui.selectedEdgeId = null
+    selectNode(n.id)
     const w = toWorld(e)
     drag = { id: n.id, ox: w.x - n.x, oy: w.y - n.y, moved: false }
   }
@@ -277,7 +276,7 @@
     e.stopPropagation()
     const ntext = e.currentTarget.querySelector('.ntext')
     pendingCaret = ntext && n.text ? caretIndexAt(e.clientX, e.clientY, ntext) : null
-    ui.selectedId = n.id
+    selectNode(n.id)
     ui.editingId = n.id
   }
   // 緣 핸들을 마우스와 가장 가까운 변으로 — 제스처 중에는 고정
@@ -296,13 +295,12 @@
   function onHandleDown(e, n) {
     e.stopPropagation()
     const w = toWorld(e)
-    ui.selectedId = n.id
+    selectNode(n.id)
     ui.linking = { from: n.id, x: w.x, y: w.y }
   }
   function onResizeDown(e, n, edge) {
     e.stopPropagation()
-    ui.selectedId = n.id
-    ui.selectedEdgeId = null
+    selectNode(n.id)
     const w = toWorld(e)
     const sw = n.bw || nodeBox(n).w
     resizing = { id: n.id, edge, sx: w.x, sw, right: n.x + sw }
@@ -423,10 +421,7 @@
       ui.showHelp = false
       searchQ = null
       commitEditing()
-      if (!hadOpen) {
-        ui.selectedId = null
-        ui.selectedEdgeId = null
-      }
+      if (!hadOpen) clearSelection()
       return
     }
     if (ui.overlay) return
@@ -583,8 +578,7 @@
         target = e.key === 'ArrowUp' ? sibs[i - 1] : sibs[i + 1]
       }
       if (target) {
-        ui.selectedId = target.id
-        ui.selectedEdgeId = null
+        selectNode(target.id)
         ensureVisible(target)
       }
       return
@@ -610,8 +604,7 @@
         }
         if (best) {
           e.preventDefault()
-          ui.selectedId = best.id
-          ui.selectedEdgeId = null
+          selectNode(best.id)
           ensureVisible(best)
         }
       }
@@ -709,8 +702,7 @@
   function toMarkdown() {
     const out = [t.mdHeading, '']
     const incoming = new Set(graph.edges.map((e) => e.b))
-    const kidsOf = (id) =>
-      graph.edges.filter((e) => e.a === id).map((e) => byId(e.b)).filter(Boolean)
+    const kidsOf = (id) => childIdsOf(graph.edges, id).map(byId).filter(Boolean) // 緣 순서 보존
     const label = (n) => (n.text || t.mdEmptyNode).replace(/\s*\n+\s*/g, ' / ')
     const seen = new Set()
     const walk = (n, d) => {
@@ -751,13 +743,14 @@
   // 자식 수 — 봉문 배지용 (노드마다 edges를 다시 돌지 않게 한 번에)
   const kidCount = $derived(childCounts(graph.edges))
 
-  // 숨은 쪽지/緣이 선택·편집 상태로 남지 않게
+  // 숨은 쪽지/緣이 선택·편집 상태로 남지 않게 (쪽지/緣 선택은 상호 배타 —
+  // 한쪽이 무효면 clearSelection으로 둘 다 비워도 결과는 같다)
   $effect(() => {
-    if (ui.selectedId && hidden.has(ui.selectedId)) ui.selectedId = null
+    if (ui.selectedId && hidden.has(ui.selectedId)) clearSelection()
     if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null
     if (ui.selectedEdgeId) {
       const ed = graph.edges.find((x) => x.id === ui.selectedEdgeId)
-      if (!ed || hidden.has(ed.a) || hidden.has(ed.b)) ui.selectedEdgeId = null
+      if (!ed || hidden.has(ed.a) || hidden.has(ed.b)) clearSelection()
     }
   })
 </script>
@@ -845,8 +838,7 @@
               onpointerdown={(ev) => {
                 ev.stopPropagation()
                 searchQ = null
-                ui.selectedEdgeId = e.id
-                ui.selectedId = null
+                selectEdge(e.id)
               }}
             />
             <path class="vis" d={d} />
@@ -1033,6 +1025,9 @@
 {/if}
 
 <!-- ── 입출력 시트 ── -->
+<!-- 하이라이트 토큰 렌더 — 읽기 전용 pre와 가져오기 overlay pre가 공유.
+     pre 안이라 공백·개행이 그대로 보인다: 한 줄 유지. 끝 개행은 pre가 삼키니 공백 한 칸 보전 -->
+{#snippet toks(list, text)}{#each list as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span>{:else}{tk.t}{/if}{/each}{text.endsWith('\n') ? ' ' : ''}{/snippet}
 {#if ui.overlay}
   <div
     class="overlay"
@@ -1068,7 +1063,7 @@
           <!-- 편집 + 하이라이트: 투명 글자 textarea 밑에 같은 metric의 pre — 입력은 위가, 색은 아래가.
                줄바꿈 어긋남 방지로 양쪽 다 no-wrap(가로 스크롤), 스크롤은 onscroll로 동기화 -->
           <div class="code-wrap">
-            <pre class="code" bind:this={hlPre} aria-hidden="true">{#each highlightAuto(sheetText) as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span>{:else}{tk.t}{/if}{/each}{sheetText.endsWith('\n') ? ' ' : ''}</pre>
+            <pre class="code" bind:this={hlPre} aria-hidden="true">{@render toks(highlightAuto(sheetText), sheetText)}</pre>
             <textarea
               bind:value={sheetText}
               wrap="off"
@@ -1077,7 +1072,7 @@
             ></textarea>
           </div>
         {:else}
-          <pre class="code ro">{#each (ui.overlay.mode === 'md' ? highlightMd(sheetText) : highlightJson(sheetText)) as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span>{:else}{tk.t}{/if}{/each}{sheetText.endsWith('\n') ? ' ' : ''}</pre>
+          <pre class="code ro">{@render toks(ui.overlay.mode === 'md' ? highlightMd(sheetText) : highlightJson(sheetText), sheetText)}</pre>
         {/if}
         {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
         <div class="row">
