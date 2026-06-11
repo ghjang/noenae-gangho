@@ -424,8 +424,9 @@ button.primary:hover { background: #d6552f; }
 .node:hover .handle,
 .node.selected .handle { opacity: 1; }
 
-/* 우하단 — 가지 접기 배지 (자식 있는 쪽지만, 접힌 상태면 상시 표시 + 자식 수) */
-.fold {
+/* 우하단 — 가지 접기 배지 (자식 있는 쪽지만, 접힌 상태면 상시 표시 + 자식 수).
+   반드시 .node 스코프 — 무스코프 .fold는 오행진 카드의 ▸N 배지까지 순간이동시킨 전과가 있다 */
+.node .fold {
   position: absolute;
   z-index: 1;
   right: -9px;
@@ -445,7 +446,7 @@ button.primary:hover { background: #d6552f; }
 }
 .node:hover .fold,
 .node.selected .fold,
-.fold.on { opacity: 1; }
+.node .fold.on { opacity: 1; }
 
 /* 좌/우 변 — 보이지 않는 너비 조절 띠 (호버하면 커서가 ↔ 로) */
 .rsz {
