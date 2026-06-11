@@ -101,7 +101,7 @@ export const STRINGS = {
     // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
     helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
     helpMoreButton: '요결 전부 보기',
-    focusPill: '集中 {depth}촌 — [ ] 반경 · L 해제',
+    focusPill: "集中 '{label}' {depth}촌 — [ ] 반경 · L 해제",
     focusPillAria: '집중 해제',
     closeButton: '닫기',
 
@@ -204,7 +204,7 @@ export const STRINGS = {
     ],
     helpQuick: ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '빨간 점 드래그', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
     helpMoreButton: '전체 도움말',
-    focusPill: '포커스 {depth}촌 — [ ] 반경 · L 해제',
+    focusPill: "포커스 '{label}' {depth}촌 — [ ] 반경 · L 해제",
     focusPillAria: '포커스 해제',
     closeButton: '닫기',
 
