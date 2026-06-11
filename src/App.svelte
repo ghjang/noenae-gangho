@@ -18,6 +18,7 @@
   import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
   import { computeHidden, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
   import { fromMarkdown } from './lib/markdown.js'
+  import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.js'
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone])
@@ -37,6 +38,7 @@
   let edgeHover = null // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
 
   let sheetText = $state('')     // 입출력 시트 본문
+  let hlPre = null               // 가져오기 편집 overlay의 하이라이트 pre — 스크롤 동기화용
   let sheetMsg = $state('')      // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let searchQ = $state(null)     // 검색 질의 — null이면 닫힘
   let searchIdx = $state(0)      // 하이라이트 = 지금/다음에 볼 결과 (화면과 항상 일치)
@@ -1062,7 +1064,21 @@
       <div class="sheet" role="dialog" aria-label={sheetTitle}>
         <h2>{sheetTitle}</h2>
         {#if ui.overlay.mode === 'import'}<p class="hint">{t.importHint}</p>{/if}
-        <textarea bind:value={sheetText} readonly={ui.overlay.mode !== 'import'}></textarea>
+        {#if ui.overlay.mode === 'import'}
+          <!-- 편집 + 하이라이트: 투명 글자 textarea 밑에 같은 metric의 pre — 입력은 위가, 색은 아래가.
+               줄바꿈 어긋남 방지로 양쪽 다 no-wrap(가로 스크롤), 스크롤은 onscroll로 동기화 -->
+          <div class="code-wrap">
+            <pre class="code" bind:this={hlPre} aria-hidden="true">{#each highlightAuto(sheetText) as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span>{:else}{tk.t}{/if}{/each}{sheetText.endsWith('\n') ? ' ' : ''}</pre>
+            <textarea
+              bind:value={sheetText}
+              wrap="off"
+              spellcheck="false"
+              onscroll={(e) => { if (hlPre) { hlPre.scrollTop = e.currentTarget.scrollTop; hlPre.scrollLeft = e.currentTarget.scrollLeft } }}
+            ></textarea>
+          </div>
+        {:else}
+          <pre class="code ro">{#each (ui.overlay.mode === 'md' ? highlightMd(sheetText) : highlightJson(sheetText)) as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span>{:else}{tk.t}{/if}{/each}{sheetText.endsWith('\n') ? ' ' : ''}</pre>
+        {/if}
         {#if sheetMsg}<p class="msg">{t[sheetMsg]}</p>{/if}
         <div class="row">
           {#if ui.overlay.mode === 'import'}
