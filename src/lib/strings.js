@@ -94,6 +94,9 @@ export const STRINGS = {
       ['휠', '축경(줌)'],
       ['두 손가락', '꼬집어 축경 · 끌어 유람 (터치)'],
     ],
+    // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
+    helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
+    helpMoreButton: '요결 전부 보기',
     closeButton: '닫기',
 
     exportTitle: '내공 내보내기 — JSON',
@@ -189,6 +192,8 @@ export const STRINGS = {
       ['휠', '확대/축소'],
       ['두 손가락', '핀치 줌 · 화면 이동 (터치)'],
     ],
+    helpQuick: ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '빨간 점 드래그', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
+    helpMoreButton: '전체 도움말',
     closeButton: '닫기',
 
     exportTitle: '내보내기 — JSON',

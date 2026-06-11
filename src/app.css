@@ -577,13 +577,16 @@ button.armed {
   border-left: 3px solid var(--inju);
   padding: 14px 16px;
   box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8);
+  max-height: calc(100vh - 76px); /* 작은 화면 안전핀 — 카드가 바닥을 못 뚫는다 (top 62 + 여백 14) */
+  overflow-y: auto;
 }
 .help-card h2 {
   margin: 0 0 8px;
   font-family: var(--serif);
   font-size: 15px;
 }
-.help-card dl {
+.help-card dl,
+.sheet.help dl {
   margin: 0;
   font-size: 12.5px;
   line-height: 1.5;
@@ -591,12 +594,17 @@ button.armed {
   grid-template-columns: auto 1fr;
   gap: 4px 10px;
 }
-.help-card dt {
+.help-card dt,
+.sheet.help dt {
   font-weight: 600;
   font-family: var(--serif);
   white-space: nowrap;
 }
-.help-card dd { margin: 0; color: #4d4538; }
+.help-card dd,
+.sheet.help dd { margin: 0; color: #4d4538; }
+
+/* 전체 요결 시트 — 퀵 카드의 큰형. 기능이 늘어도 시트 안 스크롤로 받아낸다 */
+.sheet.help { max-height: 86vh; overflow-y: auto; }
 .help-card .close-row { margin-top: 10px; text-align: right; }
 .help-card button {
   color: var(--ink);
