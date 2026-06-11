@@ -49,6 +49,13 @@ for (const tone of TONES) {
   for (const c of colors) if (!STRINGS[tone].colorLabel?.[c]) err(`${tone}.colorLabel.${c} 없음`)
   if (!STRINGS[tone].helpItems?.every((p) => Array.isArray(p) && p.length === 2))
     err(`${tone}.helpItems가 [키, 설명] 쌍 배열이 아님`)
+  // helpQuick(퀵 카드 노출 목록)은 helpItems 키의 부분집합 — 오타/유실 즉시 적발
+  const itemKeys = new Set((STRINGS[tone].helpItems ?? []).map((p) => p[0]))
+  if (!Array.isArray(STRINGS[tone].helpQuick) || STRINGS[tone].helpQuick.length === 0)
+    err(`${tone}.helpQuick이 비어 있음 — 퀵 카드가 텅 빈다`)
+  else
+    for (const k of STRINGS[tone].helpQuick)
+      if (!itemKeys.has(k)) err(`${tone}.helpQuick의 '${k}'가 helpItems에 없음`)
 }
 
 if (fail) {

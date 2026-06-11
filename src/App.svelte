@@ -722,6 +722,14 @@
     return out.join('\n')
   }
 
+  // 도움말 — 퀵 카드(필수 요결)에서 전체 요결 시트로
+  function openHelpAll() {
+    ui.showHelp = false
+    ui.overlay = { mode: 'help' }
+  }
+  // 퀵 카드 목록 — helpQuick 키 순서대로 helpItems에서 추림 (본문 중복 없이)
+  const quickHelp = $derived(t.helpQuick.map((k) => t.helpItems.find((it) => it[0] === k)).filter(Boolean))
+
   // ── 비우기 (확인 카드) ────────────────────────
   // 네이티브 confirm()은 VSCode 웹뷰에서 차단 — 시트/배경막 패턴 재사용이 이식 안전
   function onClear() {
@@ -1011,11 +1019,12 @@
   <aside class="help-card">
     <h2>{t.helpTitle}</h2>
     <dl>
-      {#each t.helpItems as [key, desc] (key)}
+      {#each quickHelp as [key, desc] (key)}
         <dt>{key}</dt><dd>{desc}</dd>
       {/each}
     </dl>
     <div class="close-row">
+      <button onclick={openHelpAll}>{t.helpMoreButton}</button>
       <button onclick={() => (ui.showHelp = false)}>{t.closeButton}</button>
     </div>
   </aside>
@@ -1035,6 +1044,18 @@
         <div class="row">
           <button onclick={() => (ui.overlay = null)}>{t.cancelButton}</button>
           <button class="armed" onclick={confirmClear}>{t.clearButton}</button>
+        </div>
+      </div>
+    {:else if ui.overlay.mode === 'help'}
+      <div class="sheet help" role="dialog" aria-label={t.helpTitle}>
+        <h2>{t.helpTitle}</h2>
+        <dl>
+          {#each t.helpItems as [key, desc] (key)}
+            <dt>{key}</dt><dd>{desc}</dd>
+          {/each}
+        </dl>
+        <div class="row">
+          <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
         </div>
       </div>
     {:else}
