@@ -28,17 +28,28 @@ export function edgeEnd(a, b) {
   return { x: B.x, y: fromTop ? box.y : box.y + box.h, ax: 0, ay: fromTop ? 1 : -1 }
 }
 
-// 곡선 경로 — E는 edgeEnd(a, b)를 한 번만 계산해 받는다.
-// 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게.
-export function edgePath(a, E) {
+// 緣의 시작점 — 출발 박스 4변 중 표적 t({x,y})를 향한 변의 중앙.
+// 중심 출발은 드래그 강조(緣이 노드 위층으로 부상)에서 선이 박스 위로 드러났다.
+// 우세 축 판정이 edgeEnd와 동일(중심 간 변위) — 같은 緣의 양끝이 늘 같은 축으로 짝 맞아
+// edgePath의 가로/세로 탄젠트 분기가 양끝 모두에서 성립한다.
+export function edgeStart(a, t) {
   const A = center(a)
+  const box = nodeBox(a)
+  const dx = t.x - A.x, dy = t.y - A.y
+  if (Math.abs(dx) >= Math.abs(dy)) return { x: dx >= 0 ? box.x + box.w : box.x, y: A.y }
+  return { x: A.x, y: dy >= 0 ? box.y + box.h : box.y }
+}
+
+// 곡선 경로 — S는 edgeStart, E는 edgeEnd를 한 번만 계산해 받는다.
+// 선은 화살촉 뒤까지만 — 반투명 촉 밑으로 선이 비치지 않게.
+export function edgePath(S, E) {
   const ex = E.x - 7 * E.ax, ey = E.y - 7 * E.ay
   if (E.ax !== 0) {
-    const mx = (A.x + ex) / 2
-    return `M ${A.x} ${A.y} C ${mx} ${A.y}, ${mx} ${ey}, ${ex} ${ey}`
+    const mx = (S.x + ex) / 2
+    return `M ${S.x} ${S.y} C ${mx} ${S.y}, ${mx} ${ey}, ${ex} ${ey}`
   }
-  const my = (A.y + ey) / 2
-  return `M ${A.x} ${A.y} C ${A.x} ${my}, ${ex} ${my}, ${ex} ${ey}`
+  const my = (S.y + ey) / 2
+  return `M ${S.x} ${S.y} C ${S.x} ${my}, ${ex} ${my}, ${ex} ${ey}`
 }
 
 // 방향 화살촉 — 진입 축으로 7px, 날개 ±4px
@@ -47,8 +58,8 @@ export function arrowPath(E) {
   return `M ${E.x} ${E.y} L ${bx - 4 * E.ay} ${by + 4 * E.ax} L ${bx + 4 * E.ay} ${by - 4 * E.ax} Z`
 }
 
-// 연결 드래그 중의 임시 직선
+// 연결 드래그 중의 임시 직선 — 시작도 변 앵커 (마우스를 향한 변의 중앙)
 export function ghostPath(s, x, y) {
-  const A = center(s)
-  return `M ${A.x} ${A.y} L ${x} ${y}`
+  const S = edgeStart(s, { x, y })
+  return `M ${S.x} ${S.y} L ${x} ${y}`
 }
