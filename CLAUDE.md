@@ -21,7 +21,7 @@
   - 변이 함수는 첫머리에 `markUndo()`(되돌리기 스택 — 타이핑·드래그 등 연속 제스처는 key로 병합, 복합 변이는 `asOneStep`으로 한 걸음) · 끝에 `scheduleSave()`(500ms 디바운스). 스토어 밖 직접 변이(드래그/넛지의 `n.x/n.y`)는 호출부가 둘 다 챙긴다 — 빠뜨리면 저장 증발/유령 undo
 - `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
 - `src/lib/geometry.js` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeStart`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만. 緣은 양끝 다 변 중앙 앵커(시작=edgeStart·끝=edgeEnd) — 우세 축 판정을 공유해 양끝 축이 늘 짝 맞는다
-- `src/lib/graph.js` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
+- `src/lib/graph.js` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · `neighborhood` 무방향 이웃(포커스) · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
 - `src/lib/markdown.js` — 비급.md 역해석 순수 함수(`fromMarkdown` — 들여쓰기 불릿 → 트리, 격자 배치 행=줄·열=깊이). 스토어 import 금지: runes 탓에 맨 node(검사 스크립트)가 못 읽는다 — id 생성기를 자체로 갖는 이유. 규칙 바꾸면 `scripts/check-markdown.mjs`도 같이
 - `src/lib/highlight.js` — 시트 신택스 하이라이트 순수 토크나이저(JSON/비급.md, 외부 라이브러리 금지라 자작). 토큰 text를 이어 붙이면 입력과 동일해야 함 — 가져오기 편집 overlay(투명 textarea+pre) 정렬의 전제
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토

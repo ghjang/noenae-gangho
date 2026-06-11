@@ -17,7 +17,7 @@
   } from './lib/store.svelte.js'
   import { STRINGS, TONES, fmt } from './lib/strings.js'
   import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
-  import { computeHidden, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
+  import { computeHidden, neighborhood, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
   import { fromMarkdown } from './lib/markdown.js'
   import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.js'
 
@@ -185,6 +185,7 @@
   })
   function jumpTo(n) {
     revealNode(n.id) // 접힌 가지 속이면 조상 봉문을 열며 데려간다
+    if (ui.focusId && ui.focusId !== n.id) ui.focusId = n.id // 집중 중 점프 = 표적 갈아타기
     selectNode(n.id)
     // 멀리서 보던 중이면 읽기 배율로 — 이미 가까우면(≥0.9x) 건드리지 않는다
     if (ui.scale < 0.9) ui.scale = 1
@@ -460,10 +461,11 @@
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
       // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
       const hadOpen =
-        ui.linking || ui.overlay || ui.showHelp || searchQ !== null || ui.editingId
+        ui.linking || ui.overlay || ui.showHelp || ui.focusId || searchQ !== null || ui.editingId
       ui.linking = null
       ui.overlay = null
       ui.showHelp = false
+      ui.focusId = null
       searchQ = null
       commitEditing()
       if (!hadOpen) clearSelection()
@@ -582,6 +584,20 @@
     if ((e.code === 'KeyC' || e.code === 'Space') && selected && (kidCount.get(selected.id) ?? 0) > 0) {
       e.preventDefault()
       toggleCollapse(selected.id) // 가지 봉문/개문 — 자식 있는 쪽지만 (Space는 FreeMind 혈통 별칭)
+      return
+    }
+    // L — 집중(포커스): 선택한 쪽지의 이웃만 남기고 숨김 (#47).
+    // 같은 표적 재토글/빈손 L = 해제, 다른 쪽지 선택 후 L = 표적 갈아타기
+    if (e.code === 'KeyL') {
+      e.preventDefault()
+      if (selected && ui.focusId !== selected.id) ui.focusId = selected.id
+      else ui.focusId = null
+      return
+    }
+    // [ / ] — 집중 반경(촌수) 조절
+    if ((e.code === 'BracketLeft' || e.code === 'BracketRight') && ui.focusId) {
+      e.preventDefault()
+      ui.focusDepth = Math.max(1, Math.min(9, ui.focusDepth + (e.code === 'BracketRight' ? 1 : -1)))
       return
     }
     // R — 가지런히(Tidy): 무조건 전체. Shift+R = 선택한 가지만 (예측 가능성 우선)
@@ -792,12 +808,22 @@
 
   // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.js computeHidden
   // (시나리오 검증: scripts/check-graph.mjs)
-  const hidden = $derived.by(() => computeHidden(graph.nodes, graph.edges))
+  // 집중(포커스, #47)이 켜져 있으면 표적의 이웃 밖도 합쳐 숨긴다 —
+  // 全 맞춤/전도/Alt 항법/선택 정리가 전부 이 집합을 보므로 공짜로 따라온다
+  const hidden = $derived.by(() => {
+    const base = computeHidden(graph.nodes, graph.edges)
+    if (!ui.focusId || !byId(ui.focusId)) return base
+    const keep = neighborhood(graph.edges, ui.focusId, ui.focusDepth)
+    const out = new Set(base)
+    for (const n of graph.nodes) if (!keep.has(n.id)) out.add(n.id)
+    return out
+  })
   // 자식 수 — 봉문 배지용 (노드마다 edges를 다시 돌지 않게 한 번에)
   const kidCount = $derived(childCounts(graph.edges))
 
   // 숨은(봉문) 쪽지가 무리·편집 상태로 남지 않게, 끊긴 緣 선택도 정리
   $effect(() => {
+    if (ui.focusId && !byId(ui.focusId)) ui.focusId = null // 표적이 베이면 집중도 풀린다
     const dead = new Set(ui.selectedIds.filter((id) => hidden.has(id)))
     if (dead.size) pruneSelection(dead)
     if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null
@@ -1006,6 +1032,17 @@
     {/if}
   </div>
 </div>
+
+<!-- ── 집중(포커스) 배지 — 켜진 동안 상단 중앙, 클릭 = 해제 ── -->
+{#if ui.focusId}
+  <button
+    class="focus-pill"
+    onclick={() => (ui.focusId = null)}
+    title={t.focusPillAria}
+    aria-label={t.focusPillAria}
+    transition:fade={{ duration: dur(150) }}
+  ><i></i>{fmt(t.focusPill, { depth: ui.focusDepth })}</button>
+{/if}
 
 <!-- ── 하단 HUD + 콜로폰 ── -->
 <div class="hud">

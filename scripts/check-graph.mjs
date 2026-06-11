@@ -3,7 +3,7 @@
 // 하루에 세 번 규칙이 바뀐 사고 다발 지역이라 시나리오로 못 박는다.
 // 규칙 본체는 src/lib/graph.js의 computeHidden().
 // ──────────────────────────────────────────────
-import { computeHidden, tidyLayout } from '../src/lib/graph.js'
+import { computeHidden, tidyLayout, neighborhood } from '../src/lib/graph.js'
 
 let fail = 0
 const err = (m) => { console.error('✗ ' + m); fail++ }
@@ -79,8 +79,23 @@ const ids = (s) => [...s].sort().join(',')
   if (a && z && !(z.x > a.x)) err('정돈 순환 구제: 자식 z가 첫 부모 a의 오른쪽이 아님')
 }
 
+// 8) 이웃(포커스) — 무방향 1촌/2촌: 부모·자식·또 다른 부모 가리지 않는다
+{
+  const edges = [E('a', 'b'), E('b', 'c'), E('c', 'd'), E('x', 'b')]
+  const n1 = neighborhood(edges, 'b', 1)
+  if (ids(n1) !== 'a,b,c,x') err(`이웃 1촌: ${ids(n1)} (기대 a,b,c,x)`)
+  const n2 = neighborhood(edges, 'b', 2)
+  if (ids(n2) !== 'a,b,c,d,x') err(`이웃 2촌: ${ids(n2)} (기대 a,b,c,d,x)`)
+}
+// 9) 이웃 — 순환 안전(무한 반경도 멈춘다), 0촌은 자기 자신만
+{
+  const edges = [E('a', 'b'), E('b', 'c'), E('c', 'a')]
+  if (ids(neighborhood(edges, 'a', 9)) !== 'a,b,c') err('이웃 순환: 한 바퀴에서 멈춰야')
+  if (ids(neighborhood(edges, 'a', 0)) !== 'a') err('이웃 0촌: 자기 자신만이어야')
+}
+
 if (fail) {
   console.error(`봉문 검사 실패 — ${fail}건`)
   process.exit(1)
 }
-console.log('봉문 검사 통과 — 시나리오 7종 (접기 5 + 정돈 2)')
+console.log('봉문 검사 통과 — 시나리오 9종 (접기 5 + 정돈 2 + 이웃 2)')
