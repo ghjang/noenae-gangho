@@ -776,13 +776,17 @@ button.primary:hover { background: #d6552f; }
 }
 .doc-list input {
   flex: 1;
+  min-width: 0;
+  margin: 1px; /* 스크롤 컨테이너 가장자리에 보더가 잘려 너덜거리지 않게 한 숨 */
   font: 13px var(--sans);
   color: var(--ink);
   background: rgba(255, 252, 244, 0.7);
   border: 1px solid rgba(42, 36, 28, 0.35);
   border-radius: 4px;
   padding: 7px 10px;
+  outline: none; /* UA 포커스 링은 overflow에 잘려 지저분 — 인주 보더로 대신 */
 }
+.doc-list input:focus { border-color: var(--inju); }
 
 .sheet h2 {
   margin: 0 0 10px;
@@ -870,7 +874,7 @@ button.primary:hover { background: #d6552f; }
 
 /* PC에선 입출력 시트를 넉넉히 — 내용이 더 보이게 (확인 카드·도움말은 제외) */
 @media (min-width: 900px) {
-  .sheet:not(.confirm):not(.help) { width: min(840px, 92vw); }
-  .sheet:not(.confirm):not(.help) .code,
-  .sheet:not(.confirm):not(.help) .code-wrap { height: 56vh; }
+  .sheet:not(.confirm):not(.help):not(.docs) { width: min(840px, 92vw); }
+  .sheet:not(.confirm):not(.help):not(.docs) .code,
+  .sheet:not(.confirm):not(.help):not(.docs) .code-wrap { height: 56vh; }
 }

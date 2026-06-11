@@ -26,9 +26,10 @@
   const t = $derived(STRINGS[ui.tone])
 
   let viewportEl
-  // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계)
+  // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계).
+  // 문서 전환 중에도 0 — 떠나는 강호와 오는 강호가 겹쳐 보이지 않게 (동기식 절단)
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
-  const dur = (ms) => (REDUCED ? 0 : ms)
+  const dur = (ms) => (REDUCED || ui.docSwitching ? 0 : ms)
   let drag = null     // { grabbed, items: [{id, ox, oy}], moved, plain } — 쪽지(무리) 드래그
   let dragIds = $state(null) // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
   let marquee = $state(null) // { x0, y0, x1, y1, base } — 올가미(Shift+빈 곳 드래그), world 좌표

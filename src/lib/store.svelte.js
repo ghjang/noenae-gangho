@@ -54,6 +54,7 @@ export const ui = $state({
   showHelp: false,
   focusId: null, // 집중(포커스) 표적 — 세션 전용 뷰 상태: snapshot/undo 밖 (#47)
   focusDepth: 1, // 집중 반경(촌수) — [ ]로 조절
+  docSwitching: false, // 문서 전환 중 — 퇴장/입장 애니를 꺼서 두 강호가 겹쳐 보이지 않게
   tone: loadTone(), // 'muhyeop'(무협, 기본) | 'plain'(일반) — strings.js 팩 선택
   ink: 'muk', // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 })
@@ -354,22 +355,28 @@ function resetHistory() {
 
 // 문서 활성화 — 본문+뷰 적재, 역사 리셋. 전환/삭제 후/부팅이 공용으로 쓴다.
 // (직전 문서의 저장은 호출부 몫 — 디바운스 잔당이 새 문서에 적히는 사고 방지)
+// 전환은 동기식 절단: 애니를 끄고 즉시 갈아끼운다 — 두 강호가 겹쳐 보이면 주화입마
 async function activateDoc(id) {
-  docs.current = id
-  persistDocs()
-  const saved = await adapter.load(id)
-  if (!saved || !loadData(saved)) {
-    graph.nodes.length = 0
-    graph.edges.length = 0
-    clearSelection()
-    ui.editingId = null
-    ui.focusId = null
+  ui.docSwitching = true
+  try {
+    docs.current = id
+    persistDocs()
+    const saved = await adapter.load(id)
+    if (!saved || !loadData(saved)) {
+      graph.nodes.length = 0
+      graph.edges.length = 0
+      clearSelection()
+      ui.editingId = null
+      ui.focusId = null
+    }
+    resetHistory() // 문서 전환은 역사를 가르는 일 — undo는 문서 안에서만
+    const v = loadView(id)
+    ui.pan.x = v?.x ?? 40
+    ui.pan.y = v?.y ?? 40
+    ui.scale = v?.s ?? 1
+  } finally {
+    setTimeout(() => (ui.docSwitching = false), 60) // 교체 플러시가 지나간 뒤 애니 복권
   }
-  resetHistory() // 문서 전환은 역사를 가르는 일 — undo는 문서 안에서만
-  const v = loadView(id)
-  ui.pan.x = v?.x ?? 40
-  ui.pan.y = v?.y ?? 40
-  ui.scale = v?.s ?? 1
 }
 
 export async function init() {
