@@ -630,8 +630,17 @@ button.armed {
 .help-card dd,
 .sheet.help dd { margin: 0; color: #4d4538; }
 
-/* 전체 요결 시트 — 퀵 카드의 큰형. 기능이 늘어도 시트 안 스크롤로 받아낸다 */
-.sheet.help { max-height: 86vh; overflow-y: auto; }
+/* 전체 요결 시트 — 퀵 카드의 큰형. 다이얼로그 정석대로 제목/닫기 버튼은 고정,
+   요결 목록(dl)만 스크롤 — 기능이 늘어도 목록 안에서 받아낸다 */
+.sheet.help {
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+.sheet.help dl {
+  overflow-y: auto;
+  min-height: 0; /* 플렉스 자식이 내용보다 작아질 수 있게 — 없으면 스크롤 대신 시트가 터진다 */
+}
 .help-card .close-row { margin-top: 10px; text-align: right; }
 .help-card button {
   color: var(--ink);
