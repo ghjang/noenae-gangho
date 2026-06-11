@@ -318,14 +318,28 @@ export function markUndo(key = null) {
   redoStack.length = 0
 }
 
-// 여러 변이를 한 걸음(undo 1회)으로 묶는다 — 가지치기, 드롭 연결, 가져오기 등
+// 여러 변이를 한 걸음(undo 1회)으로 묶는다 — 가지치기, 드롭 연결, 가져오기 등.
+// 끝났는데 아무것도 안 변했으면(중복 緣 시도처럼 전부 무산) 역사를 원상복구 —
+// 유령 undo 걸음과 redo 스택 증발을 막는다
 export function asOneStep(fn) {
+  if (mutedDepth) {
+    fn() // 중첩 — 바깥 걸음에 흡수
+    return
+  }
+  const before = JSON.stringify(snapshot())
+  const savedRedo = redoStack.slice()
+  const savedMark = lastMark
   markUndo()
   mutedDepth++
   try {
     fn()
   } finally {
     mutedDepth--
+  }
+  if (JSON.stringify(snapshot()) === before) {
+    undoStack.pop() // 방금 쌓은 무변 스냅샷 회수
+    redoStack.push(...savedRedo)
+    lastMark = savedMark
   }
 }
 
