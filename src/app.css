@@ -173,9 +173,9 @@ button.armed {
 .bar .md { padding-block: 8px; }
 .bar .md svg { display: block; }
 
-/* 아이콘 버튼(내보내기/불러오기/비우기) — svg 15px + 패딩 7px = 같은 31px 키 */
-.bar .icon { padding-block: 7px; }
-.bar .icon svg { display: block; }
+/* 아이콘 버튼(내보내기/불러오기/비우기 + HUD 화면 맞춤) — svg 15px + 패딩 7px = 같은 31px 키 */
+.bar .icon, .hud .icon { padding-block: 7px; }
+.bar .icon svg, .hud .icon svg { display: block; }
 
 /* '+'는 ASCII 글리프라 줄높이가 낮다 — 한글/아이콘 버튼(31px)과 키 맞춤 겸 글리프 증량 */
 .bar .actions .primary { font-size: 15px; line-height: 17px; padding-block: 6px; }
