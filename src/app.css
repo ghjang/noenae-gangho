@@ -20,6 +20,7 @@
   --hanji-2: #e8dcc2;
   --ink: #2a241c;
   --ink-dim: rgba(42, 36, 28, 0.6); /* 한지(시트) 위 보조 먹빛 — 안내문 등 */
+  --bar-h: 52px; /* 상단 바 높이 — 뷰포트/검색·도움말 카드가 같이 참조. 모바일에선 2단으로 키운다 */
   --paper-dim: rgba(242, 233, 214, 0.55);
 
   /* 연(緣) — 잇는 선 */
@@ -74,6 +75,7 @@ html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
+  touch-action: manipulation; /* 폰 더블탭 줌·탭 지연 차단 — 캔버스(touch-action: none)는 별도 */
   cursor: var(--cursor-default), default; /* 기본 화살표까지 커스텀 — 상속으로 전역 */
   background: var(--muk-void);
   color: var(--hanji);
@@ -84,11 +86,22 @@ html, body {
 
 button { -webkit-tap-highlight-color: transparent; }
 
+/* 캔버스 앱 — UI 크롬(버튼·타이틀·HUD·도움말)의 글자는 선택 대상이 아니다
+   (PC Ctrl+A·드래그, 폰 꾹 누름 모두). 글을 다루는 곳만 아래에서 되살린다 */
+html {
+  -webkit-user-select: none;
+  user-select: none;
+}
+textarea, input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ── 상단 바 ── */
 .bar {
   position: fixed;
   inset: 0 0 auto 0;
-  height: 52px;
+  height: var(--bar-h);
   z-index: 20;
   display: flex;
   align-items: center;
@@ -222,7 +235,7 @@ button.armed {
 /* ── 캔버스 ── */
 .viewport {
   position: absolute;
-  inset: 52px 0 0 0;
+  inset: var(--bar-h) 0 0 0;
   overflow: hidden;
   touch-action: none;
   cursor: var(--cursor-grab), grab;
@@ -481,10 +494,24 @@ button.armed {
   .minimap { display: none; }
 }
 
+/* ── 모바일(폰) 응급 다듬기 — 뷰잉용 최소 대응 ── */
+@media (max-width: 640px) {
+  :root { --bar-h: 86px; } /* 상단 바 2단 높이 — 제목 줄 + 팔레트·버튼 줄 */
+  .bar {
+    flex-wrap: wrap; /* 우상단 버튼 잘림 방지 — 팔레트부터 둘째 줄로 */
+    row-gap: 2px;
+    padding-block: 8px;
+    align-content: center;
+  }
+  .bar .title { flex: 1 0 100%; }
+  .colophon { display: none; } /* 낙관(콜로폰)은 폰 화면에선 자리만 차지 */
+  .hud { left: 50%; translate: -50% 0; } /* 줌 위젯은 하단 중앙 — 콜로폰이 비운 자리, 엄지 닿기 좋게 */
+}
+
 /* ── 검색 카드 (Ctrl+F) ── */
 .search-card {
   position: fixed;
-  top: 62px;
+  top: calc(var(--bar-h) + 10px);
   left: 50%;
   translate: -50% 0;
   z-index: 30;
@@ -568,7 +595,7 @@ button.armed {
 .help-card {
   position: fixed;
   right: 14px;
-  top: 62px;
+  top: calc(var(--bar-h) + 10px);
   z-index: 30;
   width: min(320px, calc(100vw - 28px));
   background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
