@@ -121,6 +121,17 @@ const ok = (c, m) => {
   await p.keyboard.press('3'); // 사다리 2단: 미분 가지로 더 깊이
   await p.waitForTimeout(200);
   ok((await p.locator('.outline button.row').count()) === 2, '3 사다리 2단 — 미분 가지(2행)');
+  ok((await p.locator('.outline .scope button.crumb').count()) === 2, '크럼: 全 › difference (현재 미분)');
+  await p.locator('.outline .scope button.crumb').nth(1).click(); // difference 디딤돌 클릭
+  await p.waitForTimeout(200);
+  ok(
+    (await p.locator('.outline button.row').count()) === 3 &&
+      (await p.locator('.outline .scope button.crumb').count()) === 1,
+    '크럼 클릭 → 그 단으로 (사다리 절단)',
+  );
+  await p.locator('.outline button.row', { hasText: '미분' }).click(); // 다시 2단으로 — Esc 시나리오 계속
+  await p.keyboard.press('3');
+  await p.waitForTimeout(200);
   await p.keyboard.press('Escape');
   await p.waitForTimeout(200);
   ok(
