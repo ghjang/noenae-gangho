@@ -12,7 +12,7 @@
   import { STRINGS } from './lib/strings.js'
   import { boardColumns, childCounts } from './lib/graph.js'
 
-  let { onJump } = $props()
+  let { onJump, hue = null } = $props() // hue: 빈손 팔레트 호버 색 — 캔버스 '같은 색 비추기'의 보드 번역
   // 앵커 카드의 색 — 그 종대 머리 동그라미에 팔레트식 .cur 링 (키 항법의 나침반)
   const selColor = $derived(graph.nodes.find((n) => n.id === ui.selectedId)?.color)
   // 색을 갈아입으면 카드가 옛 종대에서 새 종대로 날아간다(crossfade) —
@@ -28,7 +28,7 @@
 
 <div class="board" role="region" aria-label={t.viewKanbanAria}>
   {#each cols as [c, nodes] (c)}
-    <section class="col" class:cur={c === selColor}>
+    <section class="col" class:cur={c === selColor} class:fade={hue && c !== hue}>
       <!-- 색명 글자는 떼고 동그라미가 곧 라벨 — 오행에선 색이 의미다 (이름은 툴팁·보조기기 몫) -->
       <h3 title={t.colorLabel[c]}><i class:cur={c === selColor} style={`background: var(--c-${c})`} role="img" aria-label={t.colorLabel[c]}></i><em>{nodes.length}</em></h3>
       <div class="cards">
