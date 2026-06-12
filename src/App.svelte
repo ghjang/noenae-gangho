@@ -551,6 +551,13 @@
       return
     }
     if (inField) return
+    // V — 뷰 순환 (강호 캔버스 ↔ 오행진): 양 뷰 공통, 상단 토글 버튼과 같은 길.
+    // 뷰 가족이 늘면(#42 포스트잇/아웃라인, #108 유람) V=다음 뷰로 순환 확장 예정
+    if (e.code === 'KeyV' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault()
+      toggleView()
+      return
+    }
     if (ui.viewMode !== 'canvas') { onBoardKey(e); return } // 캔버스 단축키(이동/가지/집중/올가미…)는 오행진에선 침묵 — 항법(#111)만 받는다
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫

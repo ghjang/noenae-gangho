@@ -21,7 +21,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   // 전부 보기 → 전체 요결 시트 (스크롤)
   await page.locator('.help-card .close-row button').first().click()
   ok(await page.locator('.sheet.help').count() === 1, '전부 보기 → 전체 시트 등장')
-  ok(await page.locator('.sheet.help dt').count() === 33, "전체 시트: 요결 33수")
+  ok(await page.locator('.sheet.help dt').count() === 34, "전체 시트: 요결 34수")
   // PR #89/#97 이후: 시트는 고정, 본문(.cols — 6묶음 다단)만 스크롤
   const dlScroll = await page.locator('.sheet.help .cols').evaluate((el) => el.scrollHeight > el.clientHeight)
   const sheetFixed = await page.locator('.sheet.help').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)
@@ -37,7 +37,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   ok(await page.locator('.help-card dt').count() === 8, 'plain 퀵 카드: 8수')
   ok((await page.locator('.help-card .close-row button').first().textContent()) === '전체 도움말', 'plain 버튼 문구')
   await page.locator('.help-card .close-row button').first().click()
-  ok(await page.locator('.sheet.help dt').count() === 33, "plain 전체 시트: 33수")
+  ok(await page.locator('.sheet.help dt').count() === 34, "plain 전체 시트: 34수")
   await page.keyboard.press('Escape')
 
   await browser.close()
