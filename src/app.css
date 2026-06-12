@@ -181,12 +181,10 @@ button.primary:hover { background: #d6552f; }
 .bar .md { padding-block: 8px; }
 .bar .md svg { display: block; }
 
-/* 아이콘 버튼(내보내기/불러오기/비우기 + HUD 화면 맞춤) — svg 15px + 패딩 7px = 같은 31px 키 */
-.bar .icon, .hud .icon { padding-block: 7px; }
-.bar .icon svg, .hud .icon svg { display: block; }
-
-/* '+'는 ASCII 글리프라 줄높이가 낮다 — 한글/아이콘 버튼(31px)과 키 맞춤 겸 글리프 증량 */
-.bar .actions .primary { font-size: 15px; line-height: 17px; padding-block: 6px; }
+/* 아이콘 버튼(새 쪽지/내보내기/불러오기/비우기 + HUD 화면 맞춤) — svg 15px + 패딩 7px = 같은 31px 키.
+   .add(새 쪽지)는 .icon과 같은 결이되 보초(iconbar.cjs)의 아이콘 4종 셈에서 별도 — 클래스만 다르다 */
+.bar .icon, .bar .add, .hud .icon { padding-block: 7px; }
+.bar .icon svg, .bar .add svg, .hud .icon svg { display: block; }
 
 /* 무공봉인 토글 — 한자 한 글자 낙관 (封: 봉인, 武: 무협으로) */
 .bar .tone {

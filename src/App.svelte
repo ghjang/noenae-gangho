@@ -1001,8 +1001,11 @@
   </div>
 
   <div class="actions">
-    <!-- 붓 색 표시는 팔레트의 링(.cur)이 담당 — 버튼은 인주 단색 '+' 하나로 깔끔하게 -->
-    <button class="primary" onclick={addAtCenter} title={t.newNode} aria-label={t.newNode}>+</button>
+    <!-- 새 쪽지 — Phosphor 'plus' regular (MIT, phosphor-icons/core). 인주 채움·ASCII '+'는
+         퇴역(튀기만 했다): 붓 색은 팔레트 링이, 강세는 낙관(선택)만 — 창작 버튼도 이웃 결로 -->
+    <button class="add" onclick={addAtCenter} title={t.newNode} aria-label={t.newNode}>
+      <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"><path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"/></svg>
+    </button>
     <button class="md" onclick={openMd} title={t.mdButtonTitle} aria-label={t.mdButtonAria}>
       <!-- 공식 Markdown 마크(M↓) — dcurtis/markdown-mark, 퍼블릭 도메인 헌정(저장소 LICENSE 확인) -->
       <svg viewBox="0 0 208 128" width="21" height="13" aria-hidden="true"><g fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="m15 10c-2.7614 0-5 2.2386-5 5v98c0 2.761 2.2386 5 5 5h178c2.761 0 5-2.239 5-5v-98c0-2.7614-2.239-5-5-5zm-15 5c0-8.28427 6.71573-15 15-15h178c8.284 0 15 6.71573 15 15v98c0 8.284-6.716 15-15 15h-178c-8.28427 0-15-6.716-15-15z"/><path d="m30 98v-68h20l20 25 20-25h20v68h-20v-39l-20 25-20-25v39zm125 0-30-33h20v-35h20v35h20z"/></g></svg>
