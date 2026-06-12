@@ -700,24 +700,33 @@ button.primary:hover { background: #d6552f; }
   font: 12.5px var(--sans); /* 행 본문과 같은 산세리프 — 명조/고딕 뒤섞임 정리 (사용자 제보) */
   color: var(--ink-dim);
 }
-.outline .scope span {
+.outline .scope .sep {
+  flex: none;
+  opacity: 0.55;
+}
+.outline .scope .cur {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+  color: var(--ink); /* 현재 가지 — 크럼 끝, 또렷하게 */
 }
-.outline .scope button {
-  margin-left: auto;
+.outline .scope button.crumb {
   flex: none;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: 600 12px/1 var(--sans);
   color: var(--ink);
   background: rgba(42, 36, 28, 0.06);
   border: 1px solid rgba(42, 36, 28, 0.25);
   border-radius: 999px; /* 알약 — 머릿수 칩·팔레트와 같은 결 */
-  padding: 6px 12px;
+  padding: 5px 11px;
   cursor: var(--cursor-pointer), pointer;
 }
-.outline .scope button:hover {
+.outline .scope button.crumb:hover {
   background: rgba(42, 36, 28, 0.12);
 }
 .outline button.row:focus-visible {
@@ -734,6 +743,16 @@ button.primary:hover { background: #d6552f; }
   align-items: center;
   gap: 7px;
   padding-left: calc(var(--d) * 20px); /* 깊이 들여쓰기 — 행=쪽지, 열=깊이 (비급.md와 같은 격자 감각) */
+  /* 들여쓰기 가이드 선 (IDE 트리 국룰) — 조상 열(20px 단위)마다 중앙에 옅은 세로선:
+     같은 깊이의 잎/가지가 누구 밑인지 선으로 읽힌다 (x 정렬만으론 부족 — 사용자 제보) */
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0 9.5px,
+    rgba(42, 36, 28, 0.14) 9.5px 10.5px,
+    transparent 10.5px 20px
+  );
+  background-size: calc(var(--d) * 20px) 100%;
+  background-repeat: no-repeat;
 }
 .outline .dot {
   flex: none;

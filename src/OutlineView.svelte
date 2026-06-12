@@ -8,8 +8,8 @@
   // rootId가 있으면 그 가지만(스코프 — 진입 시점의 선택, Workflowy zoom 국룰).
   // 행 클릭=선택 · 더블클릭=캔버스 점프 · ▸/▾=봉문 토글(캔버스 변이 재사용) — 그 외 편집은 본진 몫
   // ──────────────────────────────────────────────
-  import { graph, ui, selectNode, toggleCollapse, byId } from './lib/store.svelte.ts';
-  import { STRINGS, fmt } from './lib/strings.ts';
+  import { graph, ui, selectNode, toggleCollapse, byId, jumpOutlineScope } from './lib/store.svelte.ts';
+  import { STRINGS } from './lib/strings.ts';
   import { outlineRows, childCounts } from './lib/graph.ts';
   import type { NoteNode } from './lib/types.ts';
 
@@ -31,10 +31,19 @@
 <div class="outline" role="region" aria-label={t.viewOutlineAria}>
   <div class="scroll">
     {#if scopeNode}
-      <div class="scope">
-        <span>{fmt(t.outlineScope, { label: firstLine(scopeNode) })}</span>
-        <button onclick={onScopeClear}>{t.outlineScopeAll}</button>
-      </div>
+      <!-- 사다리 브레드크럼 — 全 › 디딤돌들 › 현재 가지. 디딤돌 클릭 = 그 단으로 (사다리 절단) -->
+      <nav class="scope" aria-label={t.outlineCrumbsAria}>
+        <button class="crumb" onclick={onScopeClear}>{t.outlineCrumbAll}</button>
+        {#each ui.outlineTrail as tid, i (tid + ':' + i)}
+          {@const tn = byId(tid)}
+          {#if tn}
+            <span class="sep" aria-hidden="true">›</span>
+            <button class="crumb" onclick={() => jumpOutlineScope(i)}>{firstLine(tn)}</button>
+          {/if}
+        {/each}
+        <span class="sep" aria-hidden="true">›</span>
+        <span class="cur">{firstLine(scopeNode)}</span>
+      </nav>
     {/if}
     {#if rows.length === 0}
       <p class="none">{t.emptyTitle}</p>

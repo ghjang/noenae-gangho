@@ -132,6 +132,14 @@ export function popOutlineScope(): void {
   applyOutlineScope(prev);
 }
 
+// 브레드크럼 클릭 — 사다리의 그 디딤돌로 (그 단까지 사다리를 자른다)
+export function jumpOutlineScope(index: number): void {
+  const target = ui.outlineTrail[index];
+  if (!target) return;
+  ui.outlineTrail.length = index;
+  applyOutlineScope(byId(target) ? target : null);
+}
+
 export const graph: { nodes: NoteNode[]; edges: Edge[] } = $state({ nodes: [], edges: [] });
 
 export interface UiState {

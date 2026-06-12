@@ -158,8 +158,8 @@ const muhyeop = {
   viewOutlineTitle: '족보(族譜) — 위계로 읽는다 (V로 순환)',
   viewOutlineAria: '족보',
   outlineRowTitle: '두 번 두드리면 강호의 그 자리로',
-  outlineScope: "'{label}' 가지의 족보",
-  outlineScopeAll: '전체 족보 보기',
+  outlineCrumbAll: '全 족보',
+  outlineCrumbsAria: '족보 사다리 — 디딤돌을 누르면 그 단으로',
   boardCardTitle: '두 번 두드리면 강호의 그 자리로',
   closeButton: '닫기',
 
@@ -322,8 +322,8 @@ export const STRINGS: Record<Tone, StringPack> = {
     viewOutlineTitle: '아웃라인 보기 — 트리 개요 (V로 순환)',
     viewOutlineAria: '아웃라인',
     outlineRowTitle: '더블클릭 = 캔버스에서 보기',
-    outlineScope: "'{label}' 하위만 표시 중",
-    outlineScopeAll: '전체 보기',
+    outlineCrumbAll: '전체',
+    outlineCrumbsAria: '아웃라인 경로 — 누르면 그 단계로',
     boardCardTitle: '더블클릭 = 캔버스에서 보기',
     closeButton: '닫기',
 
