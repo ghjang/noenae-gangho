@@ -27,7 +27,7 @@ const ok = (c, m) => {
   // 전부 보기 → 전체 요결 시트 (스크롤)
   await page.locator('.help-card .close-row button').first().click();
   ok((await page.locator('.sheet.help').count()) === 1, '전부 보기 → 전체 시트 등장');
-  ok((await page.locator('.sheet.help dt').count()) === 36, '전체 시트: 요결 36수');
+  ok((await page.locator('.sheet.help dt').count()) === 37, '전체 시트: 요결 37수');
   // PR #89/#97 이후: 시트는 고정, 본문(.cols — 6묶음 다단)만 스크롤
   const dlScroll = await page
     .locator('.sheet.help .cols')
@@ -50,7 +50,7 @@ const ok = (c, m) => {
     'plain 버튼 문구',
   );
   await page.locator('.help-card .close-row button').first().click();
-  ok((await page.locator('.sheet.help dt').count()) === 36, 'plain 전체 시트: 36수');
+  ok((await page.locator('.sheet.help dt').count()) === 37, 'plain 전체 시트: 37수');
   await page.keyboard.press('Escape');
 
   // 노트북(OS 배율 125% 추정 1536×754) — 전체 시트가 수직 스크롤 없이 한눈에.

@@ -66,6 +66,66 @@ const ok = (c, m) => {
     '전체 족보 보기 → 4행·스코프 해제',
   );
 
+  // 키보드 항법 — 트리 뷰 국룰: ↑↓ 순회(순환)·← 접기/부모·→ 펼치기/자식·Enter 점프·Delete 베기
+  await p.keyboard.press('Escape'); // 빈손에서
+  await p.keyboard.press('ArrowDown');
+  ok(
+    (await p.locator('.outline button.row.sel .txt').textContent()).includes('깨다름'),
+    '빈손 화살표 → 첫 행 선택',
+  );
+  await p.keyboard.press('ArrowUp');
+  ok(
+    (await p.locator('.outline button.row.sel .txt').textContent()).includes('브로'),
+    '↑ 머리에서 바닥으로 순환',
+  );
+  await p.keyboard.press('ArrowLeft');
+  ok(
+    (await p.locator('.outline button.row.sel .txt').textContent()).includes('미분'),
+    '← 잎에서 부모로',
+  );
+  await p.keyboard.press('ArrowLeft'); // 미분(자식 있음·펼침) → 접기
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 3, '← 펼친 가지(미분)에서 = 접기 (행 4→3)');
+  await p.keyboard.press('ArrowLeft'); // 접힌 미분 → 부모(difference)로
+  await p.keyboard.press('ArrowRight'); // difference(펼침) → 첫 자식(접힌 미분)으로
+  await p.keyboard.press('ArrowRight'); // 접힌 미분 → 개문
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 4, '→ 접힌 가지에서 = 펼치기 (행 복원)');
+  await p.keyboard.press('ArrowRight'); // 미분(펼침) → 첫 자식 브로
+  ok(
+    (await p.locator('.outline button.row.sel .txt').textContent()).includes('브로'),
+    '→ 펼친 가지에서 = 첫 자식으로',
+  );
+  await p.keyboard.press('Enter');
+  await p.waitForTimeout(400);
+  ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프');
+  await p.keyboard.press('3'); // 족보 복귀 (브로 선택 중 — 스코프 재조준)
+  await p.waitForTimeout(250);
+  ok(
+    (await p.locator('.outline .scope').count()) === 1 &&
+      (await p.locator('.outline button.row').count()) === 1,
+    '3 재진입 = 선택 가지(잎 하나)로 재조준',
+  );
+  await p.keyboard.press('0'); // 숫자 가족의 귀환 번호
+  await p.waitForTimeout(250);
+  ok(
+    (await p.locator('.outline .scope').count()) === 0 &&
+      (await p.locator('.outline button.row').count()) === 4,
+    '0 → 전체 족보 복귀',
+  );
+  await p.keyboard.press('3'); // 다시 조준 (선택 유지 중)
+  await p.waitForTimeout(250);
+  await p.keyboard.press('Escape'); // 단계식 — 스코프부터 닫는다 (선택은 유지)
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 단계식 → 스코프 해제');
+  ok((await p.locator('.outline button.row.sel').count()) === 1, 'Esc 1단은 선택을 살려둔다');
+  await p.keyboard.press('Delete');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 3, 'Delete → 베기 (3행)');
+  await p.keyboard.press('Control+z');
+  await p.waitForTimeout(300);
+  ok((await p.locator('.outline button.row').count()) === 4, 'Ctrl+Z → 4행 귀환 (undo는 뷰 불문 전역)');
+
   // 뷰 직행(1/2/3)·역순환(Shift+V) — 전 뷰 공통
   await p.keyboard.press('1');
   await p.waitForTimeout(250);

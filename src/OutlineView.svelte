@@ -57,6 +57,7 @@
               class="row"
               class:sel={!r.revisit && ui.selectedIds.includes(r.node.id)}
               class:revisit={r.revisit}
+              data-id={r.node.id}
               title={t.outlineRowTitle}
               onclick={() => selectNode(r.node.id)}
               ondblclick={() => onJump(r.node)}

@@ -694,16 +694,35 @@ button.primary:hover { background: #d6552f; }
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 12px;
-  padding: 0 0 10px;
+  margin: 0 0 14px;
+  padding: 0 6px 10px;
   border-bottom: 1px solid rgba(42, 36, 28, 0.18);
-  font: 600 13px var(--serif);
+  font: 12.5px var(--sans); /* 행 본문과 같은 산세리프 — 명조/고딕 뒤섞임 정리 (사용자 제보) */
+  color: var(--ink-dim);
+}
+.outline .scope span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .outline .scope button {
   margin-left: auto;
+  flex: none;
+  font: 600 12px/1 var(--sans);
   color: var(--ink);
   background: rgba(42, 36, 28, 0.06);
-  border-color: rgba(42, 36, 28, 0.25);
+  border: 1px solid rgba(42, 36, 28, 0.25);
+  border-radius: 999px; /* 알약 — 머릿수 칩·팔레트와 같은 결 */
+  padding: 6px 12px;
+  cursor: var(--cursor-pointer), pointer;
+}
+.outline .scope button:hover {
+  background: rgba(42, 36, 28, 0.12);
+}
+.outline button.row:focus-visible {
+  outline: 3px solid var(--c-hwang); /* 조준 금테 — 보드 카드와 같은 어휘 (.sel 인주가 이긴다) */
+  outline-offset: 0;
 }
 .outline ul {
   list-style: none;
