@@ -479,7 +479,7 @@
     // Ctrl/Cmd 조합 — 줌(±/0)과 검색(F)은 입력 필드에 포커스가 있어도 캔버스 몫
     // (검색창 띄운 채 Ctrl+±로 찾은 쪽지 확대). 나머지는 필드 네이티브에 양보
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
-      // 오행진(보드)에선 되돌리기만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
+      // 오행진(보드)에선 되돌리기 + 색 이동만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
       if (ui.viewMode !== 'canvas') {
         if (e.code === 'KeyZ') {
           e.preventDefault()
@@ -488,6 +488,13 @@
         } else if (e.code === 'KeyY') {
           e.preventDefault()
           redo()
+        } else if (!e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && ui.selectedIds.length) {
+          // Ctrl+←→ — 선택 카드를 이웃 종대 색으로 (#105 경량 편집 첫 수, 양끝 순환).
+          // 빈 종대도 어엿한 목적지. 팔레트 칠하기와 같은 변이(setColorMany) —
+          // undo 한 걸음, 종대 비행(crossfade)은 공짜. 무리면 앵커 색 기준으로 일괄
+          e.preventDefault()
+          const i = COLORS.indexOf(byId(ui.selectedId)?.color ?? COLORS[0])
+          setColorMany(ui.selectedIds, COLORS[(i + (e.key === 'ArrowRight' ? 1 : -1) + COLORS.length) % COLORS.length])
         }
         return
       }
