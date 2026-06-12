@@ -112,7 +112,7 @@ const muhyeop = {
       '↑↓·←→ 카드 누비기(양끝 순환) · Tab 조준(금테) 중엔 금테만 이동 — Enter면 선택, 다시 Enter면 강호의 그 자리로',
     ],
     ['Ctrl+←→ (오행진)', '선택한 카드를 이웃 종대 색으로 물들여 보내기 — 양끝 순환'],
-  ],
+  ] as [string, string][],
   // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
   helpQuick: [
     '빈 곳 2번',
@@ -133,7 +133,7 @@ const muhyeop = {
     ['강호 유람', ['빈 곳 끌기', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn']],
     ['항법·수소문·되돌리기', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
     ['서가와 진법', ['서가(겹책)', '오행진 토글', 'V', '오행진 항법', 'Ctrl+←→ (오행진)']],
-  ],
+  ] as [string, string[]][],
   helpMoreButton: '요결 전부 보기',
   focusPill: "集中 '{label}' {depth}촌 — [ ] 반경 · L 해제",
   focusPillAria: '집중 해제',

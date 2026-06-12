@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   // ──────────────────────────────────────────────
   // 오행진(五行陣) — 색별 종대 칸반 (#42 + #111 항법 + #105 경량 편집).
   // 단일 컴포넌트 원칙의 첫 분리: 캔버스(App)와 형제, 표현만 다르다.
@@ -13,8 +13,10 @@
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
   import { boardColumns, childCounts } from './lib/graph.ts';
+  import type { Color, NoteNode } from './lib/types.ts';
 
-  let { onJump, hue = null } = $props(); // hue: 빈손 팔레트 호버 색 — 캔버스 '같은 색 비추기'의 보드 번역
+  // hue: 빈손 팔레트 호버 색 — 캔버스 '같은 색 비추기'의 보드 번역
+  let { onJump, hue = null }: { onJump: (n: NoteNode) => void; hue?: Color | null } = $props();
   // 앵커 카드의 색 — 그 종대 머리 동그라미에 팔레트식 .cur 링 (키 항법의 나침반)
   const selColor = $derived(graph.nodes.find((n) => n.id === ui.selectedId)?.color);
   // 색을 갈아입으면 카드가 옛 종대에서 새 종대로 날아간다(crossfade) —
@@ -25,7 +27,9 @@
   const kidCount = $derived(childCounts(graph.edges)); // 접힌 카드의 ▸N 배지용 — 캔버스와 같은 표기
   // 봉문은 오행진에서도 존중 — '치웠다'는 의지는 뷰를 가리지 않는다 (집중은 캔버스 전용).
   // 진형(색별 y→x)은 boardColumns — App의 키보드 항법(#111)과 같은 한 벌
-  const cols = $derived(boardColumns(graph.nodes, graph.edges, COLORS).map((ns, i) => [COLORS[i], ns]));
+  const cols = $derived(
+    boardColumns(graph.nodes, graph.edges, COLORS).map((ns, i): [Color, NoteNode[]] => [COLORS[i], ns]),
+  );
 </script>
 
 <div class="board" role="region" aria-label={t.viewKanbanAria}>

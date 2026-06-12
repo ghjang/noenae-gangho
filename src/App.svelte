@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   // ──────────────────────────────────────────────
   // 뇌내강호(腦內江湖) — 메인 컴포넌트
   // 먹빛 허공에 念(쪽지)을 띄우고 緣(연결)으로 잇는다.
@@ -67,40 +67,45 @@
   } from './lib/graph.ts';
   import { fromMarkdown } from './lib/markdown.ts';
   import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.ts';
+  import type { Color, NoteNode } from './lib/types.ts';
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone]);
 
-  let viewportEl;
+  let viewportEl: HTMLDivElement; // bind:this — 캔버스 분기에서만 산다 (보드에선 부재)
   // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계).
   // 문서 전환 중에도 0 — 떠나는 강호와 오는 강호가 겹쳐 보이지 않게 (동기식 절단)
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const dur = (ms) => (REDUCED || ui.docSwitching ? 0 : ms);
-  let drag = null; // { grabbed, items: [{id, ox, oy}], moved, plain } — 쪽지(무리) 드래그
-  let dragIds = $state(null); // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
-  let marquee = $state(null); // { x0, y0, x1, y1, base } — 올가미(Shift+빈 곳 드래그), world 좌표
+  const dur = (ms: number) => (REDUCED || ui.docSwitching ? 0 : ms);
+  // 쪽지(무리) 드래그
+  let drag: { grabbed: string; moved: boolean; plain: boolean; items: { id: string; ox: number; oy: number }[] } | null =
+    null;
+  let dragIds = $state<Set<string> | null>(null); // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
+  // 올가미(Shift+빈 곳 드래그), world 좌표
+  let marquee = $state<{ x0: number; y0: number; x1: number; y1: number; base: string[] } | null>(null);
   let shiftHeld = $state(false); // Shift 누름 — 캔버스 커서를 조준 레티클로 (올가미 예고)
-  let panning = null; // { sx, sy, px, py } — 강호 유람(팬)
-  let resizing = null; // { id, sx, sw } — 쪽지 너비 조절
-  let touchPts = new Map(); // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
-  let pinch = null; // { d, mx, my } — 직전 두 손가락 거리·중점 (화면 좌표)
-  let hover = $state({ id: null, side: 'right' }); // 緣 핸들 위치 — 마우스에 가까운 변
-  let colorHover = $state(null); // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
-  let edgeHover = null; // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
+  let panning: { sx: number; sy: number; px: number; py: number } | null = null; // 강호 유람(팬)
+  let resizing: { id: string; edge: 'left' | 'right'; sx: number; sw: number; right: number } | null = null; // 쪽지 너비 조절
+  let touchPts = new Map<number, { x: number; y: number }>(); // pointerId → {x, y} — 뷰포트에서 시작한 포인터 (핀치 판별)
+  let pinch: { d: number; mx: number; my: number } | null = null; // 직전 두 손가락 거리·중점 (화면 좌표)
+  let hover = $state<{ id: string | null; side: string }>({ id: null, side: 'right' }); // 緣 핸들 위치 — 마우스에 가까운 변
+  let colorHover = $state<Color | null>(null); // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
+  let edgeHover: string | null = null; // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
 
   let sheetText = $state(''); // 입출력 시트 본문
-  let hlPre = null; // 가져오기 편집 overlay의 하이라이트 pre — 스크롤 동기화용
-  let sheetMsg = $state(''); // 시트 하단 메시지 — strings.js 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
-  let searchQ = $state(null); // 검색 질의 — null이면 닫힘
+  let hlPre: HTMLElement | null = null; // 가져오기 편집 overlay의 하이라이트 pre — 스크롤 동기화용
+  // 시트 하단 메시지 — strings 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
+  let sheetMsg = $state<'' | 'importBadShape' | 'importParseFail' | 'copyOk' | 'copyFail'>('');
+  let searchQ = $state<string | null>(null); // 검색 질의 — null이면 닫힘
   let searchIdx = $state(0); // 하이라이트 = 지금/다음에 볼 결과 (화면과 항상 일치)
   let searchJumped = false; // Enter 의미 분기: 처음엔 현재 항목, 그 뒤엔 전진 후 점프
-  let searchEl = null; // 검색 input — 재호출 시 전체 선택용
+  let searchEl: HTMLInputElement | null = null; // 검색 input — 재호출 시 전체 선택용
   let vpW = $state(0),
     vpH = $state(0); // 뷰포트 실측 — 미니맵 뷰 사각형용
   let tidying = $state(false); // 정돈(R) 직후 잠깐 — 쪽지가 미끄러지는 트랜지션
-  let tidyTimer = null;
+  let tidyTimer: ReturnType<typeof setTimeout> | undefined;
   let mmDrag = false; // 미니맵 스크럽 중
-  let mmEl = null; // 미니맵 svg (스크럽 좌표 변환용)
+  let mmEl: SVGSVGElement; // 미니맵 svg (스크럽 좌표 변환용)
 
   onMount(() => {
     init();
@@ -120,7 +125,7 @@
 
   // ── 좌표 변환 ─────────────────────────────────
   // (緣 기하 — center/edgeStart/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.ts)
-  function toWorld(e) {
+  function toWorld(e: { clientX: number; clientY: number }) {
     const r = viewportEl.getBoundingClientRect();
     return {
       x: (e.clientX - r.left - ui.pan.x) / ui.scale,
@@ -129,7 +134,7 @@
   }
 
   // ── 뷰포트: 팬 / 줌 / 새 쪽지 ─────────────────
-  function onViewportDown(e) {
+  function onViewportDown(e: PointerEvent & { currentTarget: HTMLElement }) {
     if (e.target !== e.currentTarget) return;
     commitEditing();
     searchQ = null; // 캔버스 직접 조작 = 검색창 닫기 (팝오버 국룰)
@@ -152,24 +157,24 @@
     }
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
-  function onViewportDbl(e) {
+  function onViewportDbl(e: MouseEvent) {
     if (e.target !== e.currentTarget) return;
     const w = toWorld(e);
     addNodeAt(w.x - 90, w.y - 24);
   }
-  function onWheel(e) {
+  function onWheel(e: WheelEvent) {
     e.preventDefault();
     const r = viewportEl.getBoundingClientRect();
     zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
   }
-  function zoomAt(cx, cy, factor) {
+  function zoomAt(cx: number, cy: number, factor: number) {
     const ns = clampScale(ui.scale * factor);
     const k = ns / ui.scale;
     ui.pan.x = cx - (cx - ui.pan.x) * k;
     ui.pan.y = cy - (cy - ui.pan.y) * k;
     ui.scale = ns;
   }
-  function zoomCenter(factor) {
+  function zoomCenter(factor: number) {
     const r = viewportEl.getBoundingClientRect();
     zoomAt(r.width / 2, r.height / 2, factor);
   }
@@ -211,7 +216,7 @@
     ui.pan.y = (r.height - (bb.y0 + bb.y1) * s) / 2;
   }
   // 선택한 쪽지를 화면 가득히 (Shift+2 — Figma 'Zoom to Selection' 국룰)
-  function fitSelection(n) {
+  function fitSelection(n: NoteNode) {
     const b = nodeBox(n);
     const pad = 48;
     const r = viewportEl.getBoundingClientRect();
@@ -221,14 +226,14 @@
     ui.pan.y = (r.height - (b.y * 2 + b.h) * s) / 2;
   }
   // 쪽지를 화면 중앙으로 (배율 유지)
-  function centerOn(n) {
+  function centerOn(n: NoteNode) {
     const r = viewportEl.getBoundingClientRect();
     const b = nodeBox(n);
     ui.pan.x = r.width / 2 - (b.x + b.w / 2) * ui.scale;
     ui.pan.y = r.height / 2 - (b.y + b.h / 2) * ui.scale;
   }
   // 쪽지가 화면 밖이면 중앙으로 끌어온다 (Alt+화살표 緣 타기용)
-  function ensureVisible(n) {
+  function ensureVisible(n: NoteNode) {
     const r = viewportEl.getBoundingClientRect();
     const b = nodeBox(n);
     const x0 = b.x * ui.scale + ui.pan.x,
@@ -246,7 +251,7 @@
     if (!q) return [];
     return graph.nodes.filter((n) => n.text.toLowerCase().includes(q)).slice(0, 8);
   });
-  function jumpTo(n) {
+  function jumpTo(n: NoteNode) {
     revealNode(n.id); // 접힌 가지 속이면 조상 봉문을 열며 데려간다
     if (ui.focusId && ui.focusId !== n.id) ui.focusId = n.id; // 집중 중 점프 = 표적 갈아타기
     selectNode(n.id);
@@ -254,7 +259,7 @@
     if (ui.scale < 0.9) ui.scale = 1;
     centerOn(n);
   }
-  function onSearchKey(e) {
+  function onSearchKey(e: KeyboardEvent) {
     const len = matches.length;
     if (e.key === 'Escape') {
       e.stopPropagation(); // 전역 Esc(단계식 해제)가 같은 키로 또 동작하지 않게
@@ -275,7 +280,7 @@
       searchJumped = true;
     }
   }
-  const focusit = (el) => {
+  const focusit = (el: HTMLElement) => {
     el.focus();
   };
 
@@ -298,12 +303,12 @@
     return { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
   });
   // 미니맵의 한 점(world)이 화면 중앙에 오도록
-  function mmJump(e) {
-    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(mmEl.getScreenCTM().inverse());
+  function mmJump(e: { clientX: number; clientY: number }) {
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(mmEl.getScreenCTM()!.inverse());
     ui.pan.x = vpW / 2 - pt.x * ui.scale;
     ui.pan.y = vpH / 2 - pt.y * ui.scale;
   }
-  function onMinimapDown(e) {
+  function onMinimapDown(e: PointerEvent) {
     e.stopPropagation();
     mmDrag = true;
     mmEl.setPointerCapture?.(e.pointerId);
@@ -317,7 +322,10 @@
       // 아래 이어 붙이기(같은 x), 그 색이 없으면 맨 아래 쪽지 아래 — 캔버스 배치 보존.
       // 보드엔 편집기가 없으니 선택까지만(edit=false) — 인라인 편집은 #105의 몫
       const pool = graph.nodes.filter((n) => n.color === ui.ink);
-      const anchor = (pool.length ? pool : graph.nodes).reduce((a, b) => (!a || b.y > a.y ? b : a), null);
+      const anchor = (pool.length ? pool : graph.nodes).reduce<NoteNode | null>(
+        (a, b) => (!a || b.y > a.y ? b : a),
+        null,
+      );
       if (anchor) addNodeAt(anchor.x, anchor.y + nodeBox(anchor).h + 24, '', ui.ink, false);
       else addNodeAt(0, 0, '', ui.ink, false);
       return;
@@ -329,7 +337,7 @@
   }
 
   // ── 쪽지(노드) ────────────────────────────────
-  function onNodeDown(e, n) {
+  function onNodeDown(e: PointerEvent, n: NoteNode) {
     e.stopPropagation();
     // 편집 중인 쪽지의 여백을 잡으면 — 편집을 유지한 채 그대로 드래그한다.
     // preventDefault가 포커스 이탈(blur)을 막아, 빈 쪽지가 끌리는 도중에
@@ -358,12 +366,12 @@
           const m = byId(id);
           return m && { id, ox: w.x - m.x, oy: w.y - m.y };
         })
-        .filter(Boolean),
+        .filter((it): it is { id: string; ox: number; oy: number } => !!it),
     };
   }
   // 더블클릭 좌표 → 표시 텍스트의 오프셋 (편집 진입 시 그 자리에 캐럿)
-  let pendingCaret = null;
-  function caretIndexAt(x, y, textEl) {
+  let pendingCaret: number | null = null;
+  function caretIndexAt(x: number, y: number, textEl: HTMLElement): number | null {
     try {
       if (document.caretPositionFromPoint) {
         const p = document.caretPositionFromPoint(x, y);
@@ -377,45 +385,46 @@
     }
     return null;
   }
-  function onNodeDbl(e, n) {
+  function onNodeDbl(e: MouseEvent & { currentTarget: HTMLElement }, n: NoteNode) {
     e.stopPropagation();
-    const ntext = e.currentTarget.querySelector('.ntext');
+    const ntext = e.currentTarget.querySelector<HTMLElement>('.ntext');
     pendingCaret = ntext && n.text ? caretIndexAt(e.clientX, e.clientY, ntext) : null;
     selectNode(n.id);
     ui.editingId = n.id;
   }
   // 緣 핸들을 마우스와 가장 가까운 변으로 — 제스처 중에는 고정
-  function onNodeHover(e, n) {
+  function onNodeHover(e: PointerEvent, n: NoteNode) {
     if (drag || panning || resizing || ui.linking) return;
     const w = toWorld(e);
     const b = nodeBox(n);
     const lx = w.x - b.x,
       ly = w.y - b.y;
-    const side = [
+    const sides: [string, number][] = [
       ['left', lx],
       ['right', b.w - lx],
       ['top', ly],
       ['bottom', b.h - ly],
-    ].sort((p, q) => p[1] - q[1])[0][0];
+    ];
+    const side = sides.sort((p, q) => p[1] - q[1])[0][0];
     if (hover.id !== n.id || hover.side !== side) hover = { id: n.id, side };
   }
-  function onNodeLeave(n) {
+  function onNodeLeave(n: NoteNode) {
     if (hover.id === n.id) hover = { id: null, side: 'right' };
   }
-  function onHandleDown(e, n) {
+  function onHandleDown(e: PointerEvent, n: NoteNode) {
     e.stopPropagation();
     const w = toWorld(e);
     selectNode(n.id);
     ui.linking = { from: n.id, x: w.x, y: w.y };
   }
-  function onResizeDown(e, n, edge) {
+  function onResizeDown(e: PointerEvent, n: NoteNode, edge: 'left' | 'right') {
     e.stopPropagation();
     selectNode(n.id);
     const w = toWorld(e);
     const sw = n.bw || nodeBox(n).w;
     resizing = { id: n.id, edge, sx: w.x, sw, right: n.x + sw };
   }
-  function onResizeDbl(e, n) {
+  function onResizeDbl(e: MouseEvent, n: NoteNode) {
     e.stopPropagation();
     setNodeWidth(n.id, null); // 자동 너비로 복귀
   }
@@ -425,13 +434,13 @@
 
   // ── 전역 포인터: 드래그 진행/마무리 ────────────
   // 올가미 사각형 정규화 — 어느 방향으로 그어도 양수 폭
-  const normRect = (m) => ({
+  const normRect = (m: { x0: number; y0: number; x1: number; y1: number }) => ({
     x: Math.min(m.x0, m.x1),
     y: Math.min(m.y0, m.y1),
     w: Math.abs(m.x1 - m.x0),
     h: Math.abs(m.y1 - m.y0),
   });
-  function onWinMove(e) {
+  function onWinMove(e: PointerEvent) {
     if (!viewportEl) return; // 캔버스 부재(오행진) — 떠돌이 제스처 상태가 toWorld를 찌르지 않게 (안전핀)
     if (mmDrag) {
       mmJump(e);
@@ -491,7 +500,7 @@
       setNodeWidth(resizing.id, resizing.edge === 'right' ? resizing.sw + dx : resizing.sw - dx);
       if (resizing.edge === 'left') {
         const n = byId(resizing.id);
-        if (n) n.x = resizing.right - n.bw; // 왼변을 끌 때는 오른변 고정
+        if (n) n.x = resizing.right - n.bw!; // 왼변을 끌 때는 오른변 고정 (직전 setNodeWidth가 bw를 채웠다)
       }
     } else if (ui.linking) {
       const w = toWorld(e);
@@ -499,7 +508,7 @@
       ui.linking.y = w.y;
     }
   }
-  function onWinUp(e) {
+  function onWinUp(e: PointerEvent) {
     mmDrag = false;
     marquee = null;
     touchPts.delete(e.pointerId);
@@ -515,7 +524,7 @@
     if (ui.linking) {
       const from = ui.linking.from;
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      const nodeEl = el?.closest?.('[data-node-id]');
+      const nodeEl = el?.closest?.<HTMLElement>('[data-node-id]');
       // 접힌 쪽지에서 緣을 이으면 개문하고 진행 — 새 식구가 잇자마자 봉문 속으로
       // 사라지지 않게 (Tab/Enter 가지치기의 collapsed 해제와 같은 관행)
       const unfold = () => {
@@ -528,7 +537,7 @@
       if (nodeEl && nodeEl.dataset.nodeId !== from) {
         asOneStep(() => {
           unfold();
-          addEdge(from, nodeEl.dataset.nodeId);
+          addEdge(from, nodeEl.dataset.nodeId!);
         });
       } else if (!nodeEl && viewportEl?.contains(el)) {
         // 허공에 놓으면 — 그 자리에 새 쪽지를 피우고 緣을 잇는다 (undo 한 걸음)
@@ -544,8 +553,8 @@
   }
 
   // ── 키보드 ───────────────────────────────────
-  function onKey(e) {
-    const el = e.target;
+  function onKey(e: KeyboardEvent) {
+    const el = e.target as HTMLElement | null;
     const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT');
     if (e.key === 'Shift' && !inField) shiftHeld = true; // 올가미 예고 커서 (글 입력 중엔 무시)
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지.
@@ -731,7 +740,7 @@
     }
     if (e.code === 'KeyF' && (edgeHover || ui.selectedEdgeId)) {
       e.preventDefault();
-      flipEdge(edgeHover ?? ui.selectedEdgeId); // 가리키는 緣이 선택보다 우선
+      flipEdge((edgeHover ?? ui.selectedEdgeId)!); // 가리키는 緣이 선택보다 우선 — 가드가 실존 보장
       return;
     }
     if ((e.code === 'KeyC' || e.code === 'Space') && selected && (kidCount.get(selected.id) ?? 0) > 0) {
@@ -777,26 +786,26 @@
     // Alt+화살표 — 緣 타고 이동: ←부모 / →자식(최상단) / ↑↓형제(루트면 뿌리들 사이)
     if (e.altKey && e.key.startsWith('Arrow') && selected) {
       e.preventDefault();
-      const cy = (nd) => center(nd).y;
-      const visible = (id) => !hidden.has(id);
-      let target = null;
+      const cy = (nd: NoteNode) => center(nd).y;
+      const visible = (id: string) => !hidden.has(id);
+      let target: NoteNode | null = null;
       if (e.key === 'ArrowLeft') {
         const pe = graph.edges.find((ed) => ed.b === selected.id && visible(ed.a));
-        target = pe ? byId(pe.a) : null;
+        target = pe ? (byId(pe.a) ?? null) : null;
       } else if (e.key === 'ArrowRight') {
         const kids = childIdsOf(graph.edges, selected.id)
           .map(byId)
-          .filter((nd) => nd && visible(nd.id))
+          .filter((nd): nd is NoteNode => !!nd && visible(nd.id))
           .sort((p, q) => cy(p) - cy(q));
         target = kids[0] ?? null;
       } else {
         const pe = parentEdgeOf(graph.edges, selected.id);
         const sibs = (pe ? childIdsOf(graph.edges, pe.a) : rootIds(graph.nodes, graph.edges))
           .map(byId)
-          .filter((nd) => nd && visible(nd.id))
+          .filter((nd): nd is NoteNode => !!nd && visible(nd.id))
           .sort((p, q) => cy(p) - cy(q));
         const i = sibs.findIndex((nd) => nd.id === selected.id);
-        target = e.key === 'ArrowUp' ? sibs[i - 1] : sibs[i + 1];
+        target = (e.key === 'ArrowUp' ? sibs[i - 1] : sibs[i + 1]) ?? null;
       }
       if (target) {
         selectNode(target.id);
@@ -816,7 +825,7 @@
         const r = viewportEl.getBoundingClientRect();
         const wx = (r.width / 2 - ui.pan.x) / ui.scale;
         const wy = (r.height / 2 - ui.pan.y) / ui.scale;
-        let best = null,
+        let best: NoteNode | null = null,
           bd = Infinity;
         for (const n of graph.nodes) {
           if (hidden.has(n.id)) continue;
@@ -847,17 +856,17 @@
       ui.editingId = ui.selectedId;
     }
   }
-  function onKeyUp(e) {
+  function onKeyUp(e: KeyboardEvent) {
     if (e.key === 'Shift') shiftHeld = false;
     // Alt 단독으로 눌렀다 떼면 브라우저 메뉴바가 포커스를 훔쳐간다(Windows 관행)
     // — 緣 타기(Alt+화살표) 도중 끊기는 원인. keyup preventDefault로 차단
     if (e.key === 'Alt') {
-      const el = e.target;
+      const el = e.target as HTMLElement | null;
       const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT');
       if (!inField) e.preventDefault();
     }
   }
-  function onEditorKey(e, n) {
+  function onEditorKey(e: KeyboardEvent, n: NoteNode) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       commitEditing();
@@ -874,7 +883,7 @@
   // 편집 textarea — 자동 높이 + 포커스.
   // 캐럿: 더블클릭이면 클릭한 그 자리(pendingCaret), 키보드 진입이면 끝.
   // 전체 선택은 안 한다 — 여러 줄 메모가 오타 한 방에 증발하지 않게 (갈아엎기는 Ctrl+A)
-  function autogrow(el) {
+  function autogrow(el: HTMLTextAreaElement) {
     const fit = () => {
       el.style.height = '0px';
       el.style.height = el.scrollHeight + 'px';
@@ -953,10 +962,13 @@
   function toMarkdown() {
     const out = [t.mdHeading, ''];
     const incoming = new Set(graph.edges.map((e) => e.b));
-    const kidsOf = (id) => childIdsOf(graph.edges, id).map(byId).filter(Boolean); // 緣 순서 보존
-    const label = (n) => (n.text || t.mdEmptyNode).replace(/\s*\n+\s*/g, ' / ');
-    const seen = new Set();
-    const walk = (n, d) => {
+    const kidsOf = (id: string) =>
+      childIdsOf(graph.edges, id)
+        .map(byId)
+        .filter((m): m is NoteNode => !!m); // 緣 순서 보존
+    const label = (n: NoteNode) => (n.text || t.mdEmptyNode).replace(/\s*\n+\s*/g, ' / ');
+    const seen = new Set<string>();
+    const walk = (n: NoteNode, d: number) => {
       if (seen.has(n.id)) {
         out.push(`${'  '.repeat(d)}- ${label(n)} ↻`);
         return;
@@ -978,18 +990,22 @@
   // 전체 요결 시트·퀵 카드 공용 — 키→설명 사전
   const helpMap = $derived(new Map(t.helpItems));
   // 퀵 카드 목록 — helpQuick 키 순서대로 (본문 중복 없이)
-  const quickHelp = $derived(t.helpQuick.map((k) => [k, helpMap.get(k)]).filter(([, d]) => d));
+  const quickHelp = $derived(
+    t.helpQuick
+      .map((k): [string, string | undefined] => [k, helpMap.get(k)])
+      .filter((p): p is [string, string] => !!p[1]),
+  );
 
   // ── 서가 (다중 문서, #62) ─────────────────────
-  let docEditId = $state(null); // 이름 고치는 중인 문서 id (시트 안 인라인 입력)
-  let docKillId = $state(null); // 베기 확인 중인 문서 id (시트 안 인라인 확인)
+  let docEditId = $state<string | null>(null); // 이름 고치는 중인 문서 id (시트 안 인라인 입력)
+  let docKillId = $state<string | null>(null); // 베기 확인 중인 문서 id (시트 안 인라인 확인)
   const curDoc = $derived(docs.list.find((d) => d.id === docs.current));
   function openDocs() {
     docEditId = null;
     docKillId = null;
     ui.overlay = { mode: 'docs' };
   }
-  function commitDocRename(id, value) {
+  function commitDocRename(id: string, value: string) {
     renameDoc(id, value);
     docEditId = null;
   }
@@ -1005,7 +1021,7 @@
     setViewMode(ui.viewMode === 'canvas' ? 'kanban' : 'canvas');
   }
   // 오행진 카드 더블클릭 — 강호의 그 자리로 (모드 전환 후 viewport가 서야 점프 가능)
-  async function boardJump(n) {
+  async function boardJump(n: NoteNode) {
     setViewMode('canvas');
     await tick();
     jumpTo(n);
@@ -1017,7 +1033,7 @@
   // 금테만 이동하고 선택은 제자리 — 합체 상태면 둘이 같이 간다. 화살표 이동은 보드
   // 카드 밖으로 새지 않는다. Enter는 2단: 조준 카드 선택 → 선택된 카드면 캔버스 점프.
   // 빈손 첫 화살표 = 첫 종대 첫 카드
-  function onBoardKey(e) {
+  function onBoardKey(e: KeyboardEvent) {
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       // 베기 — 캔버스와 같은 율법 (#105): 접힌 카드는 봉문이 숨기던 가지째,
@@ -1028,11 +1044,17 @@
       }
       return;
     }
-    const arrows = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+    const arrows: Record<string, [number, number]> = {
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+    };
     const dir = arrows[e.key];
     if (!dir && e.key !== 'Enter') return;
     const cols = boardColumns(graph.nodes, graph.edges, COLORS);
-    const aimId = e.target?.classList?.contains('card') ? e.target.dataset.id : null;
+    const tgt = e.target as HTMLElement | null;
+    const aimId = (tgt?.classList?.contains('card') ? tgt.dataset.id : null) ?? null;
     // 조준(금테 따로)은 '선택이 어딘가 있는데 포커스가 다른 카드'일 때만 —
     // 빈손의 포커스 카드는 조준이 아니라 항법의 출발점 (Esc 직후 화살표 = 선택 재개)
     const aiming = !!aimId && !!ui.selectedId && aimId !== ui.selectedId;
@@ -1058,7 +1080,7 @@
       return;
     }
     e.preventDefault();
-    let next = null;
+    let next: NoteNode | undefined;
     if (ci < 0) {
       next = cols.find((col) => col.length)?.[0]; // 빈손 진입점 — 캔버스 Tab의 '화면 중심 선택'과 평행
     } else if (dir[1]) {
@@ -1080,8 +1102,8 @@
   }
 
   // 보드 카드에 포커스 + 시야 확보 — 카드는 항상 DOM에 있으니 tick 불요
-  function focusCard(id) {
-    const card = document.querySelector(`.board .card[data-id="${id}"]`);
+  function focusCard(id: string) {
+    const card = document.querySelector<HTMLElement>(`.board .card[data-id="${id}"]`);
     card?.focus({ preventScroll: true }); // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
     card?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
@@ -1104,7 +1126,8 @@
     const s = (n.text || t.mdEmptyNode).split('\n')[0];
     return s.length > 12 ? s.slice(0, 12) + '…' : s;
   });
-  const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '');
+  // 동적 합성 키(mode+'Title') — 실존은 check-strings의 간접 참조 목록이 검증 (any 경계)
+  const sheetTitle = $derived(ui.overlay ? ((t as any)[ui.overlay.mode + 'Title'] ?? '') : '');
 
   // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.ts computeHidden
   // (시나리오 검증: scripts/check-graph.mjs)
@@ -1327,7 +1350,7 @@
         <!-- 이동 중인 무리의 緣만 노드들 위에 잠깐 — 손 떼면 사라지고 원래 층으로.
            주의: 'overlay'라는 클래스명은 입출력 시트 배경막(.overlay)과 충돌한다 -->
         <svg class="edges lift-layer" aria-hidden="true">
-          {#each graph.edges.filter((ed) => dragIds.has(ed.a) || dragIds.has(ed.b)) as e (e.id)}
+          {#each graph.edges.filter((ed) => dragIds!.has(ed.a) || dragIds!.has(ed.b)) as e (e.id)}
             {@const a = byId(e.a)}
             {@const b = byId(e.b)}
             {#if a && b && !hidden.has(a.id) && !hidden.has(b.id)}
@@ -1540,8 +1563,9 @@
 <!-- ── 입출력 시트 ── -->
 <!-- 하이라이트 토큰 렌더 — 읽기 전용 pre와 가져오기 overlay pre가 공유.
      pre 안이라 공백·개행이 그대로 보인다: 한 줄 유지. 끝 개행은 pre가 삼키니 공백 한 칸 보전 -->
-{#snippet toks(list, text)}{#each list as tk}{#if tk.c}<span class={'tk-' + tk.c}>{tk.t}</span
-      >{:else}{tk.t}{/if}{/each}{text.endsWith('\n') ? ' ' : ''}{/snippet}
+{#snippet toks(list: import('./lib/highlight.ts').Token[], text: string)}{#each list as tk}{#if tk.c}<span
+      class={'tk-' + tk.c}>{tk.t}</span
+    >{:else}{tk.t}{/if}{/each}{text.endsWith('\n') ? ' ' : ''}{/snippet}
 {#if ui.overlay}
   <div
     class="overlay"
