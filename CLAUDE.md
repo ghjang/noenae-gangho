@@ -40,7 +40,7 @@
 3. **좌표계**: 노드 x/y는 world 좌표, 화면 변환은 `ui.pan`/`ui.scale`. 새 인터랙션은 `toWorld()` 경유
 4. **노드 w/h는 실측** (`bind:offsetWidth/Height` — 테두리 포함 박스 치수) — 엣지 앵커 계산에 쓰임. 하드코딩 금지. clientWidth로 바꾸면 좌측 7px 띠만큼 우변이 안쪽으로 어긋나 화살촉이 박스에 묻힌다. ResizeObserver는 크기가 변할 때만 울리므로, 같은 id 객체를 갈아끼우는 `loadData()`(언두/불러오기)는 직전 실측을 물려받는다 — 빼먹으면 엣지가 허공을 찌른다
 5. **엣지는 방향이 있다**: `a`=부모, `b`=자식. Tab 가지치기(`addChild`)와 비급.md 트리 출력(`toMarkdown`)이 이 방향에 의존하고, 화면에는 화살촉으로 표시(F키 = `flipEdge` 방향 뒤집기). 단 중복 판정(`addEdge`)은 무방향 — 같은 두 쪽지 사이 緣은 한 가닥뿐
-6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 무공봉인 토글 — 한자 아이콘 封/武, 접근 라벨은 `toneButtonAria`): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통. 뷰포트(팬/줌)도 같은 원칙이되 문서별 — 키 `noenae-gangho-view-<docId>`(`scheduleViewSave`, App의 `$effect`가 감지), 문서 전환 시 그 문서의 뷰로 복원. 톤만 문서 무관 전역
+6. **말투(톤) 전환은 문자열 팩 교체로만** (`ui.tone` + `STRINGS[ui.tone]`, 상단 바 무공봉인 토글 — 한자 아이콘 封/武, 접근 라벨은 `toneButtonAria`): 선택은 별도 localStorage 키 `noenae-gangho-tone`에 즉시 저장(`setTone` — `scheduleSave()` 안 탐) — 그래프 스냅샷/저장 어댑터와 무관, `snapshot()`에 넣지 말 것. 디자인(색·서체·먹빛)은 톤과 무관하게 공통. 뷰포트(팬/줌)도 같은 원칙이되 문서별 — 키 `noenae-gangho-view-<docId>`(`scheduleViewSave`, App의 `$effect`가 감지), 문서 전환 시 그 문서의 뷰로 복원. 뷰 모드(`noenae-gangho-viewmode-<docId>`)와 족보 스코프(`noenae-gangho-outline-<docId>`, `setOutlineScope`)도 문서별 — 톤만 문서 무관 전역
 
 ## 컨벤션 / 세계관
 

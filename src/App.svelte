@@ -1153,9 +1153,10 @@
     focusCard(next.id); // 조준 중엔 금테만 옮긴다 (선택 불변)
   }
 
-  // 보드 카드에 포커스 + 시야 확보 — 카드는 항상 DOM에 있으니 tick 불요
+  // 보드 카드에 포커스 + 시야 확보 — 카드는 항상 DOM에 있으니 tick 불요.
+  // id는 CSS.escape — 손으로 가져온 JSON의 별난 id(따옴표 등)가 셀렉터를 못 깨게
   function focusCard(id: string) {
-    const card = document.querySelector<HTMLElement>(`.board .card[data-id="${id}"]`);
+    const card = document.querySelector<HTMLElement>(`.board .card[data-id="${CSS.escape(id)}"]`);
     card?.focus({ preventScroll: true }); // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
     card?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
@@ -1234,7 +1235,7 @@
     focusRow(next.id); // 조준 중엔 금테만 (보드와 같은 '마지막으로 만진 링' 율법)
   }
   function focusRow(id: string) {
-    const row = document.querySelector<HTMLElement>(`.outline button.row[data-id="${id}"]`);
+    const row = document.querySelector<HTMLElement>(`.outline button.row[data-id="${CSS.escape(id)}"]`);
     row?.focus({ preventScroll: true });
     row?.scrollIntoView({ block: 'nearest' });
   }
