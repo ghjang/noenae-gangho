@@ -739,6 +739,7 @@ button.primary:hover { background: #d6552f; }
   flex: none;
   width: 9px;
   height: 9px;
+  margin: 0 5.5px; /* 점(9px)도 삼각형(20px)과 같은 거터 폭 — 잎/가지 행의 글줄 x를 맞춰 위계 헛읽힘 방지 */
   border-radius: 50%;
   border: 1px solid rgba(42, 36, 28, 0.35); /* 한지 위 오행 점 — 먹 점도 또렷 */
 }
