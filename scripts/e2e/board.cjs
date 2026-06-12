@@ -32,6 +32,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   // 카드 클릭 = 선택
   await p.locator('.board .card', { hasText: '깨다름' }).click()
   ok((await p.locator('.board .card.sel').count()) === 1, '카드 클릭 → 선택 링')
+  ok((await p.locator('.board .col:first-child h3 i.cur').count()) === 1, '그 종대 머리 동그라미에 .cur 링 (팔레트 어휘 나침반)')
 
   // 키보드 항법 (#111) — 빈손 진입 / ↑↓ 종대 내(끝 멈춤) / ←→ 이웃 종대(인덱스 클램프·빈 종대 멈춤) / Enter 점프
   await p.keyboard.press('Escape') // 선택 해제 — 빈손에서 시작
@@ -46,6 +47,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   ok(selTxt.includes('깨다름'), '↓ 종대 끝에서 멈춤 (순환 없음)')
   await p.keyboard.press('ArrowRight')
   ok((await p.locator('.board .col:nth-child(2) .card.sel').count()) === 1, '→ 청 종대로 (높이 1→0 클램프)')
+  ok((await p.locator('.board .col:nth-child(2) h3 i.cur').count()) === 1, '나침반 링도 청 종대로 동행')
   await p.keyboard.press('ArrowRight')
   await p.keyboard.press('ArrowRight')
   ok((await p.locator('.board .col:nth-child(4) .card.sel').count()) === 1, '→→ 황 종대까지 전진')
