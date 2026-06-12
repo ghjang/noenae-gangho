@@ -691,11 +691,15 @@ button.primary:hover { background: #d6552f; }
   max-width: 880px; /* 행 글줄의 호흡 — 가운데 띄우지 않고 왼쪽에 정박 */
 }
 .outline .scope {
+  position: sticky; /* 긴 족보를 내려가도 사다리(크럼)는 머리에 — 길 잃지 않게 */
+  top: 0;
+  z-index: 1;
+  background: var(--hanji); /* 스크롤 시 행이 비쳐 보이지 않게 — 컨테이너 그라데이션 머리색과 동일 */
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 0 0 14px;
-  padding: 0 6px 10px;
+  padding: 10px 6px;
   border-bottom: 1px solid rgba(42, 36, 28, 0.18);
   font: 12.5px var(--sans); /* 행 본문과 같은 산세리프 — 명조/고딕 뒤섞임 정리 (사용자 제보) */
   color: var(--ink-dim);

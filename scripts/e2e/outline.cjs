@@ -184,6 +184,41 @@ const ok = (c, m) => {
   ok((await p.locator('.outline button.row').count()) === 4, '0(전체)로 푼 것도 기억');
 
   await p.screenshot({ path: '/tmp/outline-view.png' });
+  await p.context().close();
+
+  // 긴 족보(30 사슬) — 세로 스크롤 + sticky 크럼 (스크롤해도 사다리는 머리에)
+  const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 700 } });
+  await ctx2.addInitScript(() => {
+    const nodes = [];
+    const edges = [];
+    for (let i = 0; i < 30; i++) {
+      nodes.push({ id: 'n' + i, x: i * 40, y: i * 60, text: '계보 ' + i, color: 'muk' });
+      if (i) edges.push({ id: 'e' + i, a: 'n' + (i - 1), b: 'n' + i });
+    }
+    // 레거시 단일 키 — 첫 실행 이주가 '강호 1'로 편입한다 (CLAUDE.md 시드 요령)
+    localStorage.setItem('noenae-gangho-v1', JSON.stringify({ app: 'noenae-gangho', v: 3, nodes, edges }));
+  });
+  const q = await ctx2.newPage();
+  await q.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+  await q.waitForTimeout(400);
+  await q.keyboard.press('Escape');
+  await q.keyboard.press('v');
+  await q.keyboard.press('v');
+  await q.waitForTimeout(300);
+  ok((await q.locator('.outline button.row').count()) === 30, '긴 족보 30행');
+  await q.locator('.outline button.row').first().click();
+  await q.keyboard.press('3'); // 스코프 — 크럼 등장
+  await q.waitForTimeout(250);
+  await q.locator('.outline').evaluate((el) => (el.scrollTop = el.scrollHeight)); // 바닥까지
+  await q.waitForTimeout(200);
+  const lastVisible = await q
+    .locator('.outline button.row')
+    .last()
+    .evaluate((el) => el.getBoundingClientRect().bottom <= window.innerHeight + 1);
+  const crumbBox = await q.locator('.outline .scope').boundingBox();
+  ok(lastVisible, '바닥 행까지 스크롤 도달');
+  ok(crumbBox && crumbBox.y <= 120, `sticky 크럼 — 스크롤해도 머리에 (y=${Math.round(crumbBox.y)})`);
+  await ctx2.close();
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '#42 족보(아웃라인) — 전 시나리오 통과');
 })().catch((e) => {
