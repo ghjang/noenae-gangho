@@ -843,11 +843,11 @@
     jumpTo(n)
   }
 
-  // 오행진 키보드 항법 (#111) — ↑↓ 같은 종대 안(끝에서 멈춤) · ←→ 이웃 종대의
-  // 같은 높이(인덱스 클램프, 빈 종대 건너뜀). Tab은 브라우저 포커스 순회에 양보 —
-  // 카드가 button이라 공짜고, 캔버스 Tab(가지치기)과 의미가 섞이지 않는다.
-  // Enter는 2단: Tab으로 조준만 한 카드(포커스≠선택)면 먼저 선택, 선택된 카드면
-  // 캔버스 점프(더블클릭과 동일). 화살표 항법은 포커스가 동행하니 늘 한 방에 점프.
+  // 오행진 키보드 항법 (#111 + 개정) — ↑↓ 종대 안 · ←→ 이웃 종대(같은 높이 착지,
+  // 빈 종대 건너뜀) · 양끝에선 순환. Tab/Shift+Tab은 브라우저 포커스 순회 그대로(조준 금테).
+  // 화살표는 '마지막으로 만진 링'을 움직인다: 조준(금테)이 선택(인주)과 갈라져 있으면
+  // 금테만 이동하고 선택은 제자리 — 합체 상태면 둘이 같이 간다. 화살표 이동은 보드
+  // 카드 밖으로 새지 않는다. Enter는 2단: 조준 카드 선택 → 선택된 카드면 캔버스 점프.
   // 빈손 첫 화살표 = 첫 종대 첫 카드
   function onBoardKey(e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return
@@ -855,15 +855,21 @@
     const dir = arrows[e.key]
     if (!dir && e.key !== 'Enter') return
     const cols = boardColumns(graph.nodes, graph.edges, COLORS)
-    let ci = -1, ri = -1 // 앵커 카드의 종대/높이 — 보드에 없으면(빈손·봉문 속) -1
-    for (let i = 0; ui.selectedId && i < cols.length && ci < 0; i++) {
-      const j = cols[i].findIndex((n) => n.id === ui.selectedId)
+    const aimId = e.target?.classList?.contains('card') ? e.target.dataset.id : null
+    // 조준(금테 따로)은 '선택이 어딘가 있는데 포커스가 다른 카드'일 때만 —
+    // 빈손의 포커스 카드는 조준이 아니라 항법의 출발점 (Esc 직후 화살표 = 선택 재개)
+    const aiming = !!aimId && !!ui.selectedId && aimId !== ui.selectedId
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (aimId && aimId !== ui.selectedId) { selectNode(aimId); return } // 조준/포커스 카드 선택 — 금테가 인주로
+    }
+    const refId = aiming ? aimId : (ui.selectedId ?? aimId)
+    let ci = -1, ri = -1 // 기준 카드(조준 또는 앵커)의 종대/높이 — 보드에 없으면(빈손) -1
+    for (let i = 0; refId && i < cols.length && ci < 0; i++) {
+      const j = cols[i].findIndex((n) => n.id === refId)
       if (j >= 0) { ci = i; ri = j }
     }
     if (e.key === 'Enter') {
-      e.preventDefault()
-      const aimId = e.target?.classList?.contains('card') ? e.target.dataset.id : null
-      if (aimId && aimId !== ui.selectedId) { selectNode(aimId); return } // 조준 카드 선택 — 금테가 인주로
       if (ci >= 0) boardJump(cols[ci][ri])
       return
     }
@@ -872,19 +878,25 @@
     if (ci < 0) {
       next = cols.find((col) => col.length)?.[0] // 빈손 진입점 — 캔버스 Tab의 '화면 중심 선택'과 평행
     } else if (dir[1]) {
-      next = cols[ci][ri + dir[1]]
+      const col = cols[ci]
+      next = col[(ri + dir[1] + col.length) % col.length] // 종대 양끝 순환
     } else {
-      for (let i = ci + dir[0]; i >= 0 && i < cols.length; i += dir[0]) {
+      const N = cols.length // 좌우도 순환 — 빈 종대 건너뛰고 한 바퀴가 한계
+      for (let s = 1; s <= N; s++) {
+        const i = (((ci + dir[0] * s) % N) + N) % N
         if (cols[i].length) { next = cols[i][Math.min(ri, cols[i].length - 1)]; break }
       }
     }
     if (!next) return
-    selectNode(next.id)
-    tick().then(() => {
-      const card = document.querySelector('.board .card.sel')
-      card?.focus({ preventScroll: true }) // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
-      card?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    })
+    if (!aiming) selectNode(next.id) // 합체 상태 — 선택과 포커스가 같이 간다
+    focusCard(next.id) // 조준 중엔 금테만 옮긴다 (선택 불변)
+  }
+
+  // 보드 카드에 포커스 + 시야 확보 — 카드는 항상 DOM에 있으니 tick 불요
+  function focusCard(id) {
+    const card = document.querySelector(`.board .card[data-id="${id}"]`)
+    card?.focus({ preventScroll: true }) // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
+    card?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }
 
   // ── 비우기 (확인 카드) ────────────────────────
