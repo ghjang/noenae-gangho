@@ -3,7 +3,7 @@
 // 하루에 세 번 규칙이 바뀐 사고 다발 지역이라 시나리오로 못 박는다.
 // 규칙 본체는 src/lib/graph.ts의 computeHidden().
 // ──────────────────────────────────────────────
-import { computeHidden, tidyLayout, neighborhood } from '../src/lib/graph.ts';
+import { computeHidden, tidyLayout, neighborhood, outlineRows } from '../src/lib/graph.ts';
 
 let fail = 0;
 const err = (m) => {
@@ -99,8 +99,42 @@ const ids = (s) => [...s].sort().join(',');
   if (ids(neighborhood(edges, 'a', 0)) !== 'a') err('이웃 0촌: 자기 자신만이어야');
 }
 
+// ── 족보(아웃라인) 행 시나리오 (#42 — toMarkdown과 같은 순회 율법) ──
+// A) 사슬 트리 — 행 4개, 깊이 0/1/2/3, 재방문 없음
+{
+  const ns = [N('a'), N('b'), N('c'), N('d')];
+  const rows = outlineRows(ns, [E('a', 'b'), E('b', 'c'), E('c', 'd')]);
+  const sig = rows.map((r) => r.node.id + r.depth + (r.revisit ? '↻' : '')).join(' ');
+  if (sig !== 'a0 b1 c2 d3') err(`족보 사슬: ${sig} (기대 a0 b1 c2 d3)`);
+}
+// B) 순환 a→b→c→a — 첫 방문은 본문, 재방문은 ↻ 한 줄로 멈춤
+{
+  const rows = outlineRows([N('a'), N('b'), N('c')], [E('a', 'b'), E('b', 'c'), E('c', 'a')]);
+  const sig = rows.map((r) => r.node.id + r.depth + (r.revisit ? '↻' : '')).join(' ');
+  if (sig !== 'a0 b1 c2 a3↻') err(`족보 순환: ${sig} (기대 a0 b1 c2 a3↻)`);
+}
+// C) 다중 부모 — 두 번째 길에서는 ↻
+{
+  const rows = outlineRows([N('a'), N('b'), N('c')], [E('a', 'b'), E('a', 'c'), E('b', 'c')]);
+  const sig = rows.map((r) => r.node.id + r.depth + (r.revisit ? '↻' : '')).join(' ');
+  if (sig !== 'a0 b1 c2 c1↻') err(`족보 다중 부모: ${sig} (기대 a0 b1 c2 c1↻)`);
+}
+// D) 봉문 — 접힌 가지는 행만 남고 후손 생략 (삼각형이 곧 collapsed)
+{
+  const rows = outlineRows([N('a'), N('b', true), N('c')], [E('a', 'b'), E('b', 'c')]);
+  const sig = rows.map((r) => r.node.id + r.depth).join(' ');
+  if (sig !== 'a0 b1') err(`족보 봉문: ${sig} (기대 a0 b1)`);
+}
+// E) 스코프 — rootId를 주면 그 가지만
+{
+  const ns = [N('a'), N('b'), N('c')];
+  const rows = outlineRows(ns, [E('a', 'b'), E('b', 'c')], 'b');
+  const sig = rows.map((r) => r.node.id + r.depth).join(' ');
+  if (sig !== 'b0 c1') err(`족보 스코프: ${sig} (기대 b0 c1)`);
+}
+
 if (fail) {
   console.error(`봉문 검사 실패 — ${fail}건`);
   process.exit(1);
 }
-console.log('봉문 검사 통과 — 시나리오 9종 (접기 5 + 정돈 2 + 이웃 2)');
+console.log('봉문 검사 통과 — 시나리오 14종 (접기 5 + 정돈 2 + 이웃 2 + 족보 5)');

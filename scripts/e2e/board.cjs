@@ -36,7 +36,10 @@ const ok = (c, m) => {
     '캔버스 전용 UI(HUD/전도) 숨김',
   );
 
-  // V — 뷰 순환 단축키 (양 뷰 공통, 토글 버튼과 동일)
+  // V — 뷰 순환 단축키 (캔버스 → 오행진 → 족보 → 캔버스, 토글 버튼과 동일)
+  await p.keyboard.press('v');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline').count()) === 1, 'V → 족보(아웃라인)로 순환');
   await p.keyboard.press('v');
   await p.waitForTimeout(250);
   ok((await p.locator('.viewport').count()) === 1, 'V → 캔버스 복귀');
@@ -132,7 +135,8 @@ const ok = (c, m) => {
   await p.waitForTimeout(300);
 
   // 집중 × 오행진 — 렌즈 끄고 입장: 버블 밖 카드 선택이 증발하지 않는다 (3차 체크포인트 버그)
-  await p.locator('button[aria-label="강호 캔버스"]').click();
+  await p.keyboard.press('v'); // 순환: 오행진 → 족보
+  await p.keyboard.press('v'); // → 캔버스
   await p.waitForTimeout(300);
   await p.locator('.node', { hasText: 'difference' }).click();
   await p.keyboard.press('l');
@@ -294,7 +298,8 @@ const ok = (c, m) => {
   await p.keyboard.press('Escape');
 
   // 접힌 카드 Delete = 숨은 가지째 (베기는 보이는 것을 벤다 — 캔버스 율법 그대로)
-  await p.locator('button[aria-label="강호 캔버스"]').click();
+  await p.keyboard.press('v'); // 순환: 오행진 → 족보
+  await p.keyboard.press('v'); // → 캔버스
   await p.waitForTimeout(300);
   await p.locator('.node', { hasText: 'difference' }).click();
   await p.keyboard.press('c'); // 봉문

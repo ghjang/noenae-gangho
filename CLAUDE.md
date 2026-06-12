@@ -14,7 +14,7 @@
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트 프레임워크·린터 없음 (포매터는 Prettier, 타입은 tsc/svelte-check — #115부터). 자동 검증은 `npm run build`(위 check 전부 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 - 헤드리스 검증(렌더링/조작 버그 재현·수술 확인용): Claude Code 원격 컨테이너엔 전역 playwright가 있다 — `NODE_PATH=/opt/node22/lib/node_modules node 스크립트.cjs` (크로미움 `/opt/pw-browsers`). localhost 접속은 프록시 우회 필수: launch args `--proxy-bypass-list=<-loopback>` + env `NO_PROXY=localhost,127.0.0.1`. 그래프 시드는 `context.addInitScript`로 **로드 전에** localStorage에 심을 것 — 로드 후 setItem은 앱의 500ms 디바운스 저장이 도로 덮는다 (그래프 `noenae-gangho-v1` / 뷰 `noenae-gangho-view` `{x,y,s}`). 드래그 중 상태는 `mouse.down()` 후 `mouse.move()` 반복으로 동결해 검사
-- 재사용 헤드리스 스위트: `scripts/e2e/*.cjs` (앵커/오행진/커서/서가·문서/緣·undo/집중/도움말/하이라이트/아이콘바/모바일/다중 선택 — 11종, 빌드 게이트 아님·수동 실행). `npm run build && npm run preview -- --port 4173` 띄운 뒤 위 env로 `node scripts/e2e/<이름>.cjs`. 관련 부위를 수술하면 해당 스위트를 같이 갱신·재실행할 것 — 기능 추가로 도움말 수가 변하면 `help.cjs`의 요결 수부터 깨진다 (의도된 보초)
+- 재사용 헤드리스 스위트: `scripts/e2e/*.cjs` (앵커/오행진/커서/서가·문서/緣·undo/집중/도움말/하이라이트/아이콘바/모바일/다중 선택/족보 — 12종, 빌드 게이트 아님·수동 실행). `npm run build && npm run preview -- --port 4173` 띄운 뒤 위 env로 `node scripts/e2e/<이름>.cjs`. 관련 부위를 수술하면 해당 스위트를 같이 갱신·재실행할 것 — 기능 추가로 도움말 수가 변하면 `help.cjs`의 요결 수부터 깨진다 (의도된 보초)
 
 ## 구조와 역할 분담
 
@@ -30,6 +30,7 @@
 - `src/lib/highlight.ts` — 시트 신택스 하이라이트 순수 토크나이저(JSON/비급.md, 외부 라이브러리 금지라 자작). 토큰 text를 이어 붙이면 입력과 동일해야 함 — 가져오기 편집 overlay(투명 textarea+pre) 정렬의 전제
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
 - `src/BoardView.svelte` — 오행진(칸반) 뷰 (#42, 첫 분리 컴포넌트). 종대 진형(색별 y→x)은 graph.ts `boardColumns`로 App의 보드 키 항법(#111)과 공유 — 따로 세면 어긋난다
+- `src/OutlineView.svelte` — 족보(아웃라인) 뷰 (#42 셋째 식구). 행 목록은 graph.ts `outlineRows`(비급.md와 같은 순회 율법 — ↻ 재방문·봉문 생략·스코프) — 규칙 바꾸면 check-graph 족보 시나리오도 같이
 - `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙
 
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것

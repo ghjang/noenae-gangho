@@ -13,8 +13,8 @@ const docKey = (id: string) => 'noenae-gangho-doc-' + id; // 문서별 본문 (v
 const viewKey = (id: string) => 'noenae-gangho-view-' + id; // 문서별 뷰(팬/줌)
 const viewModeKey = (id: string) => 'noenae-gangho-viewmode-' + id; // 문서별 뷰 모드 (#42)
 
-export type ViewMode = 'canvas' | 'kanban';
-const isViewMode = (v: string | null): v is ViewMode => v === 'canvas' || v === 'kanban';
+export type ViewMode = 'canvas' | 'kanban' | 'outline';
+const isViewMode = (v: string | null): v is ViewMode => v === 'canvas' || v === 'kanban' || v === 'outline';
 const isTone = (v: string | null): v is Tone => v === 'muhyeop' || v === 'plain';
 
 export type OverlayMode = 'export' | 'import' | 'md' | 'help' | 'docs' | 'confirmClear';

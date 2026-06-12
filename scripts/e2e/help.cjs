@@ -27,7 +27,7 @@ const ok = (c, m) => {
   // 전부 보기 → 전체 요결 시트 (스크롤)
   await page.locator('.help-card .close-row button').first().click();
   ok((await page.locator('.sheet.help').count()) === 1, '전부 보기 → 전체 시트 등장');
-  ok((await page.locator('.sheet.help dt').count()) === 34, '전체 시트: 요결 34수');
+  ok((await page.locator('.sheet.help dt').count()) === 35, '전체 시트: 요결 35수');
   // PR #89/#97 이후: 시트는 고정, 본문(.cols — 6묶음 다단)만 스크롤
   const dlScroll = await page
     .locator('.sheet.help .cols')
@@ -36,7 +36,7 @@ const ok = (c, m) => {
     .locator('.sheet.help')
     .evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
   ok(dlScroll && sheetFixed, '전체 시트: 본문만 스크롤(시트 고정)');
-  ok((await page.locator('.sheet.help h3').count()) === 7, '묶음 7개');
+  ok((await page.locator('.sheet.help h3').count()) === 8, '묶음 8개');
   await page.screenshot({ path: '/tmp/help-full.png' });
   await page.keyboard.press('Escape');
   ok((await page.locator('.sheet.help').count()) === 0, 'Esc → 시트 닫힘');
@@ -50,7 +50,7 @@ const ok = (c, m) => {
     'plain 버튼 문구',
   );
   await page.locator('.help-card .close-row button').first().click();
-  ok((await page.locator('.sheet.help dt').count()) === 34, 'plain 전체 시트: 34수');
+  ok((await page.locator('.sheet.help dt').count()) === 35, 'plain 전체 시트: 35수');
   await page.keyboard.press('Escape');
 
   // 노트북(OS 배율 125% 추정 1536×754) — 전체 시트가 수직 스크롤 없이 한눈에.
@@ -65,7 +65,7 @@ const ok = (c, m) => {
     .locator('.sheet.help .cols')
     .evaluate((el) => ({ over: el.scrollHeight - el.clientHeight }));
   ok(fit.over <= 0, `노트북 1536×754: 전체 시트 무스크롤 (넘침 ${fit.over}px)`);
-  ok((await lap.locator('.sheet.help h3').count()) === 7, '노트북: 묶음 7개 전부 표시');
+  ok((await lap.locator('.sheet.help h3').count()) === 8, '노트북: 묶음 8개 전부 표시');
 
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '퀵 카드 + 전체 요결 시트 — 통과');
