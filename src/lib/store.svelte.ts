@@ -12,6 +12,7 @@ const DOCS_KEY = 'noenae-gangho-docs'; // 문서(강호) 인덱스 — { current
 const docKey = (id: string) => 'noenae-gangho-doc-' + id; // 문서별 본문 (v3 snapshot — 포맷은 문서 단위로 불변)
 const viewKey = (id: string) => 'noenae-gangho-view-' + id; // 문서별 뷰(팬/줌)
 const viewModeKey = (id: string) => 'noenae-gangho-viewmode-' + id; // 문서별 뷰 모드 (#42)
+const outlineKey = (id: string) => 'noenae-gangho-outline-' + id; // 문서별 족보 스코프 — '보던 가지'는 뷰포트와 같은 결
 
 export type ViewMode = 'canvas' | 'kanban' | 'outline';
 const isViewMode = (v: string | null): v is ViewMode => v === 'canvas' || v === 'kanban' || v === 'outline';
@@ -92,6 +93,26 @@ export function setViewMode(mode: ViewMode): void {
   }
 }
 
+// 족보 스코프 — Workflowy zoom 국룰대로 새로고침에도 보던 가지를 기억 (문서별, snapshot 밖).
+// 집중(L)이 세션 렌즈라면 스코프는 '족보의 카메라 위치' — 뷰포트와 같은 영속 결 (사용자 결 2026-06-12)
+function loadOutlineScope(docId: string): string | null {
+  try {
+    return localStorage.getItem(outlineKey(docId));
+  } catch {
+    return null;
+  }
+}
+
+export function setOutlineScope(id: string | null): void {
+  ui.outlineRootId = id;
+  try {
+    if (id) localStorage.setItem(outlineKey(docs.current!), id);
+    else localStorage.removeItem(outlineKey(docs.current!));
+  } catch {
+    /* 조용히 */
+  }
+}
+
 export const graph: { nodes: NoteNode[]; edges: Edge[] } = $state({ nodes: [], edges: [] });
 
 export interface UiState {
@@ -108,6 +129,7 @@ export interface UiState {
   focusDepth: number; // 집중 반경(촌수) — [ ]로 조절
   docSwitching: boolean; // 문서 전환 중 — 퇴장/입장 애니를 꺼서 두 강호가 겹쳐 보이지 않게
   viewMode: ViewMode; // 문서별 취향(#42), snapshot/undo 밖
+  outlineRootId: string | null; // 족보 스코프 — 문서별 영속(setOutlineScope), snapshot/undo 밖
   tone: Tone; // strings.ts 팩 선택
   ink: Color; // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 }
@@ -126,6 +148,7 @@ export const ui: UiState = $state({
   focusDepth: 1,
   docSwitching: false,
   viewMode: 'canvas',
+  outlineRootId: null,
   tone: loadTone(),
   ink: 'muk',
 });
@@ -485,6 +508,7 @@ async function activateDoc(id: string): Promise<void> {
     ui.pan.y = v?.y ?? 40;
     ui.scale = v?.s ?? 1;
     ui.viewMode = loadViewMode(id); // 그 문서가 보던 모드로
+    ui.outlineRootId = loadOutlineScope(id); // 보던 족보 가지도 — 표적이 베였으면 렌더가 전체로 폴백
   } finally {
     setTimeout(() => (ui.docSwitching = false), 60); // 교체 플러시가 지나간 뒤 애니 복권
   }
@@ -552,6 +576,7 @@ export async function removeDoc(id: string): Promise<void> {
     localStorage.removeItem(docKey(id));
     localStorage.removeItem(viewKey(id));
     localStorage.removeItem(viewModeKey(id));
+    localStorage.removeItem(outlineKey(id));
   } catch {
     /* 조용히 */
   }
