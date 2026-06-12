@@ -19,7 +19,7 @@
   } from './lib/store.svelte.js'
   import { STRINGS, TONES, fmt } from './lib/strings.js'
   import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js'
-  import { computeHidden, neighborhood, parentEdgeOf, childIdsOf, childCounts, rootIds } from './lib/graph.js'
+  import { computeHidden, neighborhood, parentEdgeOf, childIdsOf, childCounts, rootIds, boardColumns } from './lib/graph.js'
   import { fromMarkdown } from './lib/markdown.js'
   import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.js'
 
@@ -458,8 +458,9 @@
     const el = e.target
     const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')
     if (e.key === 'Shift' && !inField) shiftHeld = true // 올가미 예고 커서 (글 입력 중엔 무시)
-    // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지
-    if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter')) return
+    // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지.
+    // 오행진 카드(역시 버튼)만 예외: 그 위의 Enter는 보드 항법(점프)이 받는다 (#111)
+    if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter') && !el.closest('.board')) return
     if (e.key === 'Escape') {
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
       // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
@@ -543,7 +544,7 @@
       return
     }
     if (inField) return
-    if (ui.viewMode !== 'canvas') return // 캔버스 단축키(이동/가지/집중/올가미…)는 오행진에선 침묵
+    if (ui.viewMode !== 'canvas') { onBoardKey(e); return } // 캔버스 단축키(이동/가지/집중/올가미…)는 오행진에선 침묵 — 항법(#111)만 받는다
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
     if (e.key.startsWith('Arrow') && !e.altKey) {
@@ -840,6 +841,45 @@
     setViewMode('canvas')
     await tick()
     jumpTo(n)
+  }
+
+  // 오행진 키보드 항법 (#111) — ↑↓ 같은 종대 안(끝에서 멈춤) · ←→ 이웃 종대의
+  // 같은 높이(인덱스 클램프, 빈 종대 건너뜀) · Enter 캔버스 점프(더블클릭과 동일).
+  // Tab은 브라우저 포커스 순회에 양보 — 카드가 button이라 공짜고, 캔버스
+  // Tab(가지치기)과 의미가 섞이지 않는다. 빈손 첫 화살표 = 첫 종대 첫 카드
+  function onBoardKey(e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return
+    const arrows = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }
+    const dir = arrows[e.key]
+    if (!dir && e.key !== 'Enter') return
+    const cols = boardColumns(graph.nodes, graph.edges, COLORS)
+    let ci = -1, ri = -1 // 앵커 카드의 종대/높이 — 보드에 없으면(빈손·봉문 속) -1
+    for (let i = 0; ui.selectedId && i < cols.length && ci < 0; i++) {
+      const j = cols[i].findIndex((n) => n.id === ui.selectedId)
+      if (j >= 0) { ci = i; ri = j }
+    }
+    if (e.key === 'Enter') {
+      if (ci >= 0) { e.preventDefault(); boardJump(cols[ci][ri]) }
+      return
+    }
+    e.preventDefault()
+    let next = null
+    if (ci < 0) {
+      next = cols.find((col) => col.length)?.[0] // 빈손 진입점 — 캔버스 Tab의 '화면 중심 선택'과 평행
+    } else if (dir[1]) {
+      next = cols[ci][ri + dir[1]]
+    } else {
+      for (let i = ci + dir[0]; i >= 0 && i < cols.length; i += dir[0]) {
+        if (cols[i].length) { next = cols[i][Math.min(ri, cols[i].length - 1)]; break }
+      }
+    }
+    if (!next) return
+    selectNode(next.id)
+    tick().then(() => {
+      const card = document.querySelector('.board .card.sel')
+      card?.focus({ preventScroll: true }) // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
+      card?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    })
   }
 
   // ── 비우기 (확인 카드) ────────────────────────

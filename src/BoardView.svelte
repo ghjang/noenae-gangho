@@ -10,7 +10,7 @@
   import { flip } from 'svelte/animate'
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.js'
   import { STRINGS } from './lib/strings.js'
-  import { computeHidden, childCounts } from './lib/graph.js'
+  import { boardColumns, childCounts } from './lib/graph.js'
 
   let { onJump } = $props()
   // 색을 갈아입으면 카드가 옛 종대에서 새 종대로 날아간다(crossfade) —
@@ -18,17 +18,10 @@
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const [send, receive] = crossfade({ duration: REDUCED ? 0 : 280, fallback: () => ({ duration: 0 }) })
   const t = $derived(STRINGS[ui.tone])
-  // 봉문은 오행진에서도 존중 — '치웠다'는 의지는 뷰를 가리지 않는다 (집중은 캔버스 전용)
-  const hidden = $derived(computeHidden(graph.nodes, graph.edges))
   const kidCount = $derived(childCounts(graph.edges)) // 접힌 카드의 ▸N 배지용 — 캔버스와 같은 표기
-  const cols = $derived(
-    COLORS.map((c) => [
-      c,
-      graph.nodes
-        .filter((n) => n.color === c && !hidden.has(n.id))
-        .sort((p, q) => p.y - q.y || p.x - q.x),
-    ])
-  )
+  // 봉문은 오행진에서도 존중 — '치웠다'는 의지는 뷰를 가리지 않는다 (집중은 캔버스 전용).
+  // 진형(색별 y→x)은 boardColumns — App의 키보드 항법(#111)과 같은 한 벌
+  const cols = $derived(boardColumns(graph.nodes, graph.edges, COLORS).map((ns, i) => [COLORS[i], ns]))
 </script>
 
 <div class="board" role="region" aria-label={t.viewKanbanAria}>
