@@ -84,6 +84,15 @@ export function rootIds(nodes, edges) {
   return nodes.filter((n) => !incoming.has(n.id)).map((n) => n.id)
 }
 
+// 오행진 종대 — 색별로 보이는(봉문 밖) 쪽지를 보드 순서(y→x)로.
+// BoardView(진열)와 키보드 항법(#111, App)이 같은 진형을 공유한다 — 따로 세면 어긋난다
+export function boardColumns(nodes, edges, colors) {
+  const hidden = computeHidden(nodes, edges)
+  return colors.map((c) =>
+    nodes.filter((n) => n.color === c && !hidden.has(n.id)).sort((p, q) => p.y - q.y || p.x - q.x)
+  )
+}
+
 // 정돈(Tidy) 레이아웃 — 첫 부모 기준 신장 트리, 보이는 쪽지만.
 // 뿌리(rootId 지정 시 그 쪽지)는 제자리에 두고 후손을 오른쪽으로 펼친다.
 // 형제 순서는 현재 y를 존중. 접힌 쪽지는 잎으로 치되 숨은 후손은 같은
