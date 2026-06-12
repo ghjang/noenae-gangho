@@ -65,6 +65,7 @@
     childCounts,
     rootIds,
     boardColumns,
+    outlineRows,
   } from './lib/graph.ts';
   import { fromMarkdown } from './lib/markdown.ts';
   import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.ts';
@@ -559,8 +560,13 @@
     const inField = !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT');
     if (e.key === 'Shift' && !inField) shiftHeld = true; // 올가미 예고 커서 (글 입력 중엔 무시)
     // 포커스가 버튼에 있으면 Space/Enter는 버튼의 몫 — '강호 비우기' 오발사 방지.
-    // 오행진 카드(역시 버튼)만 예외: 그 위의 Enter는 보드 항법(점프)이 받는다 (#111)
-    if (el?.tagName === 'BUTTON' && (e.code === 'Space' || e.key === 'Enter') && !el.closest('.board'))
+    // 오행진 카드·족보 행(역시 버튼)만 예외: 그 위의 Enter는 각 뷰의 항법(점프)이 받는다
+    // (족보의 ▸/▾·스코프 버튼은 예외가 아니다 — 네이티브 Enter 활성 유지)
+    if (
+      el?.tagName === 'BUTTON' &&
+      (e.code === 'Space' || e.key === 'Enter') &&
+      !el.matches('.board .card, .outline button.row')
+    )
       return;
     if (e.key === 'Escape') {
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
@@ -696,9 +702,10 @@
       return;
     }
     if (ui.viewMode !== 'canvas') {
-      // 캔버스 단축키(이동/가지/집중/올가미…)는 비캔버스 뷰에선 침묵 — 오행진만 항법(#111)을
-      // 받고, 족보 v1은 행 클릭·봉문 토글이 본분(키 항법은 후속 — Esc·Ctrl Z/Y·V는 위에서 통과)
+      // 캔버스 단축키(이동/가지/집중/올가미…)는 비캔버스 뷰에선 침묵 —
+      // 각 뷰의 항법만 받는다 (Esc·Ctrl Z/Y·V·1/2/3은 위에서 이미 통과)
       if (ui.viewMode === 'kanban') onBoardKey(e);
+      else onOutlineKey(e);
       return;
     }
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
@@ -1140,6 +1147,77 @@
     const card = document.querySelector<HTMLElement>(`.board .card[data-id="${id}"]`);
     card?.focus({ preventScroll: true }); // 포커스 동행 — Tab 순회·보조기기 출발점 갱신
     card?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  // 족보 키보드 항법 — 트리 뷰 국룰: ↑↓ 행 순회(양끝 순환), ←(펼친 가지면 접기, 아니면
+  // 부모로) →(접힌 가지면 펼치기, 아니면 첫 자식으로), Enter 2단(조준 선택 → 점프),
+  // Delete 베기(캔버스 율법 그대로). 재방문(↻) 행은 표지일 뿐 — 항법에서 건너뛴다
+  function onOutlineKey(e: KeyboardEvent) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (ui.selectedIds.length) {
+        e.preventDefault();
+        removeNodes(ui.selectedIds);
+      }
+      return;
+    }
+    const isArrow =
+      e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+    if (!isArrow && e.key !== 'Enter') return;
+    const rid = outlineRootId && byId(outlineRootId) ? outlineRootId : null;
+    const rows = outlineRows(graph.nodes, graph.edges, rid).filter((r) => !r.revisit);
+    const tgt = e.target as HTMLElement | null;
+    const aimId = (tgt?.classList?.contains('row') ? tgt.dataset.id : null) ?? null;
+    const aiming = !!aimId && !!ui.selectedId && aimId !== ui.selectedId; // 보드와 같은 조준 율법
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (aimId && aimId !== ui.selectedId) {
+        selectNode(aimId);
+        return;
+      }
+      const cur = rows.find((r) => r.node.id === ui.selectedId);
+      if (cur) boardJump(cur.node);
+      return;
+    }
+    e.preventDefault();
+    const refId = aiming ? aimId : (ui.selectedId ?? aimId);
+    const i = rows.findIndex((r) => r.node.id === refId);
+    if (i < 0) {
+      if (rows.length) {
+        if (!aiming) selectNode(rows[0].node.id); // 빈손 진입점 — 첫 행
+        focusRow(rows[0].node.id);
+      }
+      return;
+    }
+    const cur = rows[i];
+    let next: NoteNode | null = null;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      next = rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length].node; // 양끝 순환
+    } else if (e.key === 'ArrowRight') {
+      if (cur.node.collapsed && (kidCount.get(cur.node.id) ?? 0) > 0) {
+        toggleCollapse(cur.node.id); // 개문
+        return;
+      }
+      if (rows[i + 1] && rows[i + 1].depth > cur.depth) next = rows[i + 1].node; // 첫 자식으로
+    } else {
+      if (!cur.node.collapsed && (kidCount.get(cur.node.id) ?? 0) > 0) {
+        toggleCollapse(cur.node.id); // 봉문
+        return;
+      }
+      for (let k = i - 1; k >= 0; k--)
+        if (rows[k].depth < cur.depth) {
+          next = rows[k].node; // 부모로
+          break;
+        }
+    }
+    if (!next) return;
+    if (!aiming) selectNode(next.id);
+    focusRow(next.id); // 조준 중엔 금테만 (보드와 같은 '마지막으로 만진 링' 율법)
+  }
+  function focusRow(id: string) {
+    const row = document.querySelector<HTMLElement>(`.outline button.row[data-id="${id}"]`);
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView({ block: 'nearest' });
   }
 
   // ── 비우기 (확인 카드) ────────────────────────

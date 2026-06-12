@@ -114,6 +114,7 @@ const muhyeop = {
       '↑↓·←→ 카드 누비기(양끝 순환) · Tab 조준(금테) 중엔 금테만 이동 — Enter면 선택, 다시 Enter면 강호의 그 자리로',
     ],
     ['Ctrl+←→ (오행진)', '선택한 카드를 이웃 종대 색으로 물들여 보내기 — 양끝 순환'],
+    ['족보 항법', '↑↓ 행 순회(순환) · ← 접기/부모로 · → 펼치기/자식으로 · Enter 선택→점프 · Delete 베기'],
   ] as [string, string][],
   // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
   helpQuick: [
@@ -135,7 +136,7 @@ const muhyeop = {
     ['강호 유람', ['빈 곳 끌기', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn']],
     ['항법·수소문·되돌리기', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
     ['서가와 보기', ['서가(겹책)', '오행진 토글', '족보 뷰', 'V / Shift+V', '1·2·3']],
-    ['오행진 솜씨', ['오행진 항법', 'Ctrl+←→ (오행진)']],
+    ['진법 항법', ['오행진 항법', 'Ctrl+←→ (오행진)', '족보 항법']],
   ] as [string, string[]][],
   helpMoreButton: '요결 전부 보기',
   focusPill: "集中 '{label}' {depth}촌 — [ ] 반경 · L 해제",
@@ -276,6 +277,7 @@ export const STRINGS: Record<Tone, StringPack> = {
         '↑↓·←→ 카드 이동(끝에서 순환) · Tab 포커스 중엔 포커스만 이동 — Enter = 선택, 다시 Enter = 캔버스 이동',
       ],
       ['Ctrl+←→ (칸반)', '선택한 카드를 옆 컬럼 색으로 변경 — 끝에서 순환'],
+      ['아웃라인 키 탐색', '↑↓ 행 이동(순환) · ← 접기/부모로 · → 펼치기/하위로 · Enter 선택→이동 · Delete 삭제'],
     ],
     helpQuick: [
       '빈 곳 더블클릭',
@@ -298,7 +300,7 @@ export const STRINGS: Record<Tone, StringPack> = {
       ],
       ['탐색·검색·실행 취소', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
       ['문서와 보기', ['서가(겹책)', '칸반 토글', '아웃라인 뷰', 'V / Shift+V', '1·2·3']],
-      ['칸반 조작', ['칸반 키 탐색', 'Ctrl+←→ (칸반)']],
+      ['보기 키 탐색', ['칸반 키 탐색', 'Ctrl+←→ (칸반)', '아웃라인 키 탐색']],
     ],
     helpMoreButton: '전체 도움말',
     focusPill: "포커스 '{label}' {depth}촌 — [ ] 반경 · L 해제",
