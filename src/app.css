@@ -552,8 +552,9 @@ button.primary:hover { background: #d6552f; }
   display: flex;
   flex-direction: column;
   /* 허공보다 한 단 또렷이 띄운 단(壇) — 면 위계 규칙(panel+진한 헤어라인+그림자)에
-     위가 살짝 밝은 결(한지 기운 혼입)과 윗변 하이라이트를 더해 은은한 입체 */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 86%, var(--hanji)), var(--panel) 65%);
+     한지 기운을 살짝 섞은 밝은 면 + 윗변 하이라이트. 바디(.cards)는 우물처럼 파서
+     머리(갓돌)와 바닥이 명암으로 갈린다 */
+  background: color-mix(in srgb, var(--panel) 86%, var(--hanji));
   border: 1px solid var(--hairline-strong);
   border-radius: 8px;
   box-shadow: inset 0 1px 0 rgba(242, 233, 214, 0.14), 0 10px 24px -12px rgba(0, 0, 0, 0.8);
@@ -566,14 +567,21 @@ button.primary:hover { background: #d6552f; }
   gap: 8px;
   font: 600 13px var(--serif);
   color: var(--hanji);
-  background: rgba(242, 233, 214, 0.05); /* 머리는 갓 한 톤 — 단의 갓돌 */
+  background: rgba(242, 233, 214, 0.07); /* 머리는 갓 한 톤 — 단의 갓돌 */
   border-radius: 7px 7px 0 0; /* 부모 8px 모서리의 안쪽 결 */
   border-bottom: 1px solid var(--hairline);
 }
 .board .col h3 i {
-  width: 10px;
-  height: 10px;
+  flex: none;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
+  border: 1.5px solid rgba(242, 233, 214, 0.4); /* 팔레트 점과 같은 한지빛 테 — 먹 동그라미도 어둠에서 또렷 */
+}
+.board .col h3 i.cur {
+  /* 선택한 카드가 머무는 종대 — 팔레트 .cur(붓 색 링)과 같은 어휘 */
+  border-color: var(--hanji);
+  box-shadow: 0 0 0 2px var(--paper-dim);
 }
 .board .col h3 em {
   margin-left: auto;
@@ -588,6 +596,11 @@ button.primary:hover { background: #d6552f; }
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* 안으로 파인 우물 — 윗변 안그림자가 갓돌(머리) 밑에 깊이를 판다 */
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+  border-radius: 0 0 7px 7px;
+  flex: 1; /* 카드가 적어도 우물 바닥이 종대 끝까지 — 파임이 토막나지 않게 */
 }
 .board .card {
   flex: none; /* 수축 금지 — 안 그러면 카드가 짜부되며 '다 들어간 척'한다 (스크롤 불발의 진범) */
@@ -596,9 +609,11 @@ button.primary:hover { background: #d6552f; }
   color: var(--ink);
   background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
   border: 1px solid rgba(42, 36, 28, 0.25);
-  border-left: 7px solid var(--c, var(--c-muk)); /* 오행 띠 — 캔버스 쪽지와 같은 어휘·같은 두께 */
+  /* 오행 띠 — 캔버스 쪽지와 같은 어휘·같은 7px. 단 한지 '안쪽'에 박는다(인셋):
+     테두리 밖에 두면 먹 띠가 어두운 종대 바닥에 묻혀 증발한다 (사용자 제보) */
+  box-shadow: inset 7px 0 0 var(--c, var(--c-muk));
   border-radius: 4px;
-  padding: 11px 12px;
+  padding: 11px 12px 11px 19px; /* 좌측 = 12 + 띠 7 */
   display: flex;
   align-items: flex-start;
   gap: 8px;
