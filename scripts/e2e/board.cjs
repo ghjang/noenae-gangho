@@ -252,6 +252,16 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.waitForTimeout(300)
   ok((await p.locator('.board .card').count()) === 2, 'Ctrl+Z → 가지째 귀환 (접힘 유지 — 보드엔 2)')
 
+  // 보드에서 '+' = 붓 색 종대 끝에 새 쪽지 (#42 이래 잠복하던 viewportEl null 크래시 수술 보초)
+  await p.locator('.palette button').nth(0).click() // 빈손 클릭 — 붓 색 = 먹
+  await p.locator('button[aria-label="새 쪽지 — 지금 붓 색으로 핀다"]').click()
+  await p.waitForTimeout(300)
+  const mukAfterAdd = await p.$$eval('.board .col:first-child .card', (els) => els.map((e) => e.textContent))
+  ok(mukAfterAdd.length === 2 && mukAfterAdd[1].includes('빈 쪽지'), `보드 + → 먹 종대 끝에 새 쪽지 (실측 ${mukAfterAdd.length}장)`)
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .col:first-child .card').count()) === 1, 'Ctrl+Z → 생성 취소')
+
   await p.locator('button[aria-label="서가"]').click().catch(() => {})
   await p.keyboard.press('Escape')
   await p.screenshot({ path: '/tmp/board-view.png' })
