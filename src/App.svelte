@@ -6,6 +6,7 @@
   // ──────────────────────────────────────────────
   import { onMount, tick } from 'svelte';
   import BoardView from './BoardView.svelte';
+  import OutlineView from './OutlineView.svelte';
   import { fade, scale } from 'svelte/transition';
   import { backOut, cubicIn } from 'svelte/easing';
   import {
@@ -588,8 +589,14 @@
         } else if (e.code === 'KeyY') {
           e.preventDefault();
           redo();
-        } else if (!e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && ui.selectedIds.length) {
+        } else if (
+          ui.viewMode === 'kanban' &&
+          !e.altKey &&
+          (e.key === 'ArrowLeft' || e.key === 'ArrowRight') &&
+          ui.selectedIds.length
+        ) {
           // Ctrl+←→ — 선택 카드를 이웃 종대 색으로 (#105 경량 편집 첫 수, 양끝 순환).
+          // 오행진 전용 — 족보의 질문('위계로 읽기') 밖이라 들이지 않는다 (렌즈 원칙).
           // 빈 종대도 어엿한 목적지. 팔레트 칠하기와 같은 변이(setColorMany) —
           // undo 한 걸음, 종대 비행(crossfade)은 공짜. 무리면 앵커 색 기준으로 일괄
           e.preventDefault();
@@ -678,9 +685,11 @@
       return;
     }
     if (ui.viewMode !== 'canvas') {
-      onBoardKey(e);
+      // 캔버스 단축키(이동/가지/집중/올가미…)는 비캔버스 뷰에선 침묵 — 오행진만 항법(#111)을
+      // 받고, 족보 v1은 행 클릭·봉문 토글이 본분(키 항법은 후속 — Esc·Ctrl Z/Y·V는 위에서 통과)
+      if (ui.viewMode === 'kanban') onBoardKey(e);
       return;
-    } // 캔버스 단축키(이동/가지/집중/올가미…)는 오행진에선 침묵 — 항법(#111)만 받는다
+    }
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
     if (e.key.startsWith('Arrow') && !e.altKey) {
@@ -1010,7 +1019,15 @@
     docEditId = null;
   }
 
-  // ── 뷰 모드 (#42) — 캔버스 ↔ 오행진(칸반) ────
+  // ── 뷰 모드 (#42) — 캔버스 → 오행진(칸반) → 족보(아웃라인) 순환 ────
+  const NEXT_VIEW = { canvas: 'kanban', kanban: 'outline', outline: 'canvas' } as const;
+  // 족보 스코프 — 진입 시점의 선택을 뿌리로 포착 (선택 이동에 따라 출렁이지 않게 동결,
+  // Workflowy zoom 국룰). 문서를 갈아타면 무효
+  let outlineRootId = $state<string | null>(null);
+  $effect(() => {
+    void docs.current;
+    outlineRootId = null;
+  });
   function toggleView() {
     commitEditing();
     searchQ = null;
@@ -1018,7 +1035,9 @@
     // 집중(L)은 캔버스 전용 렌즈 — 켠 채 들어가면 선택 정리 effect가 집중으로
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
-    setViewMode(ui.viewMode === 'canvas' ? 'kanban' : 'canvas');
+    const next = NEXT_VIEW[ui.viewMode];
+    if (next === 'outline') outlineRootId = ui.selectedId; // 선택해 두고 들어가면 그 가지만 — 빈손이면 전체
+    setViewMode(next);
   }
   // 오행진 카드 더블클릭 — 강호의 그 자리로 (모드 전환 후 viewport가 서야 점프 가능)
   async function boardJump(n: NoteNode) {
@@ -1190,17 +1209,32 @@
         /></svg
       >
     </button>
-    <!-- 뷰 모드 토글 — Phosphor 'kanban'/'graph' (MIT). 캔버스에선 오행진으로, 오행진에선 강호로 -->
+    <!-- 뷰 모드 토글 — Phosphor 'kanban'/'list'/'graph' (MIT). 다음 뷰의 글리프를 보인다:
+         캔버스→오행진→족보→캔버스 순환 (V와 동일) -->
     <button
       class="icon"
       onclick={toggleView}
-      title={ui.viewMode === 'canvas' ? t.viewKanbanTitle : t.viewCanvasTitle}
-      aria-label={ui.viewMode === 'canvas' ? t.viewKanbanAria : t.viewCanvasAria}
+      title={ui.viewMode === 'canvas'
+        ? t.viewKanbanTitle
+        : ui.viewMode === 'kanban'
+          ? t.viewOutlineTitle
+          : t.viewCanvasTitle}
+      aria-label={ui.viewMode === 'canvas'
+        ? t.viewKanbanAria
+        : ui.viewMode === 'kanban'
+          ? t.viewOutlineAria
+          : t.viewCanvasAria}
     >
       {#if ui.viewMode === 'canvas'}
         <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"
           ><path
             d="M216,48H40a8,8,0,0,0-8,8V208a16,16,0,0,0,16,16H88a16,16,0,0,0,16-16V160h48v16a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V56A8,8,0,0,0,216,48ZM88,208H48V128H88Zm0-96H48V64H88Zm64,32H104V64h48Zm56,32H168V128h40Zm0-64H168V64h40Z"
+          /></svg
+        >
+      {:else if ui.viewMode === 'kanban'}
+        <svg viewBox="0 0 256 256" width="15" height="15" aria-hidden="true" fill="currentColor"
+          ><path
+            d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"
           /></svg
         >
       {:else}
@@ -1282,9 +1316,11 @@
   </div>
 </header>
 
-<!-- ── 캔버스 ↔ 오행진 (#42: 데이터 불변, 표현만 교체) ── -->
-{#if ui.viewMode !== 'canvas'}
+<!-- ── 캔버스 ↔ 오행진 ↔ 족보 (#42: 데이터 불변, 표현만 교체) ── -->
+{#if ui.viewMode === 'kanban'}
   <BoardView onJump={boardJump} hue={colorHover} />
+{:else if ui.viewMode === 'outline'}
+  <OutlineView onJump={boardJump} rootId={outlineRootId} onScopeClear={() => (outlineRootId = null)} />
 {:else}
   <div
     class="viewport"

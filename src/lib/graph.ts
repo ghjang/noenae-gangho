@@ -94,6 +94,46 @@ export function boardColumns(nodes: NoteNode[], edges: Edge[], colors: readonly 
   );
 }
 
+// 족보(아웃라인) 행 — 비급.md(toMarkdown)와 같은 순회 율법의 화면판 (#42):
+// 뿌리부터 DFS(자식은 緣 순서), 재방문(순환·다중 부모)은 revisit 표지 한 줄로 멈춤(↻),
+// 접힌 쪽지는 행만 남기고 후손 생략(삼각형이 곧 collapsed — 뷰 불문 한 데이터).
+// rootId를 주면 그 가지만(스코프) — 빈손이면 뿌리들 + 잔여(순환 덩어리)까지 전부
+export interface OutlineRow {
+  node: NoteNode;
+  depth: number;
+  revisit: boolean;
+}
+export function outlineRows(nodes: NoteNode[], edges: Edge[], rootId: string | null = null): OutlineRow[] {
+  const byIdM = new Map(nodes.map((n) => [n.id, n]));
+  const out: OutlineRow[] = [];
+  const seen = new Set<string>();
+  const kidsOf = (id: string) =>
+    childIdsOf(edges, id)
+      .map((k) => byIdM.get(k))
+      .filter((m): m is NoteNode => !!m); // 緣 순서 보존 — toMarkdown과 동일
+  const walk = (n: NoteNode, d: number): void => {
+    if (seen.has(n.id)) {
+      out.push({ node: n, depth: d, revisit: true });
+      return;
+    }
+    seen.add(n.id);
+    out.push({ node: n, depth: d, revisit: false });
+    if (n.collapsed) return; // 봉문 존중 — 접힌 가지의 후손은 족보에서도 접힌다
+    for (const k of kidsOf(n.id)) walk(k, d + 1);
+  };
+  const root = rootId ? byIdM.get(rootId) : undefined;
+  if (root) {
+    walk(root, 0);
+  } else {
+    const incoming = new Set(edges.map((e) => e.b));
+    for (const r of nodes.filter((n) => !incoming.has(n.id))) walk(r, 0);
+    // 뿌리 없는 순환 덩어리 잔여 — 단 봉문 그늘 속은 구제 금지(접힌 가지가 뿌리로 부활하는 사고)
+    const hidden = computeHidden(nodes, edges);
+    for (const n of nodes) if (!seen.has(n.id) && !hidden.has(n.id)) walk(n, 0);
+  }
+  return out;
+}
+
 // 정돈(Tidy) 레이아웃 — 첫 부모 기준 신장 트리, 보이는 쪽지만.
 // 뿌리(rootId 지정 시 그 쪽지)는 제자리에 두고 후손을 오른쪽으로 펼친다.
 // 형제 순서는 현재 y를 존중. 접힌 쪽지는 잎으로 치되 숨은 후손은 같은

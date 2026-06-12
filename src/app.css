@@ -676,6 +676,114 @@ button.primary:hover { background: #d6552f; }
   color: var(--paper-dim);
 }
 
+/* ── 족보(族譜) — 트리 아웃라인 뷰 (#42 셋째 식구) ──
+   문서를 읽는 자리라 한지 두루마리 한 장을 허공 중앙에 편다 (시트 면 위계) */
+.outline {
+  position: absolute;
+  inset: var(--bar-h) 0 0 0;
+  overflow-y: auto;
+  background: var(--muk-void);
+  padding: 24px 16px 48px;
+}
+.outline .scroll {
+  max-width: 760px;
+  margin: 0 auto;
+  background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+  color: var(--ink);
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 rgba(242, 233, 214, 0.14),
+    0 14px 30px -14px rgba(0, 0, 0, 0.85);
+  padding: 22px 26px;
+}
+.outline .scope {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgba(42, 36, 28, 0.18);
+  font: 600 13px var(--serif);
+}
+.outline .scope button {
+  margin-left: auto;
+  color: var(--ink);
+  background: rgba(42, 36, 28, 0.06);
+  border-color: rgba(42, 36, 28, 0.25);
+}
+.outline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.outline li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: calc(var(--d) * 20px); /* 깊이 들여쓰기 — 행=쪽지, 열=깊이 (비급.md와 같은 격자 감각) */
+}
+.outline .dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(42, 36, 28, 0.35); /* 한지 위 오행 점 — 먹 점도 또렷 */
+}
+.outline button.fold {
+  flex: none;
+  width: 20px;
+  padding: 0 2px;
+  font: 600 12px/1.6 var(--sans);
+  color: var(--ink-dim);
+  background: none;
+  border: none;
+}
+.outline button.row {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font: 13.5px/1.7 var(--sans);
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: flex;
+  align-items: baseline;
+  cursor: var(--cursor-pointer), pointer;
+}
+.outline button.row:hover {
+  background: rgba(42, 36, 28, 0.07);
+}
+.outline button.row.sel {
+  outline: 2px solid var(--inju); /* 낙관 — 카드/쪽지 선택 링과 같은 어휘 */
+  outline-offset: 0;
+}
+.outline button.row .txt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap; /* 행 하나 = 첫 줄 — 전문은 캔버스에서 */
+}
+.outline button.row .more {
+  flex: none;
+  margin-left: 4px;
+  color: var(--ink-dim); /* 멀티라인 표지 ⋯ — 뒤가 더 있다 */
+}
+.outline button.row.revisit {
+  color: var(--ink-dim); /* 재방문(순환·다중 부모) — 본문은 위에 이미 한 번 */
+}
+.outline button.row .cyc {
+  color: var(--inju);
+}
+.outline .none {
+  margin: 8px 0 2px;
+  text-align: center;
+  font-family: var(--serif);
+  color: var(--ink-dim);
+}
+
 /* 집중(포커스) 배지 — 켜진 동안 상단 중앙 알림 겸 해제 버튼 */
 .focus-pill {
   position: fixed;
@@ -825,7 +933,7 @@ button.primary:hover { background: #d6552f; }
 
 /* 전체 요결 시트 — 퀵 카드의 큰형. 다이얼로그 정석대로 제목/닫기 버튼은 고정,
    본문(.cols)만 스크롤. 요결은 묶음(섹션)으로, 넓으면 세 줄기·중간 두 줄기·폰에선 한 줄기
-   — 일곱 묶음이 두 줄기에선 접혀(스크롤 아래) '오행진 요결이 없다'로 읽히던 문제의 처방 */
+   — 묶음들이 두 줄기에선 접혀(스크롤 아래) '오행진 요결이 없다'로 읽히던 문제의 처방 */
 .sheet.help {
   max-height: 90vh; /* 노트북(OS 배율 포함)에서 일곱 묶음이 스크롤 없이 — 86vh는 754px 높이에서 잘렸다 */
   display: flex;
