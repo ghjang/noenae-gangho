@@ -674,14 +674,25 @@
       return;
     }
     if (inField) return;
-    // V — 뷰 순환 (강호 캔버스 ↔ 오행진): 양 뷰 공통, 상단 토글 버튼과 같은 길.
+    // V/Shift+V — 뷰 순환/역순환 (캔버스→오행진→족보), 1·2·3 — 뷰 직행: 전 뷰 공통.
     // 단 제스처(드래그/올가미/팬/리사이즈/緣 잇기) 중엔 침묵 — 캔버스가 손밑에서
-    // 사라지면 진행 중인 포인터 추적이 허공을 찌른다 (전수 점검에서 검거).
-    // 뷰 가족이 늘면(#42 포스트잇/아웃라인, #108 유람) V=다음 뷰로 순환 확장 예정
+    // 사라지면 진행 중인 포인터 추적이 허공을 찌른다 (전수 점검에서 검거)
     if (e.code === 'KeyV' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (drag || marquee || panning || resizing || ui.linking) return;
       e.preventDefault();
-      toggleView();
+      goView((e.shiftKey ? PREV_VIEW : NEXT_VIEW)[ui.viewMode]);
+      return;
+    }
+    if (
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey &&
+      !e.shiftKey &&
+      (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3')
+    ) {
+      if (drag || marquee || panning || resizing || ui.linking) return;
+      e.preventDefault();
+      goView(e.code === 'Digit1' ? 'canvas' : e.code === 'Digit2' ? 'kanban' : 'outline');
       return;
     }
     if (ui.viewMode !== 'canvas') {
@@ -1021,6 +1032,7 @@
 
   // ── 뷰 모드 (#42) — 캔버스 → 오행진(칸반) → 족보(아웃라인) 순환 ────
   const NEXT_VIEW = { canvas: 'kanban', kanban: 'outline', outline: 'canvas' } as const;
+  const PREV_VIEW = { canvas: 'outline', kanban: 'canvas', outline: 'kanban' } as const;
   // 족보 스코프 — 진입 시점의 선택을 뿌리로 포착 (선택 이동에 따라 출렁이지 않게 동결,
   // Workflowy zoom 국룰). 문서를 갈아타면 무효
   let outlineRootId = $state<string | null>(null);
@@ -1028,16 +1040,19 @@
     void docs.current;
     outlineRootId = null;
   });
-  function toggleView() {
+  // 모든 뷰 이동의 공용 길 — 순환(V/토글)·역순환(Shift+V)·직행(1/2/3)이 다 이 문을 지난다
+  function goView(mode: 'canvas' | 'kanban' | 'outline') {
     commitEditing();
     searchQ = null;
     ui.linking = null;
     // 집중(L)은 캔버스 전용 렌즈 — 켠 채 들어가면 선택 정리 effect가 집중으로
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
-    const next = NEXT_VIEW[ui.viewMode];
-    if (next === 'outline') outlineRootId = ui.selectedId; // 선택해 두고 들어가면 그 가지만 — 빈손이면 전체
-    setViewMode(next);
+    if (mode === 'outline') outlineRootId = ui.selectedId; // 선택해 두고 들어가면 그 가지만 — 재진입(3)도 재조준
+    setViewMode(mode);
+  }
+  function toggleView() {
+    goView(NEXT_VIEW[ui.viewMode]);
   }
   // 오행진 카드 더블클릭 — 강호의 그 자리로 (모드 전환 후 viewport가 서야 점프 가능)
   async function boardJump(n: NoteNode) {

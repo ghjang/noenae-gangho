@@ -66,6 +66,21 @@ const ok = (c, m) => {
     '전체 족보 보기 → 4행·스코프 해제',
   );
 
+  // 뷰 직행(1/2/3)·역순환(Shift+V) — 전 뷰 공통
+  await p.keyboard.press('1');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.viewport').count()) === 1, '1 → 캔버스 직행');
+  await p.keyboard.press('2');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.board').count()) === 1, '2 → 오행진 직행');
+  await p.keyboard.press('Shift+V');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.viewport').count()) === 1, 'Shift+V → 역순환(오행진→캔버스)');
+  await p.keyboard.press('Escape'); // 빈손 — 직행 3이 전체 족보가 되게
+  await p.keyboard.press('3');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline').count()) === 1, '3 → 족보 직행');
+
   // 문서별 모드 영속 — 족보 켠 채 새로고침 → 유지 (스코프는 세션 전용이라 전체로)
   await p.reload({ waitUntil: 'networkidle' });
   await p.waitForTimeout(400);
