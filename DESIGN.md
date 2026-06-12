@@ -130,6 +130,6 @@
 - **런타임 의존성 0** — svelte/vite 외 금지. 필요한 건 자작(신택스 하이라이트)하거나
   인라인(아이콘 SVG — 출처·라이선스를 주석에 명기: Phosphor=MIT, Markdown 마크=PD).
 - 자동 게이트는 `npm run check` 3종(문구/봉문/비급 역해석)뿐 — 시나리오 검사가 곧 명세.
-  **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 10종(수동)이 보초.
+  **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 11종(수동)이 보초.
 - 순수층(`geometry/graph/markdown/highlight`)은 DOM·스토어 무관 — 맨 node로 검증 가능해야
   한다. 스토어 import 금지(runes는 맨 node가 못 읽는다).
