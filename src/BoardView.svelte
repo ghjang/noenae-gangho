@@ -28,7 +28,7 @@
 
 <div class="board" role="region" aria-label={t.viewKanbanAria}>
   {#each cols as [c, nodes] (c)}
-    <section class="col">
+    <section class="col" class:cur={c === selColor}>
       <!-- 색명 글자는 떼고 동그라미가 곧 라벨 — 오행에선 색이 의미다 (이름은 툴팁·보조기기 몫) -->
       <h3 title={t.colorLabel[c]}><i class:cur={c === selColor} style={`background: var(--c-${c})`} role="img" aria-label={t.colorLabel[c]}></i><em>{nodes.length}</em></h3>
       <div class="cards">

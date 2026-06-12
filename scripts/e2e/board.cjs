@@ -33,6 +33,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.locator('.board .card', { hasText: '깨다름' }).click()
   ok((await p.locator('.board .card.sel').count()) === 1, '카드 클릭 → 선택 링')
   ok((await p.locator('.board .col:first-child h3 i.cur').count()) === 1, '그 종대 머리 동그라미에 .cur 링 (팔레트 어휘 나침반)')
+  ok((await p.locator('.board .col.cur').count()) === 1, '선택 종대만 솟음(.cur) — 단 하나')
 
   // 키보드 항법 (#111) — 빈손 진입 / ↑↓ 종대 내(끝 멈춤) / ←→ 이웃 종대(인덱스 클램프·빈 종대 멈춤) / Enter 점프
   await p.keyboard.press('Escape') // 선택 해제 — 빈손에서 시작
