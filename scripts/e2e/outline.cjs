@@ -141,11 +141,23 @@ const ok = (c, m) => {
   await p.waitForTimeout(250);
   ok((await p.locator('.outline').count()) === 1, '3 → 족보 직행');
 
-  // 문서별 모드 영속 — 족보 켠 채 새로고침 → 유지 (스코프는 세션 전용이라 전체로)
+  // 모드·스코프 영속 — '보던 가지'는 뷰포트와 같은 결 (Workflowy zoom 국룰, 사용자 결)
+  await p.locator('.outline button.row', { hasText: 'difference' }).click();
+  await p.keyboard.press('3'); // 그 가지로 조준
+  await p.waitForTimeout(250);
   await p.reload({ waitUntil: 'networkidle' });
   await p.waitForTimeout(400);
   ok((await p.locator('.outline').count()) === 1, '새로고침 후에도 족보 (문서별 저장)');
-  ok((await p.locator('.outline button.row').count()) === 4, '새 세션은 전체 족보');
+  ok(
+    (await p.locator('.outline .scope').count()) === 1 &&
+      (await p.locator('.outline button.row').count()) === 3,
+    '스코프도 그대로 — 보던 가지 복원',
+  );
+  await p.keyboard.press('0');
+  await p.waitForTimeout(250);
+  await p.reload({ waitUntil: 'networkidle' });
+  await p.waitForTimeout(400);
+  ok((await p.locator('.outline button.row').count()) === 4, '0(전체)로 푼 것도 기억');
 
   await p.screenshot({ path: '/tmp/outline-view.png' });
   await browser.close();

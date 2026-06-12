@@ -43,6 +43,7 @@
     renameDoc,
     removeDoc,
     setViewMode,
+    setOutlineScope,
     snapshot,
     loadData,
     scheduleSave,
@@ -578,13 +579,13 @@
         ui.focusId ||
         searchQ !== null ||
         ui.editingId ||
-        (ui.viewMode === 'outline' && outlineRootId); // 족보 스코프도 '열린 것' — 렌즈니까
+        (ui.viewMode === 'outline' && ui.outlineRootId); // 족보 스코프도 '열린 것' — 렌즈니까
       ui.linking = null;
       ui.overlay = null;
       ui.showHelp = false;
       ui.focusId = null;
       searchQ = null;
-      if (ui.viewMode === 'outline') outlineRootId = null;
+      if (ui.viewMode === 'outline') setOutlineScope(null);
       commitEditing();
       if (!hadOpen) clearSelection();
       return;
@@ -1047,13 +1048,8 @@
   // ── 뷰 모드 (#42) — 캔버스 → 오행진(칸반) → 족보(아웃라인) 순환 ────
   const NEXT_VIEW = { canvas: 'kanban', kanban: 'outline', outline: 'canvas' } as const;
   const PREV_VIEW = { canvas: 'outline', kanban: 'canvas', outline: 'kanban' } as const;
-  // 족보 스코프 — 진입 시점의 선택을 뿌리로 포착 (선택 이동에 따라 출렁이지 않게 동결,
-  // Workflowy zoom 국룰). 문서를 갈아타면 무효
-  let outlineRootId = $state<string | null>(null);
-  $effect(() => {
-    void docs.current;
-    outlineRootId = null;
-  });
+  // 족보 스코프(ui.outlineRootId)는 store 소관 — 진입 시점의 선택을 뿌리로 포착(선택 이동에
+  // 출렁이지 않게 동결, Workflowy zoom 국룰), 문서별로 영속(setOutlineScope), 전환 시 그 문서 것 복원
   // 모든 뷰 이동의 공용 길 — 순환(V/토글)·역순환(Shift+V)·직행(1/2/3)이 다 이 문을 지난다
   function goView(mode: 'canvas' | 'kanban' | 'outline') {
     commitEditing();
@@ -1062,7 +1058,7 @@
     // 집중(L)은 캔버스 전용 렌즈 — 켠 채 들어가면 선택 정리 effect가 집중으로
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
-    if (mode === 'outline') outlineRootId = ui.selectedId; // 선택해 두고 들어가면 그 가지만 — 재진입(3)도 재조준
+    if (mode === 'outline') setOutlineScope(ui.selectedId); // 선택해 두고 들어가면 그 가지만 — 재진입(3)도 재조준
     setViewMode(mode);
   }
   function toggleView() {
@@ -1170,16 +1166,16 @@
     }
     if (e.code === 'Digit0' && !e.shiftKey) {
       // 0 — 전체 족보로 (1·2·3 직행 가족의 귀환 번호. 3=조준 파고들기와 짝)
-      if (outlineRootId) {
+      if (ui.outlineRootId) {
         e.preventDefault();
-        outlineRootId = null;
+        setOutlineScope(null);
       }
       return;
     }
     const isArrow =
       e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
     if (!isArrow && e.key !== 'Enter') return;
-    const rid = outlineRootId && byId(outlineRootId) ? outlineRootId : null;
+    const rid = ui.outlineRootId && byId(ui.outlineRootId) ? ui.outlineRootId : null;
     const rows = outlineRows(graph.nodes, graph.edges, rid).filter((r) => !r.revisit);
     const tgt = e.target as HTMLElement | null;
     const aimId = (tgt?.classList?.contains('row') ? tgt.dataset.id : null) ?? null;
@@ -1428,7 +1424,7 @@
 {#if ui.viewMode === 'kanban'}
   <BoardView onJump={boardJump} hue={colorHover} />
 {:else if ui.viewMode === 'outline'}
-  <OutlineView onJump={boardJump} rootId={outlineRootId} onScopeClear={() => (outlineRootId = null)} />
+  <OutlineView onJump={boardJump} rootId={ui.outlineRootId} onScopeClear={() => setOutlineScope(null)} />
 {:else}
   <div
     class="viewport"
