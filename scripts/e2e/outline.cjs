@@ -106,18 +106,25 @@ const ok = (c, m) => {
       (await p.locator('.outline button.row').count()) === 1,
     '3 재진입 = 선택 가지(잎 하나)로 재조준',
   );
-  await p.keyboard.press('Delete');
+  await p.keyboard.press('0'); // 숫자 가족의 귀환 번호
   await p.waitForTimeout(250);
   ok(
-    (await p.locator('.outline button.row').count()) === 3 &&
-      (await p.locator('.outline .scope').count()) === 0,
-    'Delete → 베기, 스코프 뿌리 증발 = 전체로 폴백 (3행)',
+    (await p.locator('.outline .scope').count()) === 0 &&
+      (await p.locator('.outline button.row').count()) === 4,
+    '0 → 전체 족보 복귀',
   );
+  await p.keyboard.press('3'); // 다시 조준 (선택 유지 중)
+  await p.waitForTimeout(250);
+  await p.keyboard.press('Escape'); // 단계식 — 스코프부터 닫는다 (선택은 유지)
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 단계식 → 스코프 해제');
+  ok((await p.locator('.outline button.row.sel').count()) === 1, 'Esc 1단은 선택을 살려둔다');
+  await p.keyboard.press('Delete');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 3, 'Delete → 베기 (3행)');
   await p.keyboard.press('Control+z');
   await p.waitForTimeout(300);
-  await p.locator('.outline .scope button').click(); // 복원과 함께 스코프도 부활 — 전체 보기로 해제
-  await p.waitForTimeout(250);
-  ok((await p.locator('.outline button.row').count()) === 4, 'Ctrl+Z + 전체 보기 → 4행 귀환');
+  ok((await p.locator('.outline button.row').count()) === 4, 'Ctrl+Z → 4행 귀환 (undo는 뷰 불문 전역)');
 
   // 뷰 직행(1/2/3)·역순환(Shift+V) — 전 뷰 공통
   await p.keyboard.press('1');

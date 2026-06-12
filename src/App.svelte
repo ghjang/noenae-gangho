@@ -572,12 +572,19 @@
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
       // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
       const hadOpen =
-        ui.linking || ui.overlay || ui.showHelp || ui.focusId || searchQ !== null || ui.editingId;
+        ui.linking ||
+        ui.overlay ||
+        ui.showHelp ||
+        ui.focusId ||
+        searchQ !== null ||
+        ui.editingId ||
+        (ui.viewMode === 'outline' && outlineRootId); // 족보 스코프도 '열린 것' — 렌즈니까
       ui.linking = null;
       ui.overlay = null;
       ui.showHelp = false;
       ui.focusId = null;
       searchQ = null;
+      if (ui.viewMode === 'outline') outlineRootId = null;
       commitEditing();
       if (!hadOpen) clearSelection();
       return;
@@ -1158,6 +1165,14 @@
       if (ui.selectedIds.length) {
         e.preventDefault();
         removeNodes(ui.selectedIds);
+      }
+      return;
+    }
+    if (e.code === 'Digit0' && !e.shiftKey) {
+      // 0 — 전체 족보로 (1·2·3 직행 가족의 귀환 번호. 3=조준 파고들기와 짝)
+      if (outlineRootId) {
+        e.preventDefault();
+        outlineRootId = null;
       }
       return;
     }
