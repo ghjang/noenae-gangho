@@ -249,6 +249,17 @@
   }
   function addAtCenter() {
     searchQ = null // 새 쪽지 행동 = 검색 팝오버 닫기 (캔버스/쪽지 클릭과 같은 국룰)
+    if (!viewportEl) {
+      // 오행진엔 '화면 중앙'이 없다 — viewportEl은 캔버스 분기에서만 산다 (#42 이래
+      // 잠복 크래시, 전수 점검에서 검거). #105의 좌표 규칙으로: 붓 색 마지막 쪽지
+      // 아래 이어 붙이기(같은 x), 그 색이 없으면 맨 아래 쪽지 아래 — 캔버스 배치 보존.
+      // 보드엔 편집기가 없으니 선택까지만(edit=false) — 인라인 편집은 #105의 몫
+      const pool = graph.nodes.filter((n) => n.color === ui.ink)
+      const anchor = (pool.length ? pool : graph.nodes).reduce((a, b) => (!a || b.y > a.y ? b : a), null)
+      if (anchor) addNodeAt(anchor.x, anchor.y + nodeBox(anchor).h + 24, '', ui.ink, false)
+      else addNodeAt(0, 0, '', ui.ink, false)
+      return
+    }
     const r = viewportEl.getBoundingClientRect()
     const x = (r.width / 2 - ui.pan.x) / ui.scale
     const y = (r.height / 2 - ui.pan.y) / ui.scale
@@ -347,6 +358,7 @@
     w: Math.abs(m.x1 - m.x0), h: Math.abs(m.y1 - m.y0),
   })
   function onWinMove(e) {
+    if (!viewportEl) return // 캔버스 부재(오행진) — 떠돌이 제스처 상태가 toWorld를 찌르지 않게 (안전핀)
     if (mmDrag) {
       mmJump(e)
       return
@@ -552,8 +564,11 @@
     }
     if (inField) return
     // V — 뷰 순환 (강호 캔버스 ↔ 오행진): 양 뷰 공통, 상단 토글 버튼과 같은 길.
+    // 단 제스처(드래그/올가미/팬/리사이즈/緣 잇기) 중엔 침묵 — 캔버스가 손밑에서
+    // 사라지면 진행 중인 포인터 추적이 허공을 찌른다 (전수 점검에서 검거).
     // 뷰 가족이 늘면(#42 포스트잇/아웃라인, #108 유람) V=다음 뷰로 순환 확장 예정
     if (e.code === 'KeyV' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (drag || marquee || panning || resizing || ui.linking) return
       e.preventDefault()
       toggleView()
       return

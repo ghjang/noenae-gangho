@@ -533,7 +533,7 @@ button.primary:hover { background: #d6552f; }
   .hud { left: 50%; translate: -50% 0; } /* 줌 위젯은 하단 중앙 — 콜로폰이 비운 자리, 엄지 닿기 좋게 */
 }
 
-/* ── 오행진(五行陣) — 색별 종대 칸반 (#42 v1, 읽기 전용) ── */
+/* ── 오행진(五行陣) — 색별 종대 칸반 (#42 + #111 항법 + #105 경량 편집) ── */
 .board {
   position: absolute;
   inset: var(--bar-h) 0 0 0;
