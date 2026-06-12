@@ -551,9 +551,12 @@ button.primary:hover { background: #d6552f; }
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--hairline);
+  /* 허공보다 한 단 또렷이 띄운 단(壇) — 면 위계 규칙(panel+진한 헤어라인+그림자)에
+     위가 살짝 밝은 결(한지 기운 혼입)과 윗변 하이라이트를 더해 은은한 입체 */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 86%, var(--hanji)), var(--panel) 65%);
+  border: 1px solid var(--hairline-strong);
   border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(242, 233, 214, 0.14), 0 10px 24px -12px rgba(0, 0, 0, 0.8);
 }
 .board .col h3 {
   margin: 0;
@@ -563,6 +566,8 @@ button.primary:hover { background: #d6552f; }
   gap: 8px;
   font: 600 13px var(--serif);
   color: var(--hanji);
+  background: rgba(242, 233, 214, 0.05); /* 머리는 갓 한 톤 — 단의 갓돌 */
+  border-radius: 7px 7px 0 0; /* 부모 8px 모서리의 안쪽 결 */
   border-bottom: 1px solid var(--hairline);
 }
 .board .col h3 i {
@@ -582,7 +587,7 @@ button.primary:hover { background: #d6552f; }
   min-height: 0; /* 플렉스 자식 스크롤의 그 규칙 — 없으면 카드가 종대 밖으로 유출 (도움말 시트와 같은 함정) */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 .board .card {
   flex: none; /* 수축 금지 — 안 그러면 카드가 짜부되며 '다 들어간 척'한다 (스크롤 불발의 진범) */
@@ -591,9 +596,9 @@ button.primary:hover { background: #d6552f; }
   color: var(--ink);
   background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
   border: 1px solid rgba(42, 36, 28, 0.25);
-  border-left: 5px solid var(--c, var(--c-muk)); /* 오행 띠 — 캔버스 쪽지와 같은 어휘 */
+  border-left: 7px solid var(--c, var(--c-muk)); /* 오행 띠 — 캔버스 쪽지와 같은 어휘·같은 두께 */
   border-radius: 4px;
-  padding: 9px 11px;
+  padding: 11px 12px;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -614,8 +619,15 @@ button.primary:hover { background: #d6552f; }
   font-size: 11px;
   color: var(--ink-dim); /* 캔버스의 ▸N 봉문 배지와 같은 어휘 — 카드에선 정보 표기만 */
 }
+/* Tab 조준(포커스)과 선택 — 같은 기하의 링 두 벌: 조준은 황금, 낙관(선택)은 인주.
+   브라우저 기본 흰 테 퇴출. 선택 규칙이 뒤에 와서 '조준+선택'이 겹치면 인주가 이긴다 —
+   Enter 1타(조준 카드 선택)에 금테가 인주로 갈아입는 연출이 공짜 */
+.board .card:focus-visible {
+  outline: 3px solid var(--c-hwang);
+  outline-offset: 1px;
+}
 .board .card.sel {
-  outline: 2px solid var(--inju);
+  outline: 3px solid var(--inju);
   outline-offset: 1px;
 }
 .board .none {
@@ -773,7 +785,8 @@ button.primary:hover { background: #d6552f; }
 .sheet.help dd { margin: 0; color: #4d4538; }
 
 /* 전체 요결 시트 — 퀵 카드의 큰형. 다이얼로그 정석대로 제목/닫기 버튼은 고정,
-   본문(.cols)만 스크롤. 요결은 묶음(섹션)으로, 넓으면 두 줄기·폰에선 한 줄기 */
+   본문(.cols)만 스크롤. 요결은 묶음(섹션)으로, 넓으면 세 줄기·중간 두 줄기·폰에선 한 줄기
+   — 일곱 묶음이 두 줄기에선 접혀(스크롤 아래) '오행진 요결이 없다'로 읽히던 문제의 처방 */
 .sheet.help {
   max-height: 86vh;
   display: flex;
@@ -796,6 +809,9 @@ button.primary:hover { background: #d6552f; }
 }
 @media (min-width: 900px) {
   .sheet.help { width: min(860px, 92vw); } /* 두 줄기 들어갈 너비 */
+}
+@media (min-width: 1280px) {
+  .sheet.help { width: min(1120px, 92vw); } /* 세 줄기 — 묶음 일곱이 한눈에 */
 }
 .help-card .close-row { margin-top: 10px; text-align: right; }
 .help-card button {
