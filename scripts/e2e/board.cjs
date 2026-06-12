@@ -159,6 +159,15 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.waitForTimeout(300)
   ok((await p.locator('.board .col.fade').count()) === 0, '호버 해제 → 전 종대 원상')
 
+  // Delete = 베기 (#105) — 펼친 카드는 그 카드만, undo 한 걸음
+  await p.locator('.board .card', { hasText: '깨다름' }).click()
+  await p.keyboard.press('Delete')
+  await p.waitForTimeout(300)
+  ok((await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent)))[0] === '0', 'Delete → 선택 카드 베기')
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(300)
+  ok((await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent)))[0] === '1', 'Ctrl+Z → 귀환')
+
   // 접힌 쪽지 카드 더블클릭 — 점프는 데려가기지 펼치기가 아니다 (봉문 보존)
   // difference(자식 둘)를 접고 보드에서 그 카드를 두드린다
   await p.locator('.board .card', { hasText: 'difference' }).dblclick()
@@ -218,6 +227,22 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const names = await p.$$eval('.doc-list .open span', (els) => els.map((e) => e.textContent))
   ok(names.includes(`${curName} (2)`), `개명 중복 → 꼬리표 (실측 ${names})`)
   await p.keyboard.press('Escape')
+
+  // 접힌 카드 Delete = 숨은 가지째 (베기는 보이는 것을 벤다 — 캔버스 율법 그대로)
+  await p.locator('button[aria-label="강호 캔버스"]').click()
+  await p.waitForTimeout(300)
+  await p.locator('.node', { hasText: 'difference' }).click()
+  await p.keyboard.press('c') // 봉문
+  await p.waitForTimeout(350)
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+  await p.locator('.board .card', { hasText: 'difference' }).click()
+  await p.keyboard.press('Delete')
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .card').count()) === 1, '접힌 카드 베기 → 봉문 속 가지(2) 동반 — 쪽지 4→1')
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .card').count()) === 2, 'Ctrl+Z → 가지째 귀환 (접힘 유지 — 보드엔 2)')
 
   await p.locator('button[aria-label="서가"]').click().catch(() => {})
   await p.keyboard.press('Escape')

@@ -858,6 +858,12 @@
   // 빈손 첫 화살표 = 첫 종대 첫 카드
   function onBoardKey(e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // 베기 — 캔버스와 같은 율법 (#105): 접힌 카드는 봉문이 숨기던 가지째,
+      // 펼친 카드는 그 카드만, 다중 부모로 보이는 쪽지는 생존 (removeNodes 재사용 — undo 한 걸음)
+      if (ui.selectedIds.length) { e.preventDefault(); removeNodes(ui.selectedIds) }
+      return
+    }
     const arrows = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }
     const dir = arrows[e.key]
     if (!dir && e.key !== 'Enter') return
