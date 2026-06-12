@@ -844,9 +844,11 @@
   }
 
   // 오행진 키보드 항법 (#111) — ↑↓ 같은 종대 안(끝에서 멈춤) · ←→ 이웃 종대의
-  // 같은 높이(인덱스 클램프, 빈 종대 건너뜀) · Enter 캔버스 점프(더블클릭과 동일).
-  // Tab은 브라우저 포커스 순회에 양보 — 카드가 button이라 공짜고, 캔버스
-  // Tab(가지치기)과 의미가 섞이지 않는다. 빈손 첫 화살표 = 첫 종대 첫 카드
+  // 같은 높이(인덱스 클램프, 빈 종대 건너뜀). Tab은 브라우저 포커스 순회에 양보 —
+  // 카드가 button이라 공짜고, 캔버스 Tab(가지치기)과 의미가 섞이지 않는다.
+  // Enter는 2단: Tab으로 조준만 한 카드(포커스≠선택)면 먼저 선택, 선택된 카드면
+  // 캔버스 점프(더블클릭과 동일). 화살표 항법은 포커스가 동행하니 늘 한 방에 점프.
+  // 빈손 첫 화살표 = 첫 종대 첫 카드
   function onBoardKey(e) {
     if (e.altKey || e.ctrlKey || e.metaKey) return
     const arrows = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }
@@ -859,7 +861,10 @@
       if (j >= 0) { ci = i; ri = j }
     }
     if (e.key === 'Enter') {
-      if (ci >= 0) { e.preventDefault(); boardJump(cols[ci][ri]) }
+      e.preventDefault()
+      const aimId = e.target?.classList?.contains('card') ? e.target.dataset.id : null
+      if (aimId && aimId !== ui.selectedId) { selectNode(aimId); return } // 조준 카드 선택 — 금테가 인주로
+      if (ci >= 0) boardJump(cols[ci][ri])
       return
     }
     e.preventDefault()

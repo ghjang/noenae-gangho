@@ -56,8 +56,25 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const jumpTxt = (await p.locator('.board .card.sel .txt').textContent()).trim()
   await p.keyboard.press('Enter')
   await p.waitForTimeout(400)
-  ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프')
+  ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프 (화살표 항법은 포커스=선택 — 한 방)')
   ok((await p.locator('.node.selected').textContent()).includes(jumpTxt), 'Enter 점프: 그 쪽지가 선택돼 있다')
+  await p.locator('button[aria-label="오행진"]').click()
+  await p.waitForTimeout(300)
+
+  // Tab 조준 → Enter 2단 — 첫 Enter는 조준 카드 선택(보드 유지·금테→인주), 둘째가 점프
+  await p.locator('.board .card', { hasText: '깨다름' }).click() // 출발: 선택=포커스=깨다름
+  await p.keyboard.press('Tab')
+  const aimId = await p.evaluate(() =>
+    document.activeElement?.classList?.contains('card') ? document.activeElement.dataset.id : null)
+  const selId = await p.locator('.board .card.sel').getAttribute('data-id')
+  ok(aimId && aimId !== selId, 'Tab → 다음 카드 조준 (포커스≠선택)')
+  await p.keyboard.press('Enter')
+  await p.waitForTimeout(150)
+  ok((await p.locator('.board').count()) === 1, '첫 Enter — 점프 아님, 보드 유지')
+  ok((await p.locator('.board .card.sel').getAttribute('data-id')) === aimId, '첫 Enter = 조준 카드 선택')
+  await p.keyboard.press('Enter')
+  await p.waitForTimeout(400)
+  ok((await p.locator('.viewport').count()) === 1, '둘째 Enter → 이제 캔버스 점프')
   await p.locator('button[aria-label="오행진"]').click() // 다음 시나리오 전제(보드) 복원
   await p.waitForTimeout(300)
 

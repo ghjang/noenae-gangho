@@ -34,6 +34,7 @@
             class="card"
             class:sel={ui.selectedIds.includes(n.id)}
             data-color={n.color}
+            data-id={n.id}
             title={t.boardCardTitle}
             animate:flip={{ duration: REDUCED ? 0 : 220 }}
             in:receive={{ key: n.id }}
