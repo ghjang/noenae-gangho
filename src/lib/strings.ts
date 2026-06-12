@@ -159,7 +159,7 @@ const muhyeop = {
   viewOutlineAria: '족보',
   outlineRowTitle: '두 번 두드리면 강호의 그 자리로',
   outlineCrumbAll: '全 족보',
-  outlineCrumbsAria: '족보 사다리 — 디딤돌을 누르면 그 단으로',
+  outlineCrumbsAria: '족보 경로 — 조상을 누르면 그 가지로',
   boardCardTitle: '두 번 두드리면 강호의 그 자리로',
   closeButton: '닫기',
 
@@ -323,7 +323,7 @@ export const STRINGS: Record<Tone, StringPack> = {
     viewOutlineAria: '아웃라인',
     outlineRowTitle: '더블클릭 = 캔버스에서 보기',
     outlineCrumbAll: '전체',
-    outlineCrumbsAria: '아웃라인 경로 — 누르면 그 단계로',
+    outlineCrumbsAria: '아웃라인 경로 — 상위를 누르면 그 단계로',
     boardCardTitle: '더블클릭 = 캔버스에서 보기',
     closeButton: '닫기',
 

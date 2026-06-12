@@ -8,9 +8,9 @@
   // rootId가 있으면 그 가지만(스코프 — 진입 시점의 선택, Workflowy zoom 국룰).
   // 행 클릭=선택 · 더블클릭=캔버스 점프 · ▸/▾=봉문 토글(캔버스 변이 재사용) — 그 외 편집은 본진 몫
   // ──────────────────────────────────────────────
-  import { graph, ui, selectNode, toggleCollapse, byId, jumpOutlineScope } from './lib/store.svelte.ts';
+  import { graph, ui, selectNode, toggleCollapse, byId, setOutlineScope } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
-  import { outlineRows, childCounts } from './lib/graph.ts';
+  import { outlineRows, childCounts, parentEdgeOf } from './lib/graph.ts';
   import type { NoteNode } from './lib/types.ts';
 
   let {
@@ -22,6 +22,21 @@
   const t = $derived(STRINGS[ui.tone]);
   // 스코프 뿌리가 베여 사라졌으면 전체로 폴백 (rootId는 진입 시점 포착 — 살아있을 때만 유효)
   const scopeNode = $derived(rootId ? byId(rootId) : undefined);
+  // 크럼 = 구조적 조상 경로 (온 길이 아니라 '있는 자리' — 브레드크럼 정석. 직행 조준에도
+  // 조상이 전부 보인다. 첫 부모 신장 트리 — 행 순회와 같은 율법, 순환 가드)
+  const crumbs = $derived.by(() => {
+    const out: NoteNode[] = [];
+    const seen = new Set<string>();
+    let pe = scopeNode ? parentEdgeOf(graph.edges, scopeNode.id) : null;
+    while (pe) {
+      const p = byId(pe.a);
+      if (!p || seen.has(p.id)) break;
+      seen.add(p.id);
+      out.unshift(p);
+      pe = parentEdgeOf(graph.edges, p.id);
+    }
+    return out;
+  });
   const rows = $derived(outlineRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null));
   const kidCount = $derived(childCounts(graph.edges));
   const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0];
@@ -31,15 +46,12 @@
 <div class="outline" role="region" aria-label={t.viewOutlineAria}>
   <div class="scroll">
     {#if scopeNode}
-      <!-- 사다리 브레드크럼 — 全 › 디딤돌들 › 현재 가지. 디딤돌 클릭 = 그 단으로 (사다리 절단) -->
+      <!-- 조상 경로 브레드크럼 — 全 › 조상들 › 현재 가지. 조상 클릭 = 그 가지로 -->
       <nav class="scope" aria-label={t.outlineCrumbsAria}>
         <button class="crumb" onclick={onScopeClear}>{t.outlineCrumbAll}</button>
-        {#each ui.outlineTrail as tid, i (tid + ':' + i)}
-          {@const tn = byId(tid)}
-          {#if tn}
-            <span class="sep" aria-hidden="true">›</span>
-            <button class="crumb" onclick={() => jumpOutlineScope(i)}>{firstLine(tn)}</button>
-          {/if}
+        {#each crumbs as a (a.id)}
+          <span class="sep" aria-hidden="true">›</span>
+          <button class="crumb" onclick={() => setOutlineScope(a.id)}>{firstLine(a)}</button>
         {/each}
         <span class="sep" aria-hidden="true">›</span>
         <span class="cur">{firstLine(scopeNode)}</span>

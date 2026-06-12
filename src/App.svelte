@@ -44,7 +44,6 @@
     removeDoc,
     setViewMode,
     setOutlineScope,
-    drillOutlineScope,
     popOutlineScope,
     snapshot,
     loadData,
@@ -1061,11 +1060,10 @@
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
     if (mode === 'outline') {
-      // 선택해 두고 들어가면 그 가지만. 족보 안에서의 3 재타 = 한 단 더 파고들기(사다리에 쌓임 —
-      // Esc가 한 단씩 되짚는다). 밖에서의 진입은 새 사다리. 족보 안 빈손 3은 no-op
-      if (ui.viewMode === 'outline') {
-        if (ui.selectedId) drillOutlineScope(ui.selectedId);
-      } else setOutlineScope(ui.selectedId);
+      // 선택해 두고 들어가면 그 가지만. 족보 안 3 재타 = 그 선택으로 재조준(파고들기),
+      // 빈손 재타는 no-op. 크럼/Esc는 구조적 조상 경로에서 파생 — 사다리 상태가 따로 없다
+      if (ui.viewMode !== 'outline') setOutlineScope(ui.selectedId);
+      else if (ui.selectedId) setOutlineScope(ui.selectedId);
     }
     setViewMode(mode);
   }
