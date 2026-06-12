@@ -827,7 +827,7 @@ button.primary:hover { background: #d6552f; }
    본문(.cols)만 스크롤. 요결은 묶음(섹션)으로, 넓으면 세 줄기·중간 두 줄기·폰에선 한 줄기
    — 일곱 묶음이 두 줄기에선 접혀(스크롤 아래) '오행진 요결이 없다'로 읽히던 문제의 처방 */
 .sheet.help {
-  max-height: 86vh;
+  max-height: 90vh; /* 노트북(OS 배율 포함)에서 일곱 묶음이 스크롤 없이 — 86vh는 754px 높이에서 잘렸다 */
   display: flex;
   flex-direction: column;
 }
@@ -835,11 +835,11 @@ button.primary:hover { background: #d6552f; }
   overflow-y: auto;
   min-height: 0; /* 플렉스 자식이 내용보다 작아질 수 있게 — 없으면 스크롤 대신 시트가 터진다 */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 4px 34px;
   align-items: start;
 }
-.sheet.help section { margin: 0 0 10px; }
+.sheet.help section { margin: 0 0 6px; }
 .sheet.help h3 {
   margin: 0 0 6px;
   font-family: var(--serif);
@@ -850,7 +850,7 @@ button.primary:hover { background: #d6552f; }
   .sheet.help { width: min(860px, 92vw); } /* 두 줄기 들어갈 너비 */
 }
 @media (min-width: 1280px) {
-  .sheet.help { width: min(1120px, 92vw); } /* 세 줄기 — 묶음 일곱이 한눈에 */
+  .sheet.help { width: min(1280px, 94vw); } /* 세넷 줄기 — 노트북(OS 배율 포함)에서 수직 스크롤 없이 한눈에 */
 }
 .help-card .close-row { margin-top: 10px; text-align: right; }
 .help-card button {

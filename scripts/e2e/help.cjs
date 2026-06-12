@@ -53,6 +53,20 @@ const ok = (c, m) => {
   ok((await page.locator('.sheet.help dt').count()) === 34, 'plain 전체 시트: 34수');
   await page.keyboard.press('Escape');
 
+  // 노트북(OS 배율 125% 추정 1536×754) — 전체 시트가 수직 스크롤 없이 한눈에.
+  // 요결이 늘어 이게 깨지면 폭/높이/묶음 재배치를 다시 논할 것 (의도된 보초)
+  const lap = await (await browser.newContext({ viewport: { width: 1536, height: 754 } })).newPage();
+  await lap.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+  await lap.waitForTimeout(300);
+  await lap.$eval('button[aria-label="도움말"]', (el) => el.click());
+  await lap.locator('.help-card .close-row button').first().click();
+  await lap.waitForTimeout(200);
+  const fit = await lap
+    .locator('.sheet.help .cols')
+    .evaluate((el) => ({ over: el.scrollHeight - el.clientHeight }));
+  ok(fit.over <= 0, `노트북 1536×754: 전체 시트 무스크롤 (넘침 ${fit.over}px)`);
+  ok((await lap.locator('.sheet.help h3').count()) === 7, '노트북: 묶음 7개 전부 표시');
+
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '퀵 카드 + 전체 요결 시트 — 통과');
 })().catch((e) => {
