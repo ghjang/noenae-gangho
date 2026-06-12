@@ -7,46 +7,46 @@
 // ──────────────────────────────────────────────
 
 const JSON_RE =
-  /("(?:\\.|[^"\\])*")(\s*:)|("(?:\\.|[^"\\])*")|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],:])/g
+  /("(?:\\.|[^"\\])*")(\s*:)|("(?:\\.|[^"\\])*")|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],:])/g;
 
 export function highlightJson(text) {
-  const s = String(text)
-  const out = []
-  let last = 0
+  const s = String(text);
+  const out = [];
+  let last = 0;
   for (const m of s.matchAll(JSON_RE)) {
-    if (m.index > last) out.push({ c: '', t: s.slice(last, m.index) })
+    if (m.index > last) out.push({ c: '', t: s.slice(last, m.index) });
     if (m[1] != null) {
-      out.push({ c: 'key', t: m[1] }, { c: 'pun', t: m[2] })
-    } else if (m[3] != null) out.push({ c: 'str', t: m[3] })
-    else if (m[4] != null) out.push({ c: 'num', t: m[4] })
-    else if (m[5] != null) out.push({ c: 'kw', t: m[5] })
-    else out.push({ c: 'pun', t: m[6] })
-    last = m.index + m[0].length
+      out.push({ c: 'key', t: m[1] }, { c: 'pun', t: m[2] });
+    } else if (m[3] != null) out.push({ c: 'str', t: m[3] });
+    else if (m[4] != null) out.push({ c: 'num', t: m[4] });
+    else if (m[5] != null) out.push({ c: 'kw', t: m[5] });
+    else out.push({ c: 'pun', t: m[6] });
+    last = m.index + m[0].length;
   }
-  if (last < s.length) out.push({ c: '', t: s.slice(last) })
-  return out
+  if (last < s.length) out.push({ c: '', t: s.slice(last) });
+  return out;
 }
 
 export function highlightMd(text) {
-  const out = []
-  const lines = String(text).split('\n')
+  const out = [];
+  const lines = String(text).split('\n');
   lines.forEach((line, i) => {
-    const nl = i < lines.length - 1 ? '\n' : ''
-    const m = line.match(/^(\s*)([-*+] )(.*?)( ↻)?$/)
-    if (/^#/.test(line)) out.push({ c: 'head', t: line + nl })
+    const nl = i < lines.length - 1 ? '\n' : '';
+    const m = line.match(/^(\s*)([-*+] )(.*?)( ↻)?$/);
+    if (/^#/.test(line)) out.push({ c: 'head', t: line + nl });
     else if (m) {
-      if (m[1]) out.push({ c: '', t: m[1] })
-      out.push({ c: 'bullet', t: m[2] })
-      if (m[3]) out.push({ c: '', t: m[3] })
-      if (m[4]) out.push({ c: 'cyc', t: m[4] })
-      if (nl) out.push({ c: '', t: nl })
-    } else out.push({ c: '', t: line + nl })
-  })
-  return out
+      if (m[1]) out.push({ c: '', t: m[1] });
+      out.push({ c: 'bullet', t: m[2] });
+      if (m[3]) out.push({ c: '', t: m[3] });
+      if (m[4]) out.push({ c: 'cyc', t: m[4] });
+      if (nl) out.push({ c: '', t: nl });
+    } else out.push({ c: '', t: line + nl });
+  });
+  return out;
 }
 
 // 가져오기용 양식 자동 판별 — applyImport와 같은 규칙({/[ 시작 = JSON)
 export function highlightAuto(text) {
-  const s = String(text).trimStart()
-  return s.startsWith('{') || s.startsWith('[') ? highlightJson(text) : highlightMd(text)
+  const s = String(text).trimStart();
+  return s.startsWith('{') || s.startsWith('[') ? highlightJson(text) : highlightMd(text);
 }
