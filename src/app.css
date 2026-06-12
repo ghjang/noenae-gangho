@@ -983,7 +983,7 @@ button.primary:hover { background: #d6552f; }
   color: var(--inju);
 }
 
-/* ── 시트 신택스 하이라이트 (lib/highlight.js) ──
+/* ── 시트 신택스 하이라이트 (lib/highlight.ts) ──
    .code는 textarea와 같은 metric의 코드 표면 — 읽기 전용(내보내기/비급)은 단독,
    가져오기는 .code-wrap에서 투명 글자 textarea 밑에 깔려 편집 overlay가 된다.
    양쪽 다 no-wrap: 줄바꿈 계산이 1픽셀도 어긋나면 안 되는 정렬의 전제 */

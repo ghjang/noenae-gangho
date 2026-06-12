@@ -1,0 +1,327 @@
+// ──────────────────────────────────────────────
+// 뇌내강호 문구 팩 — 화면에 보이는 모든 텍스트는 여기서.
+// muhyeop(무협 톤, 기본)과 plain(일반 톤) 두 벌을 같은 키로 유지한다.
+// 선택은 ui.tone, 전환은 상단 바 '무공봉인' 토글(store.toggleTone).
+// 새 문구를 들일 때는 반드시 두 팩 모두에 같은 키로 추가할 것 —
+// 키 일치는 타입(StringPack = typeof muhyeop)이 컴파일 타임에 강제하고,
+// 깊은 정합(헬프 전수 분배 등)은 scripts/check-strings.mjs(npm run check)가 지킨다.
+// 팩은 순수 데이터(JSON 직렬화 가능) 유지 — 함수 금지. 매개변수가 필요한
+// 문구는 '{label}' 같은 플레이스홀더로 쓰고 fmt()로 치환한다.
+// ──────────────────────────────────────────────
+import type { Color } from './types.ts';
+
+export type Tone = 'muhyeop' | 'plain';
+
+// 플레이스홀더 치환: fmt('{label} 색으로', { label: '먹' }) → '먹 색으로'
+// 빠진 매개변수는 {이름}을 그대로 남겨 화면에서 바로 눈에 띄게 한다.
+export function fmt(template: string, params: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k: string) => {
+    const v = params[k];
+    return v == null ? `{${k}}` : String(v);
+  });
+}
+
+const muhyeop = {
+  docTitle: '뇌내강호 — 두서없는 아이디어 정리소',
+  titleMain: '腦內江湖',
+  titleSub: '뇌내강호 · 두서없는 아이디어 정리소',
+  colophon: '腦內江湖 — 한 글자의 다름에서',
+
+  colorLabel: { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' } satisfies Record<
+    Color,
+    string
+  >,
+  paletteAria: '오행 색',
+  paletteSet: '선택한 쪽지를 {label} 색으로',
+
+  newNode: '새 쪽지 — 지금 붓 색으로 핀다',
+  mdButtonTitle: '비급.md — 강호를 트리 개요로 펴낸다',
+  mdButtonAria: '비급.md 출력',
+  exportButtonTitle: '내공 내보내기 — JSON으로 갈무리',
+  exportButtonAria: '내보내기',
+  importButtonTitle: '내공 흡수 — JSON / 비급.md 붙여넣기',
+  importButtonAria: '불러오기',
+  clearButtonTitle: '강호 비우기 — 모든 쪽지와 緣을 쓸어낸다',
+  clearButtonAria: '강호 비우기',
+  clearButton: '강호 비우기',
+  clearConfirm: '진짜 비움?',
+  clearHint: '비운 강호도 Ctrl+Z 한 방이면 돌아온다.',
+  toneButton: '封',
+  toneButtonAria: '무공봉인',
+  toneButtonTitle: '무공을 봉인하고 일반 말투로 전환',
+  helpAria: '도움말',
+
+  canvasAria: '강호 — 생각의 캔버스',
+  emptyTitle: '허공이 비어 있다.',
+  emptyHint: '빈 곳을 두 번 두드리면 念이 핀다 — 우상단 ? 참고',
+
+  nodePlaceholder: '念…',
+  handleTitle: '끌어서 다른 쪽지에 緣 잇기 (허공에 놓으면 새 쪽지)',
+  handleAria: '緣 잇기',
+  resizeHandleTitle: '좌·우 변을 끌어 너비 조절 (두 번 두드리면 자동 너비로)',
+  resizeHandleAria: '너비 조절',
+  foldBadgeTitle: '가지 봉문/개문 (단축키 C) — 접으면 후손 쪽지가 숨는다',
+  foldBadgeAria: '가지 접기/펼치기',
+
+  zoomOutAria: '축소',
+  zoomInAria: '확대',
+  resetViewTitle: '축경 100% — 보던 자리 그대로',
+  fitButtonTitle: '강호 전경(全) — 모든 쪽지를 한눈에 (Shift+1)',
+  fitAria: '전체 보기',
+
+  searchPlaceholder: '念 수소문 — 글자 일부로 찾기',
+  searchEmpty: '그런 念은 강호에 없다',
+  minimapAria: '강호 전도',
+
+  helpTitle: '강호 행보 요결',
+  helpItems: [
+    ['빈 곳 2번', '새 念(쪽지) 피우기'],
+    ['쪽지 2번', '글 고치기'],
+    ['쪽지 끌기', '자리 옮기기'],
+    ['붉은 점 끌기', '緣 잇기 · 허공에 놓으면 새 쪽지'],
+    ['Shift+클릭', '쪽지를 무리에 넣고 빼기 (다중 선택)'],
+    ['Shift+빈 곳 끌기', '올가미 — 닿는 쪽지를 모두 무리로'],
+    ['Ctrl+A', '보이는 쪽지 전부 무리로'],
+    ['좌·우 변 끌기', '쪽지 너비 조절 · 두 번 두드리면 자동'],
+    ['오행 팔레트', '선택 시 물들이기 · 빈손 클릭=붓 색 · 호버=같은 색 비추기'],
+    ['Tab', '가지 치기 · 선택 없으면 화면 중심 쪽지 선택'],
+    ['Enter', '형제 가지치기 — 같은 부모 밑에 새 쪽지'],
+    ['F2', '선택한 쪽지 글 고치기 (Ctrl+Enter도)'],
+    ['Delete', '선택한 쪽지/緣 베기 — 접힌 쪽지는 숨은 가지째'],
+    ['F', '가리키거나 선택한 緣 방향 뒤집기 (한 가닥씩)'],
+    ['C·Space / 배지', '선택한 쪽지의 가지 봉문/개문'],
+    ['L · [ ]', '집중 — 선택한 쪽지 둘레만 보기 · 반경 조절'],
+    ['R / Shift+R', '가지런히 — 강호 전체 / 선택한 가지만'],
+    ['Z / Shift+Z', '선택 쪽지 기준 확대/축소 — 한 손 줌'],
+    ['Alt+화살표', '緣 타고 이동 — ←부모 →자식 ↑↓형제'],
+    ['Ctrl ± · 0', '축경(줌) · 0이면 100%로'],
+    ['Ctrl+Z / Y', '시간 되돌리기 / 다시 감기'],
+    ['Ctrl+F', '念 수소문 — Enter 순회 · Shift+Enter 역순'],
+    ['Shift+1', '강호 전경 — 전체 보기'],
+    ['Shift+2', '선택한 쪽지를 화면 가득히'],
+    ['화살표 키', '유람 · 쪽지 선택 중엔 그 쪽지 옮기기 (Shift 성큼)'],
+    ['PgUp/PgDn', '한 화면씩 오르내리기'],
+    ['빈 곳 끌기', '강호 유람(이동)'],
+    ['휠', '축경(줌)'],
+    ['두 손가락', '꼬집어 축경 · 끌어 유람 (터치)'],
+    ['서가(겹책)', '강호 여러 권 — 갈아타기 · 개창 · 이름 · 베기'],
+    ['오행진 토글', '색별 종대 칸반 — 카드 두 번 두드리면 강호 점프'],
+    ['V', '뷰 순환 — 강호 캔버스 ↔ 오행진 (상단 토글과 동일)'],
+    [
+      '오행진 항법',
+      '↑↓·←→ 카드 누비기(양끝 순환) · Tab 조준(금테) 중엔 금테만 이동 — Enter면 선택, 다시 Enter면 강호의 그 자리로',
+    ],
+    ['Ctrl+←→ (오행진)', '선택한 카드를 이웃 종대 색으로 물들여 보내기 — 양끝 순환'],
+  ] as [string, string][],
+  // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
+  helpQuick: [
+    '빈 곳 2번',
+    '쪽지 2번',
+    '쪽지 끌기',
+    '붉은 점 끌기',
+    'Tab',
+    'Delete',
+    'Ctrl+Z / Y',
+    'Ctrl+F',
+  ],
+  // 전체 요결 시트의 묶음 — helpItems 키 전수 분배 (check-strings가 합집합=전체·중복 0 검증)
+  helpSections: [
+    ['쪽지', ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '좌·우 변 끌기', '오행 팔레트']],
+    ['緣과 가지', ['붉은 점 끌기', 'Tab', 'Enter', 'F', 'F2', 'Delete']],
+    ['무리 짓기', ['Shift+클릭', 'Shift+빈 곳 끌기', 'Ctrl+A']],
+    ['봉문·집중·정돈', ['C·Space / 배지', 'L · [ ]', 'R / Shift+R']],
+    ['강호 유람', ['빈 곳 끌기', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn']],
+    ['항법·수소문·되돌리기', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
+    ['서가와 진법', ['서가(겹책)', '오행진 토글', 'V', '오행진 항법', 'Ctrl+←→ (오행진)']],
+  ] as [string, string[]][],
+  helpMoreButton: '요결 전부 보기',
+  focusPill: "集中 '{label}' {depth}촌 — [ ] 반경 · L 해제",
+  focusPillAria: '집중 해제',
+  docsButtonTitle: '강호 서가 — 지금: {title}',
+  docsButtonAria: '서가',
+  docsTitle: '강호 서가',
+  docNewButton: '새 강호 개창',
+  docRenameAria: '이름 고치기',
+  docDeleteAria: '강호 베기',
+  docDeleteConfirm: '이 강호를 통째로 벤다?',
+  docDeleteYes: '벤다',
+  docDefaultTitle: '강호 {n}',
+  docUntitled: '무명 강호',
+  viewKanbanTitle: '오행진(五行陣) — 색별 종대로 본다 (V로 전환)',
+  viewKanbanAria: '오행진',
+  viewCanvasTitle: '강호 캔버스로 — 마인드맵',
+  viewCanvasAria: '강호 캔버스',
+  boardCardTitle: '두 번 두드리면 강호의 그 자리로',
+  closeButton: '닫기',
+
+  exportTitle: '내공 내보내기 — JSON',
+  importTitle: '내공 흡수 — JSON / 비급.md 붙여넣기',
+  importHint: '내보낸 JSON이든 비급.md(들여쓰기 불릿 개요)든 그대로 붙여넣으시게 — 양식은 알아서 알아본다.',
+  mdTitle: '비급으로 출력 — Markdown',
+  cancelButton: '취소',
+  applyImportButton: '흡수',
+  copyButton: '복사',
+  importBadShape: '형식이 비급답지 않습니다. JSON 또는 들여쓰기 불릿(비급.md)이어야 함.',
+  importParseFail: 'JSON 해독 실패 — 주화입마 직전에 멈췄다 ㅋ 다시 확인을.',
+  copyOk: '복사 완료. 단전에 잘 갈무리하시길.',
+  copyFail: '자동 복사 실패 — 본문을 직접 긁어가시게.',
+
+  mdHeading: '# 뇌내강호 — 念 모음',
+  mdEmptyNode: '(빈 쪽지)',
+};
+
+// 두 팩의 키 형상은 muhyeop이 원본 — plain이 키를 빠뜨리거나 더하면 컴파일이 멈춘다
+export type StringPack = typeof muhyeop;
+
+export const TONES: readonly Tone[] = ['muhyeop', 'plain']; // [0]이 기본값
+
+export const STRINGS: Record<Tone, StringPack> = {
+  muhyeop,
+
+  plain: {
+    docTitle: '아이디어 맵 — 생각을 잇는 캔버스',
+    titleMain: '아이디어 맵',
+    titleSub: '생각을 잇는 캔버스',
+    colophon: '', // 빈 값이면 콜로폰을 그리지 않는다
+
+    colorLabel: { muk: '흑', cheong: '녹', dan: '적', hwang: '황', nam: '남' },
+    paletteAria: '노트 색',
+    paletteSet: '선택한 노트를 {label} 색으로',
+
+    newNode: '새 노트 — 현재 선택 색으로 추가',
+    mdButtonTitle: 'Markdown 출력 — 트리 개요',
+    mdButtonAria: 'Markdown 출력',
+    exportButtonTitle: 'JSON으로 내보내기',
+    exportButtonAria: '내보내기',
+    importButtonTitle: '가져오기 — JSON / Markdown 붙여넣기',
+    importButtonAria: '가져오기',
+    clearButtonTitle: '모든 노트와 연결 지우기',
+    clearButtonAria: '모두 지우기',
+    clearButton: '모두 지우기',
+    clearConfirm: '정말 지울까요?',
+    clearHint: '지운 뒤에도 Ctrl+Z로 되돌릴 수 있습니다.',
+    toneButton: '武',
+    toneButtonAria: '무협모드',
+    toneButtonTitle: '무협 말투로 전환',
+    helpAria: '도움말',
+
+    canvasAria: '아이디어 캔버스',
+    emptyTitle: '캔버스가 비어 있습니다.',
+    emptyHint: '빈 곳을 더블클릭하면 새 노트가 생깁니다 — 우상단 ? 참고',
+
+    nodePlaceholder: '메모…',
+    handleTitle: '끌어서 다른 노트에 연결 (빈 곳에 놓으면 새 노트)',
+    handleAria: '연결하기',
+    resizeHandleTitle: '좌/우 가장자리를 끌어 너비 조절 (더블클릭하면 자동 너비)',
+    resizeHandleAria: '너비 조절',
+    foldBadgeTitle: '하위 노트 접기/펼치기 (단축키 C)',
+    foldBadgeAria: '접기/펼치기',
+
+    zoomOutAria: '축소',
+    zoomInAria: '확대',
+    resetViewTitle: '배율 100% (보던 위치 유지)',
+    fitButtonTitle: '모든 노트가 보이도록 맞춤 (Shift+1)',
+    fitAria: '전체 보기',
+
+    searchPlaceholder: '노트 검색 — 글자 일부 입력',
+    searchEmpty: '결과 없음',
+    minimapAria: '미니맵',
+
+    helpTitle: '사용법',
+    helpItems: [
+      ['빈 곳 더블클릭', '새 노트 만들기'],
+      ['노트 더블클릭', '내용 편집'],
+      ['노트 드래그', '이동'],
+      ['빨간 점 드래그', '연결 · 빈 곳에 놓으면 새 노트'],
+      ['Shift+클릭', '노트를 다중 선택에 넣고 빼기'],
+      ['Shift+빈 곳 드래그', '러버밴드 — 영역 안 노트 모두 선택'],
+      ['Ctrl+A', '보이는 노트 모두 선택'],
+      ['좌/우 변 드래그', '노트 너비 조절 · 더블클릭이면 자동'],
+      ['색 팔레트', '선택 시 색 지정 · 빈 클릭=기본색 선택 · 호버=같은 색 강조'],
+      ['Tab', '하위 노트 추가 · 선택 없으면 중앙 노트 선택'],
+      ['Enter', '형제 노트 만들기 (같은 부모)'],
+      ['F2', '선택한 노트 편집 (Ctrl+Enter도 가능)'],
+      ['Delete', '선택한 노트/연결 삭제 — 접힌 노트는 숨은 하위까지'],
+      ['F', '마우스로 가리키거나 선택한 연결 방향 뒤집기'],
+      ['C·Space / 배지', '선택한 노트의 하위 접기/펼치기'],
+      ['L · [ ]', '포커스 — 선택한 노트 주변만 보기 · 반경 조절'],
+      ['R / Shift+R', '자동 정렬 — 전체 / 선택한 가지만'],
+      ['Z / Shift+Z', '선택 노트 기준 확대/축소'],
+      ['Alt+화살표', '연결 따라 이동 — ←부모 →자식 ↑↓형제'],
+      ['Ctrl ± · 0', '확대/축소 · 0이면 100%'],
+      ['Ctrl+Z / Y', '실행 취소 / 다시 실행'],
+      ['Ctrl+F', '노트 검색 — Enter 다음 · Shift+Enter 이전'],
+      ['Shift+1', '전체 보기 (맞춤)'],
+      ['Shift+2', '선택 노트 화면 맞춤'],
+      ['화살표 키', '화면 이동 · 노트 선택 시 노트 이동 (Shift 크게)'],
+      ['PgUp/PgDn', '한 화면씩 위/아래'],
+      ['빈 곳 드래그', '화면 이동(팬)'],
+      ['휠', '확대/축소'],
+      ['두 손가락', '핀치 줌 · 화면 이동 (터치)'],
+      ['서가(겹책)', '캔버스 여러 개 — 전환 · 생성 · 이름 · 삭제'],
+      ['칸반 토글', '색별 컬럼 보기 — 카드 더블클릭 = 캔버스 이동'],
+      ['V', '보기 전환 — 캔버스 ↔ 칸반 (상단 토글과 동일)'],
+      [
+        '칸반 키 탐색',
+        '↑↓·←→ 카드 이동(끝에서 순환) · Tab 포커스 중엔 포커스만 이동 — Enter = 선택, 다시 Enter = 캔버스 이동',
+      ],
+      ['Ctrl+←→ (칸반)', '선택한 카드를 옆 컬럼 색으로 변경 — 끝에서 순환'],
+    ],
+    helpQuick: [
+      '빈 곳 더블클릭',
+      '노트 더블클릭',
+      '노트 드래그',
+      '빨간 점 드래그',
+      'Tab',
+      'Delete',
+      'Ctrl+Z / Y',
+      'Ctrl+F',
+    ],
+    helpSections: [
+      ['노트', ['빈 곳 더블클릭', '노트 더블클릭', '노트 드래그', '좌/우 변 드래그', '색 팔레트']],
+      ['연결과 가지', ['빨간 점 드래그', 'Tab', 'Enter', 'F', 'F2', 'Delete']],
+      ['다중 선택', ['Shift+클릭', 'Shift+빈 곳 드래그', 'Ctrl+A']],
+      ['접기·포커스·정렬', ['C·Space / 배지', 'L · [ ]', 'R / Shift+R']],
+      [
+        '화면 이동·줌',
+        ['빈 곳 드래그', '휠', '두 손가락', 'Z / Shift+Z', 'Ctrl ± · 0', '화살표 키', 'PgUp/PgDn'],
+      ],
+      ['탐색·검색·실행 취소', ['Alt+화살표', 'Shift+1', 'Shift+2', 'Ctrl+F', 'Ctrl+Z / Y']],
+      ['문서와 보기', ['서가(겹책)', '칸반 토글', 'V', '칸반 키 탐색', 'Ctrl+←→ (칸반)']],
+    ],
+    helpMoreButton: '전체 도움말',
+    focusPill: "포커스 '{label}' {depth}촌 — [ ] 반경 · L 해제",
+    focusPillAria: '포커스 해제',
+    docsButtonTitle: '캔버스 목록 — 현재: {title}',
+    docsButtonAria: '캔버스 목록',
+    docsTitle: '캔버스 목록',
+    docNewButton: '새 캔버스',
+    docRenameAria: '이름 바꾸기',
+    docDeleteAria: '캔버스 삭제',
+    docDeleteConfirm: '이 캔버스를 삭제할까요?',
+    docDeleteYes: '삭제',
+    docDefaultTitle: '캔버스 {n}',
+    docUntitled: '이름 없음',
+    viewKanbanTitle: '칸반 보기 — 색별 컬럼 (V로 전환)',
+    viewKanbanAria: '칸반 보기',
+    viewCanvasTitle: '캔버스 보기 — 마인드맵',
+    viewCanvasAria: '캔버스 보기',
+    boardCardTitle: '더블클릭 = 캔버스에서 보기',
+    closeButton: '닫기',
+
+    exportTitle: '내보내기 — JSON',
+    importTitle: '가져오기 — JSON / Markdown 붙여넣기',
+    importHint: '내보내기한 JSON 또는 들여쓰기 목록(Markdown)을 붙여넣으면 형식을 자동으로 인식합니다.',
+    mdTitle: 'Markdown 출력',
+    cancelButton: '취소',
+    applyImportButton: '가져오기',
+    copyButton: '복사',
+    importBadShape: '형식이 올바르지 않습니다. JSON 또는 들여쓰기 목록(Markdown)이어야 합니다.',
+    importParseFail: 'JSON 파싱에 실패했습니다. 내용을 다시 확인해 주세요.',
+    copyOk: '복사했습니다.',
+    copyFail: '자동 복사에 실패했습니다. 본문을 직접 복사해 주세요.',
+
+    mdHeading: '# 아이디어 맵 — 노트 모음',
+    mdEmptyNode: '(빈 노트)',
+  },
+};

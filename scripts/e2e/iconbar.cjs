@@ -1,57 +1,81 @@
-const { chromium } = require('playwright')
-const fail = (m) => { console.error('✗ ' + m); process.exitCode = 1 }
-const ok = (cond, m) => { if (cond) console.log('✓ ' + m); else fail(m) }
+const { chromium } = require('playwright');
+const fail = (m) => {
+  console.error('✗ ' + m);
+  process.exitCode = 1;
+};
+const ok = (cond, m) => {
+  if (cond) console.log('✓ ' + m);
+  else fail(m);
+};
 
-;(async () => {
-  const browser = await chromium.launch({ args: ['--proxy-bypass-list=<-loopback>'] })
-  const ctx = await browser.newContext({ viewport: { width: 1200, height: 760 }, deviceScaleFactor: 2 })
-  const page = await ctx.newPage()
-  await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
-  await page.waitForTimeout(400)
+(async () => {
+  const browser = await chromium.launch({ args: ['--proxy-bypass-list=<-loopback>'] });
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 760 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
 
   // 아이콘 버튼 5종(서가/오행진 토글/내보내기/불러오기/비우기) — 라벨/키(높이) 정렬
   // (오행진 토글 합류 #42 때 4종 기준이 못 따라온 드리프트를 2026-06-12에 수선)
-  const icons = page.locator('.bar button.icon')
-  ok(await icons.count() === 5, '아이콘 버튼 5종')
-  const arias = []
-  for (let i = 0; i < 5; i++) arias.push(await icons.nth(i).getAttribute('aria-label'))
-  ok(JSON.stringify(arias) === JSON.stringify(['서가', '오행진', '내보내기', '불러오기', '강호 비우기']), `aria 5종: ${arias}`)
-  const hs = []
+  const icons = page.locator('.bar button.icon');
+  ok((await icons.count()) === 5, '아이콘 버튼 5종');
+  const arias = [];
+  for (let i = 0; i < 5; i++) arias.push(await icons.nth(i).getAttribute('aria-label'));
+  ok(
+    JSON.stringify(arias) === JSON.stringify(['서가', '오행진', '내보내기', '불러오기', '강호 비우기']),
+    `aria 5종: ${arias}`,
+  );
+  const hs = [];
   for (const sel of ['.bar button.icon', '.bar button.md', '.bar .actions > button.add']) {
-    hs.push((await page.locator(sel).first().boundingBox()).height)
+    hs.push((await page.locator(sel).first().boundingBox()).height);
   }
-  ok(hs.every((h) => Math.abs(h - hs[0]) <= 1), `버튼 키 정렬 (${hs})`)
-  await page.locator('.bar').screenshot({ path: '/tmp/iconbar-muhyeop.png' })
+  ok(
+    hs.every((h) => Math.abs(h - hs[0]) <= 1),
+    `버튼 키 정렬 (${hs})`,
+  );
+  await page.locator('.bar').screenshot({ path: '/tmp/iconbar-muhyeop.png' });
 
   // 비우기 확인 카드 플로우
-  await page.locator('.bar button.icon').nth(4).click()
-  ok(await page.locator('.sheet.confirm').count() === 1, '빗자루 → 확인 카드 등장')
-  ok((await page.locator('.sheet.confirm h2').textContent()) === '진짜 비움?', '카드 제목 = 진짜 비움?')
-  await page.screenshot({ path: '/tmp/confirm-card.png' })
-  await page.locator('.sheet.confirm .row button').first().click() // 취소
-  ok(await page.locator('.sheet.confirm').count() === 0 && (await page.locator('.node').count()) === 4, '취소 → 강호 무사')
+  await page.locator('.bar button.icon').nth(4).click();
+  ok((await page.locator('.sheet.confirm').count()) === 1, '빗자루 → 확인 카드 등장');
+  ok((await page.locator('.sheet.confirm h2').textContent()) === '진짜 비움?', '카드 제목 = 진짜 비움?');
+  await page.screenshot({ path: '/tmp/confirm-card.png' });
+  await page.locator('.sheet.confirm .row button').first().click(); // 취소
+  ok(
+    (await page.locator('.sheet.confirm').count()) === 0 && (await page.locator('.node').count()) === 4,
+    '취소 → 강호 무사',
+  );
 
-  await page.locator('.bar button.icon').nth(4).click()
-  await page.keyboard.press('Escape')
-  ok(await page.locator('.sheet.confirm').count() === 0, 'Esc → 카드 닫힘')
+  await page.locator('.bar button.icon').nth(4).click();
+  await page.keyboard.press('Escape');
+  ok((await page.locator('.sheet.confirm').count()) === 0, 'Esc → 카드 닫힘');
 
-  await page.locator('.bar button.icon').nth(4).click()
-  await page.locator('.sheet.confirm button.armed').click() // 강호 비우기
-  await page.waitForTimeout(300)
-  ok((await page.locator('.node').count()) === 0, '실행 → 강호 비워짐')
-  await page.keyboard.press('Control+z')
-  await page.waitForTimeout(300)
-  ok((await page.locator('.node').count()) === 4, 'Ctrl+Z → 강호 복구 (한 걸음)')
+  await page.locator('.bar button.icon').nth(4).click();
+  await page.locator('.sheet.confirm button.armed').click(); // 강호 비우기
+  await page.waitForTimeout(300);
+  ok((await page.locator('.node').count()) === 0, '실행 → 강호 비워짐');
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(300);
+  ok((await page.locator('.node').count()) === 4, 'Ctrl+Z → 강호 복구 (한 걸음)');
 
   // plain 톤 — 문구 전환
-  await page.locator('.bar button.tone').click()
-  await page.waitForTimeout(200)
-  ok((await page.locator('.bar button.icon').nth(4).getAttribute('aria-label')) === '모두 지우기', 'plain 톤 aria 전환')
-  await page.locator('.bar button.icon').nth(4).click()
-  ok((await page.locator('.sheet.confirm h2').textContent()) === '정말 지울까요?', 'plain 카드 제목')
-  await page.locator('.bar').screenshot({ path: '/tmp/iconbar-plain.png' }).catch(() => {})
-  await page.keyboard.press('Escape')
+  await page.locator('.bar button.tone').click();
+  await page.waitForTimeout(200);
+  ok(
+    (await page.locator('.bar button.icon').nth(4).getAttribute('aria-label')) === '모두 지우기',
+    'plain 톤 aria 전환',
+  );
+  await page.locator('.bar button.icon').nth(4).click();
+  ok((await page.locator('.sheet.confirm h2').textContent()) === '정말 지울까요?', 'plain 카드 제목');
+  await page
+    .locator('.bar')
+    .screenshot({ path: '/tmp/iconbar-plain.png' })
+    .catch(() => {});
+  await page.keyboard.press('Escape');
 
-  await browser.close()
-  console.log(process.exitCode ? '검증 실패' : '아이콘 바 + 확인 카드 — 전 시나리오 통과')
-})().catch((e) => { console.error(e); process.exit(1) })
+  await browser.close();
+  console.log(process.exitCode ? '검증 실패' : '아이콘 바 + 확인 카드 — 전 시나리오 통과');
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

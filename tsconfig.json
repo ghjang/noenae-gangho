@@ -1,0 +1,19 @@
+{
+  // 腦內江湖 TypeScript 설정 (#115) — strict + '소거 가능 문법만'(erasableSyntaxOnly):
+  // 검사 스크립트(scripts/check-*.mjs)가 src/lib의 .ts를 맨 node(22.18+ 타입 스트리핑)로
+  // 직접 import하는 구조라, enum/namespace 같은 런타임 생성 문법은 금지 — 이 플래그가 보초.
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true, // 맨 node가 .ts 실파일 경로를 요구 — import도 .ts로 통일
+    "verbatimModuleSyntax": true, // import type 강제 — 스트리핑/번들러가 타입 import를 안전히 소거
+    "erasableSyntaxOnly": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "allowJs": true // 전환 중 .js 공존용 — 전환 완료 후에도 e2e/검사 스크립트 무해
+  },
+  "include": ["src/**/*"]
+}
