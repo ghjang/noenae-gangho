@@ -35,7 +35,7 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   ok((await p.locator('.board .col:first-child h3 i.cur').count()) === 1, '그 종대 머리 동그라미에 .cur 링 (팔레트 어휘 나침반)')
   ok((await p.locator('.board .col.cur').count()) === 1, '선택 종대만 솟음(.cur) — 단 하나')
 
-  // 키보드 항법 (#111) — 빈손 진입 / ↑↓ 종대 내(끝 멈춤) / ←→ 이웃 종대(인덱스 클램프·빈 종대 멈춤) / Enter 점프
+  // 키보드 항법 (#111+개정) — 빈손 진입 / ↑↓ 종대 내 순환 / ←→ 종대 간 순환(빈 종대 건너뜀) / Enter 점프
   await p.keyboard.press('Escape') // 선택 해제 — 빈손에서 시작
   await p.keyboard.press('ArrowDown')
   let selTxt = await p.locator('.board .card.sel').textContent()
@@ -45,7 +45,10 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   ok(selTxt.includes('깨다름'), '↓ 같은 종대 아래 카드로')
   await p.keyboard.press('ArrowDown')
   selTxt = await p.locator('.board .card.sel').textContent()
-  ok(selTxt.includes('깨다름'), '↓ 종대 끝에서 멈춤 (순환 없음)')
+  ok(selTxt.includes('빈 쪽지'), '↓ 바닥에서 머리로 순환')
+  await p.keyboard.press('ArrowUp')
+  selTxt = await p.locator('.board .card.sel').textContent()
+  ok(selTxt.includes('깨다름'), '↑ 머리에서 바닥으로 순환')
   await p.keyboard.press('ArrowRight')
   ok((await p.locator('.board .col:nth-child(2) .card.sel').count()) === 1, '→ 청 종대로 (높이 1→0 클램프)')
   ok((await p.locator('.board .col:nth-child(2) h3 i.cur').count()) === 1, '나침반 링도 청 종대로 동행')
@@ -53,28 +56,33 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.keyboard.press('ArrowRight')
   ok((await p.locator('.board .col:nth-child(4) .card.sel').count()) === 1, '→→ 황 종대까지 전진')
   await p.keyboard.press('ArrowRight')
-  ok((await p.locator('.board .col:nth-child(4) .card.sel').count()) === 1, '→ 남은 게 빈 종대(남)뿐이면 멈춤')
+  ok((await p.locator('.board .col:nth-child(1) .card.sel').count()) === 1, '→ 빈 남 종대 건너 첫 종대로 순환')
   await p.keyboard.press('ArrowLeft')
-  ok((await p.locator('.board .col:nth-child(3) .card.sel').count()) === 1, '← 단 종대로 귀환')
+  ok((await p.locator('.board .col:nth-child(4) .card.sel').count()) === 1, '← 황 종대로 역순환 (남 건너뜀)')
   const jumpTxt = (await p.locator('.board .card.sel .txt').textContent()).trim()
   await p.keyboard.press('Enter')
   await p.waitForTimeout(400)
-  ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프 (화살표 항법은 포커스=선택 — 한 방)')
+  ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프 (두 링 합체 상태 — 한 방)')
   ok((await p.locator('.node.selected').textContent()).includes(jumpTxt), 'Enter 점프: 그 쪽지가 선택돼 있다')
   await p.locator('button[aria-label="오행진"]').click()
   await p.waitForTimeout(300)
 
-  // Tab 조준 → Enter 2단 — 첫 Enter는 조준 카드 선택(보드 유지·금테→인주), 둘째가 점프
+  // Tab 조준 → 조준 화살표(금테만 이동·선택 불변) → Enter 2단
   await p.locator('.board .card', { hasText: '깨다름' }).click() // 출발: 선택=포커스=깨다름
   await p.keyboard.press('Tab')
-  const aimId = await p.evaluate(() =>
+  const aim1 = await p.evaluate(() =>
     document.activeElement?.classList?.contains('card') ? document.activeElement.dataset.id : null)
   const selId = await p.locator('.board .card.sel').getAttribute('data-id')
-  ok(aimId && aimId !== selId, 'Tab → 다음 카드 조준 (포커스≠선택)')
+  ok(aim1 && aim1 !== selId, 'Tab → 다음 카드 조준 (포커스≠선택)')
+  await p.keyboard.press('ArrowRight') // 조준 중 화살표 — 마지막으로 만진 링(금테)이 움직인다
+  const aim2 = await p.evaluate(() =>
+    document.activeElement?.classList?.contains('card') ? document.activeElement.dataset.id : null)
+  ok(aim2 && aim2 !== aim1, '조준 화살표 → 금테가 옆 종대로')
+  ok((await p.locator('.board .card.sel').getAttribute('data-id')) === selId, '낙관(선택)은 제자리 — 금테만 움직인다')
   await p.keyboard.press('Enter')
   await p.waitForTimeout(150)
   ok((await p.locator('.board').count()) === 1, '첫 Enter — 점프 아님, 보드 유지')
-  ok((await p.locator('.board .card.sel').getAttribute('data-id')) === aimId, '첫 Enter = 조준 카드 선택')
+  ok((await p.locator('.board .card.sel').getAttribute('data-id')) === aim2, '첫 Enter = 조준 카드 선택')
   await p.keyboard.press('Enter')
   await p.waitForTimeout(400)
   ok((await p.locator('.viewport').count()) === 1, '둘째 Enter → 이제 캔버스 점프')
