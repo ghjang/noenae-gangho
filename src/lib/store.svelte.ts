@@ -113,31 +113,17 @@ function applyOutlineScope(id: string | null): void {
   }
 }
 
-// 신규 진입/전체 보기(0) — 사다리 리셋
+// 스코프 지정 — 진입/직행/크럼 클릭/전체(null)가 모두 이 문. 크럼과 Esc는 구조적
+// 조상 경로(첫 부모 율법)에서 파생되므로 사다리(히스토리) 상태가 따로 없다
 export function setOutlineScope(id: string | null): void {
-  ui.outlineTrail.length = 0;
   applyOutlineScope(id);
 }
 
-// 3 재타 — 한 단 더 파고들기 (직전 스코프를 사다리에 쌓는다)
-export function drillOutlineScope(id: string): void {
-  if (ui.outlineRootId && ui.outlineRootId !== id) ui.outlineTrail.push(ui.outlineRootId);
-  applyOutlineScope(id);
-}
-
-// Esc — 한 단 위로 (죽은 디딤돌은 건너뛴다, 사다리가 비면 전체)
+// Esc — 부모 가지로 한 단 위 (크럼과 같은 '첫 부모' 율법, 뿌리면 전체)
 export function popOutlineScope(): void {
-  let prev = ui.outlineTrail.pop() ?? null;
-  while (prev && !graph.nodes.some((n) => n.id === prev)) prev = ui.outlineTrail.pop() ?? null;
-  applyOutlineScope(prev);
-}
-
-// 브레드크럼 클릭 — 사다리의 그 디딤돌로 (그 단까지 사다리를 자른다)
-export function jumpOutlineScope(index: number): void {
-  const target = ui.outlineTrail[index];
-  if (!target) return;
-  ui.outlineTrail.length = index;
-  applyOutlineScope(byId(target) ? target : null);
+  const cur = ui.outlineRootId ? byId(ui.outlineRootId) : undefined;
+  const pe = cur ? parentEdgeOf(graph.edges, cur.id) : null;
+  applyOutlineScope(pe && byId(pe.a) ? pe.a : null);
 }
 
 export const graph: { nodes: NoteNode[]; edges: Edge[] } = $state({ nodes: [], edges: [] });
@@ -157,7 +143,6 @@ export interface UiState {
   docSwitching: boolean; // 문서 전환 중 — 퇴장/입장 애니를 꺼서 두 강호가 겹쳐 보이지 않게
   viewMode: ViewMode; // 문서별 취향(#42), snapshot/undo 밖
   outlineRootId: string | null; // 족보 스코프 — 문서별 영속(setOutlineScope), snapshot/undo 밖
-  outlineTrail: string[]; // 3 파고들기 사다리 — Esc가 한 단씩 되짚는다 (세션 전용: 영속·undo 밖)
   tone: Tone; // strings.ts 팩 선택
   ink: Color; // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 }
@@ -177,7 +162,6 @@ export const ui: UiState = $state({
   docSwitching: false,
   viewMode: 'canvas',
   outlineRootId: null,
-  outlineTrail: [],
   tone: loadTone(),
   ink: 'muk',
 });
@@ -538,7 +522,6 @@ async function activateDoc(id: string): Promise<void> {
     ui.scale = v?.s ?? 1;
     ui.viewMode = loadViewMode(id); // 그 문서가 보던 모드로
     ui.outlineRootId = loadOutlineScope(id); // 보던 족보 가지도 — 표적이 베였으면 렌더가 전체로 폴백
-    ui.outlineTrail.length = 0; // 사다리는 세션 전용 — 문서를 갈아타면 처음부터
   } finally {
     setTimeout(() => (ui.docSwitching = false), 60); // 교체 플러시가 지나간 뒤 애니 복권
   }

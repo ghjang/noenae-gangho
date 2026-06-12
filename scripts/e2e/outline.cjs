@@ -58,7 +58,7 @@ const ok = (c, m) => {
   ok((await p.locator('.outline .scope').count()) === 1, '스코프 배지 등장');
   const sub = await p.$$eval('.outline button.row .txt', (els) => els.map((e) => e.textContent));
   ok(sub.length === 3 && sub[0].includes('difference'), `그 가지만 3행 (실측 ${sub.length})`);
-  await p.locator('.outline .scope button').click();
+  await p.locator('.outline .scope button.crumb').first().click(); // 全 크럼 — 전체로
   await p.waitForTimeout(250);
   ok(
     (await p.locator('.outline button.row').count()) === 4 &&
@@ -113,23 +113,23 @@ const ok = (c, m) => {
       (await p.locator('.outline button.row').count()) === 4,
     '0 → 전체 족보 복귀',
   );
-  // Esc = 한 단 위로 (3 파고들기 사다리를 되짚는다) — 0(전체 직행)과 구분
-  await p.locator('.outline button.row', { hasText: 'difference' }).click();
-  await p.keyboard.press('3'); // 사다리 1단: difference 가지
-  await p.waitForTimeout(200);
+  // 크럼 = 구조적 조상 경로 (온 길이 아니라 '있는 자리' — 직행 조준에도 조상 전부) · Esc = 부모로 한 단
   await p.locator('.outline button.row', { hasText: '미분' }).click();
-  await p.keyboard.press('3'); // 사다리 2단: 미분 가지로 더 깊이
+  await p.keyboard.press('3'); // 전체에서 미분으로 다이렉트 조준
   await p.waitForTimeout(200);
-  ok((await p.locator('.outline button.row').count()) === 2, '3 사다리 2단 — 미분 가지(2행)');
-  ok((await p.locator('.outline .scope button.crumb').count()) === 2, '크럼: 全 › difference (현재 미분)');
-  await p.locator('.outline .scope button.crumb').nth(1).click(); // difference 디딤돌 클릭
+  ok((await p.locator('.outline button.row').count()) === 2, '직행 조준 — 미분 가지(2행)');
+  ok(
+    (await p.locator('.outline .scope button.crumb').count()) === 3,
+    '직행에도 크럼은 조상 경로 전부: 全 › 깨다름 › difference',
+  );
+  await p.locator('.outline .scope button.crumb').nth(2).click(); // 조상 difference 클릭
   await p.waitForTimeout(200);
   ok(
     (await p.locator('.outline button.row').count()) === 3 &&
-      (await p.locator('.outline .scope button.crumb').count()) === 1,
-    '크럼 클릭 → 그 단으로 (사다리 절단)',
+      (await p.locator('.outline .scope button.crumb').count()) === 2,
+    '크럼 클릭 → 그 조상 가지로',
   );
-  await p.locator('.outline button.row', { hasText: '미분' }).click(); // 다시 2단으로 — Esc 시나리오 계속
+  await p.locator('.outline button.row', { hasText: '미분' }).click(); // 다시 미분으로 — Esc 시나리오
   await p.keyboard.press('3');
   await p.waitForTimeout(200);
   await p.keyboard.press('Escape');
@@ -137,11 +137,18 @@ const ok = (c, m) => {
   ok(
     (await p.locator('.outline button.row').count()) === 3 &&
       (await p.locator('.outline .scope').count()) === 1,
-    'Esc → 한 단 위(difference 가지)로',
+    'Esc → 부모(difference) 가지로 한 단',
   );
   await p.keyboard.press('Escape');
   await p.waitForTimeout(200);
-  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 또 → 전체 (사다리 끝)');
+  ok(
+    (await p.locator('.outline button.row').count()) === 4 &&
+      (await p.locator('.outline .scope').count()) === 1,
+    'Esc 또 → 조부(깨다름 — 뿌리) 가지로',
+  );
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 셋째 → 전체 (뿌리 위는 全)');
   ok((await p.locator('.outline button.row.sel').count()) === 1, 'Esc는 선택을 살려둔다');
   await p.keyboard.press('Delete'); // 선택 = 미분
   await p.waitForTimeout(250);
