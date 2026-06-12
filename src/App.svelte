@@ -44,6 +44,8 @@
     removeDoc,
     setViewMode,
     setOutlineScope,
+    drillOutlineScope,
+    popOutlineScope,
     snapshot,
     loadData,
     scheduleSave,
@@ -585,7 +587,7 @@
       ui.showHelp = false;
       ui.focusId = null;
       searchQ = null;
-      if (ui.viewMode === 'outline') setOutlineScope(null);
+      if (ui.viewMode === 'outline' && ui.outlineRootId) popOutlineScope(); // 한 단 위로 — 0(전체 직행)과 구분
       commitEditing();
       if (!hadOpen) clearSelection();
       return;
@@ -1058,7 +1060,13 @@
     // 집중(L)은 캔버스 전용 렌즈 — 켠 채 들어가면 선택 정리 effect가 집중으로
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
-    if (mode === 'outline') setOutlineScope(ui.selectedId); // 선택해 두고 들어가면 그 가지만 — 재진입(3)도 재조준
+    if (mode === 'outline') {
+      // 선택해 두고 들어가면 그 가지만. 족보 안에서의 3 재타 = 한 단 더 파고들기(사다리에 쌓임 —
+      // Esc가 한 단씩 되짚는다). 밖에서의 진입은 새 사다리. 족보 안 빈손 3은 no-op
+      if (ui.viewMode === 'outline') {
+        if (ui.selectedId) drillOutlineScope(ui.selectedId);
+      } else setOutlineScope(ui.selectedId);
+    }
     setViewMode(mode);
   }
   function toggleView() {

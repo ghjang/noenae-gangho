@@ -113,13 +113,26 @@ const ok = (c, m) => {
       (await p.locator('.outline button.row').count()) === 4,
     '0 → 전체 족보 복귀',
   );
-  await p.keyboard.press('3'); // 다시 조준 (선택 유지 중)
-  await p.waitForTimeout(250);
-  await p.keyboard.press('Escape'); // 단계식 — 스코프부터 닫는다 (선택은 유지)
-  await p.waitForTimeout(250);
-  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 단계식 → 스코프 해제');
-  ok((await p.locator('.outline button.row.sel').count()) === 1, 'Esc 1단은 선택을 살려둔다');
-  await p.keyboard.press('Delete');
+  // Esc = 한 단 위로 (3 파고들기 사다리를 되짚는다) — 0(전체 직행)과 구분
+  await p.locator('.outline button.row', { hasText: 'difference' }).click();
+  await p.keyboard.press('3'); // 사다리 1단: difference 가지
+  await p.waitForTimeout(200);
+  await p.locator('.outline button.row', { hasText: '미분' }).click();
+  await p.keyboard.press('3'); // 사다리 2단: 미분 가지로 더 깊이
+  await p.waitForTimeout(200);
+  ok((await p.locator('.outline button.row').count()) === 2, '3 사다리 2단 — 미분 가지(2행)');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  ok(
+    (await p.locator('.outline button.row').count()) === 3 &&
+      (await p.locator('.outline .scope').count()) === 1,
+    'Esc → 한 단 위(difference 가지)로',
+  );
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  ok((await p.locator('.outline .scope').count()) === 0, 'Esc 또 → 전체 (사다리 끝)');
+  ok((await p.locator('.outline button.row.sel').count()) === 1, 'Esc는 선택을 살려둔다');
+  await p.keyboard.press('Delete'); // 선택 = 미분
   await p.waitForTimeout(250);
   ok((await p.locator('.outline button.row').count()) === 3, 'Delete → 베기 (3행)');
   await p.keyboard.press('Control+z');
