@@ -134,6 +134,23 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   const cBack = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
   ok(cBack[0] === '1' && cBack[4] === '0', 'Ctrl+Z → 귀환 비행')
 
+  // Ctrl+←→ — 이웃 종대 색으로 (키보드 색 이동, #105 첫 수) + 양끝 순환·undo
+  await p.locator('.board .card', { hasText: '깨다름' }).click() // undo(loadData)가 선택을 비우므로 재선택
+  await p.keyboard.press('Control+ArrowRight')
+  await p.waitForTimeout(600)
+  const cKey = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
+  ok(cKey[0] === '0' && cKey[1] === '2', `Ctrl+→ → 먹에서 청으로 색 이동 (실측 ${cKey})`)
+  ok((await p.locator('.board .col:nth-child(2) .card.sel').count()) === 1, '색 이동에도 선택 링 동행')
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(600)
+  await p.locator('.board .card', { hasText: '깨다름' }).click() // 같은 이유로 재선택
+  await p.keyboard.press('Control+ArrowLeft')
+  await p.waitForTimeout(600)
+  const cWrap = await p.$$eval('.board .col h3 em', (els) => els.map((e) => e.textContent))
+  ok(cWrap[0] === '0' && cWrap[4] === '1', `Ctrl+← 첫 종대에서 끝(남)으로 순환 — 빈 종대도 목적지 (실측 ${cWrap})`)
+  await p.keyboard.press('Control+z')
+  await p.waitForTimeout(600)
+
   // 접힌 쪽지 카드 더블클릭 — 점프는 데려가기지 펼치기가 아니다 (봉문 보존)
   // difference(자식 둘)를 접고 보드에서 그 카드를 두드린다
   await p.locator('.board .card', { hasText: 'difference' }).dblclick()
