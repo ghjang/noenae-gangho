@@ -151,6 +151,14 @@ const ok = (c, m) => { if (c) console.log('✓ ' + m); else fail(m) }
   await p.keyboard.press('Control+z')
   await p.waitForTimeout(600)
 
+  // 빈손 팔레트 호버 = 같은 색 종대 비추기 (캔버스 '같은 색 비추기'의 보드 번역 — undo가 선택을 비워 빈손)
+  await p.locator('.palette button').nth(1).hover() // 청
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .col.fade').count()) === 4, '빈손 호버 → 다른 종대 4개 흐림 (청만 또렷)')
+  await p.locator('.board').hover({ position: { x: 30, y: 300 } })
+  await p.waitForTimeout(300)
+  ok((await p.locator('.board .col.fade').count()) === 0, '호버 해제 → 전 종대 원상')
+
   // 접힌 쪽지 카드 더블클릭 — 점프는 데려가기지 펼치기가 아니다 (봉문 보존)
   // difference(자식 둘)를 접고 보드에서 그 카드를 두드린다
   await p.locator('.board .card', { hasText: 'difference' }).dblclick()

@@ -1028,7 +1028,7 @@
 
 <!-- ── 캔버스 ↔ 오행진 (#42: 데이터 불변, 표현만 교체) ── -->
 {#if ui.viewMode !== 'canvas'}
-  <BoardView onJump={boardJump} />
+  <BoardView onJump={boardJump} hue={colorHover} />
 {:else}
 <div
   class="viewport"

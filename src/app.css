@@ -569,8 +569,9 @@ button.primary:hover { background: #d6552f; }
     0 18px 34px -14px rgba(0, 0, 0, 0.95);
   translate: 0 -3px;
 }
+.board .col.fade { opacity: 0.4; } /* 빈손 팔레트 호버 — 그 색 종대만 또렷 (캔버스 .fade와 같은 어휘) */
 @media (prefers-reduced-motion: no-preference) {
-  .board .col { transition: translate 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
+  .board .col { transition: translate 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, opacity 0.18s ease; }
 }
 .board .col h3 {
   margin: 0;
