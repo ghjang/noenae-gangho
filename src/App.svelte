@@ -2,7 +2,7 @@
   // ──────────────────────────────────────────────
   // 뇌내강호(腦內江湖) — 메인 컴포넌트
   // 먹빛 허공에 念(쪽지)을 띄우고 緣(연결)으로 잇는다.
-  // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.js가 담당.
+  // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.ts가 담당.
   // ──────────────────────────────────────────────
   import { onMount, tick } from 'svelte';
   import BoardView from './BoardView.svelte';
@@ -54,8 +54,8 @@
     flushSave,
     clampScale,
   } from './lib/store.svelte.js';
-  import { STRINGS, TONES, fmt } from './lib/strings.js';
-  import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.js';
+  import { STRINGS, TONES, fmt } from './lib/strings.ts';
+  import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.ts';
   import {
     computeHidden,
     neighborhood,
@@ -64,9 +64,9 @@
     childCounts,
     rootIds,
     boardColumns,
-  } from './lib/graph.js';
-  import { fromMarkdown } from './lib/markdown.js';
-  import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.js';
+  } from './lib/graph.ts';
+  import { fromMarkdown } from './lib/markdown.ts';
+  import { highlightJson, highlightMd, highlightAuto } from './lib/highlight.ts';
 
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone]);
@@ -119,7 +119,7 @@
   });
 
   // ── 좌표 변환 ─────────────────────────────────
-  // (緣 기하 — center/edgeStart/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.js)
+  // (緣 기하 — center/edgeStart/edgeEnd/edgePath/arrowPath/ghostPath — 는 lib/geometry.ts)
   function toWorld(e) {
     const r = viewportEl.getBoundingClientRect();
     return {
@@ -1106,7 +1106,7 @@
   });
   const sheetTitle = $derived(ui.overlay ? t[ui.overlay.mode + 'Title'] : '');
 
-  // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.js computeHidden
+  // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.ts computeHidden
   // (시나리오 검증: scripts/check-graph.mjs)
   // 집중(포커스, #47)이 켜져 있으면 표적의 이웃 밖도 합쳐 숨긴다 —
   // 全 맞춤/전도/Alt 항법/선택 정리가 전부 이 집합을 보므로 공짜로 따라온다

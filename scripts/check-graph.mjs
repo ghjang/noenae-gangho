@@ -1,9 +1,9 @@
 // ──────────────────────────────────────────────
 // 봉문(접기) 규칙 검증 — `npm run check`의 일부.
 // 하루에 세 번 규칙이 바뀐 사고 다발 지역이라 시나리오로 못 박는다.
-// 규칙 본체는 src/lib/graph.js의 computeHidden().
+// 규칙 본체는 src/lib/graph.ts의 computeHidden().
 // ──────────────────────────────────────────────
-import { computeHidden, tidyLayout, neighborhood } from '../src/lib/graph.js';
+import { computeHidden, tidyLayout, neighborhood } from '../src/lib/graph.ts';
 
 let fail = 0;
 const err = (m) => {

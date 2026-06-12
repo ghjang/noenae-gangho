@@ -6,7 +6,7 @@
 // 4) colorLabel이 store의 COLORS를 전부 덮는가 / helpItems가 [키, 설명] 쌍인가
 // ──────────────────────────────────────────────
 import { readFileSync } from 'node:fs';
-import { STRINGS, TONES } from '../src/lib/strings.js';
+import { STRINGS, TONES } from '../src/lib/strings.ts';
 
 let fail = 0;
 const err = (m) => {

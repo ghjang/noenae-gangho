@@ -2,9 +2,9 @@
 // 뇌내강호 상태 저장소 (Svelte 5 runes)
 // 그래프(念/緣) 데이터와 UI 상태, 영속화 어댑터.
 // ──────────────────────────────────────────────
-import { STRINGS, TONES, fmt } from './strings.js';
-import { nodeBox } from './geometry.js';
-import { ancestorIds, computeHidden, parentEdgeOf, tidyLayout } from './graph.js';
+import { STRINGS, TONES, fmt } from './strings.ts';
+import { nodeBox } from './geometry.ts';
+import { ancestorIds, computeHidden, parentEdgeOf, tidyLayout } from './graph.ts';
 
 const KEY = 'noenae-gangho-v1'; // 레거시 단일 문서 본문 — 첫 이주 후엔 읽지 않는다 (화석 백업, 지우지 않음)
 const DOCS_KEY = 'noenae-gangho-docs'; // 문서(강호) 인덱스 — { current, list: [{ id, title, updatedAt }] } (#62)

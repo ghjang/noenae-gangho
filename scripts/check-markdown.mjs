@@ -1,8 +1,8 @@
 // ──────────────────────────────────────────────
 // 비급 역해석 검사 — fromMarkdown 시나리오 (npm run check)
-// 봉문 검사(check-graph)처럼 순수층(lib/markdown.js)만 맨 node로 굴린다
+// 봉문 검사(check-graph)처럼 순수층(lib/markdown.ts)만 맨 node로 굴린다
 // ──────────────────────────────────────────────
-import { fromMarkdown } from '../src/lib/markdown.js';
+import { fromMarkdown } from '../src/lib/markdown.ts';
 
 let fail = 0;
 const err = (m) => {

@@ -11,8 +11,8 @@
   import { crossfade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.js';
-  import { STRINGS } from './lib/strings.js';
-  import { boardColumns, childCounts } from './lib/graph.js';
+  import { STRINGS } from './lib/strings.ts';
+  import { boardColumns, childCounts } from './lib/graph.ts';
 
   let { onJump, hue = null } = $props(); // hue: 빈손 팔레트 호버 색 — 캔버스 '같은 색 비추기'의 보드 번역
   // 앵커 카드의 색 — 그 종대 머리 동그라미에 팔레트식 .cur 링 (키 항법의 나침반)
