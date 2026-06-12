@@ -125,7 +125,7 @@
 
 ## 11. 문구 — 팩이 진실이다
 
-- 화면 문구는 전부 `strings.js` 두 팩(`muhyeop`/`plain`) — App 하드코딩 금지, 새 문구는
+- 화면 문구는 전부 `strings.ts` 두 팩(`muhyeop`/`plain`) — App 하드코딩 금지, 새 문구는
   두 팩 같은 키로. 팩은 순수 데이터(함수 금지), 매개변수는 `{x}` + `fmt()`.
 - 도움말은 3층: 퀵 카드(`helpQuick` ⊆ helpItems) / 전체 시트(`helpSections` — 전수 분배:
   합집합=전체·중복 0) / README 조작 요결. 조작을 바꾸면 셋 다.
@@ -135,7 +135,13 @@
 
 - **런타임 의존성 0** — svelte/vite 외 금지. 필요한 건 자작(신택스 하이라이트)하거나
   인라인(아이콘 SVG — 출처·라이선스를 주석에 명기: Phosphor=MIT, Markdown 마크=PD).
-- 자동 게이트는 `npm run check` 3종(문구/봉문/비급 역해석)뿐 — 시나리오 검사가 곧 명세.
-  **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 11종(수동)이 보초.
+  TypeScript/svelte-check/Prettier는 devDependencies — 번들엔 한 바이트도 안 실린다 (#115).
+- 자동 게이트는 `npm run check` = 시나리오 3종(문구/봉문/비급 역해석) + 타입 2종(tsc·
+  svelte-check) — 시나리오 검사가 곧 명세. **규칙을 바꾸면 시나리오를 같이 바꾼다.**
+  렌더링/조작은 `scripts/e2e/` 11종(수동)이 보초.
 - 순수층(`geometry/graph/markdown/highlight`)은 DOM·스토어 무관 — 맨 node로 검증 가능해야
-  한다. 스토어 import 금지(runes는 맨 node가 못 읽는다).
+  한다. 스토어 import 금지(runes는 맨 node가 못 읽는다). .ts 전환(#115) 후에도 같은 원칙:
+  node 22.18+ 타입 스트리핑이 .ts를 그대로 읽는다 — 그래서 **소거 가능 문법만**
+  (enum/namespace 금지). [보초: tsconfig `erasableSyntaxOnly`]
+- 두 팩 키 일치(`StringPack = typeof muhyeop`)와 colorLabel↔Color 5색 동기(`satisfies`)는
+  컴파일 타임 보초 — check-strings의 깊은 검사(전수 분배 등)와 이중 방벽.

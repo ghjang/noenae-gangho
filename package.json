@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "node scripts/check-strings.mjs && node scripts/check-graph.mjs && node scripts/check-markdown.mjs",
+    "check": "node scripts/check-strings.mjs && node scripts/check-graph.mjs && node scripts/check-markdown.mjs && tsc --noEmit && svelte-check --threshold error",
+    "format": "prettier --write \"src/**/*.{ts,svelte}\" \"scripts/**/*.{mjs,cjs}\"",
     "prebuild": "npm run check",
     "build": "vite build",
     "preview": "vite preview"

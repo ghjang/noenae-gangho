@@ -1,7 +1,7 @@
 # 腦內江湖 — 뇌내강호
 
 두서없는 아이디어를 먹빛 허공에 念(쪽지)으로 띄우고, 緣(연결)으로 잇는
-마인드맵/브레인스토밍 프로토타입. **Vite + Svelte 5** (runes).
+마인드맵/브레인스토밍 프로토타입. **Vite + Svelte 5 (runes) + TypeScript**.
 
 > 시작은 '깨다름'이라는 오타 하나였다. 자세한 사연은 첫 실행 시드 데이터 참고 ㅋ
 
@@ -13,8 +13,11 @@
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # dist/ 정적 빌드 (상대경로 — 아무 데나 얹어도 동작)
-npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
+npm run check    # 정합성 검사 + 타입 게이트 (build 때 자동 실행) — node 22.18+ 필요
+npm run format   # Prettier (세미콜론 종결 컨벤션)
 ```
+
+> check의 검사 스크립트가 `src/lib`의 `.ts`를 맨 node로 직접 import한다 — node 22.18+(타입 스트리핑 기본 활성) 전제.
 
 ## 조작 요결
 
@@ -59,16 +62,17 @@ npm run check    # 문구 팩 정합성 검사 (build 때 자동 실행)
 
 ```
 src/
-  main.js              # 마운트
+  main.ts              # 마운트
   app.css              # 디자인 토큰 (먹/한지/인주/오행)
-  App.svelte           # UI 전체 — 캔버스, 노드, 엣지, 시트
-  BoardView.svelte     # 오행진(칸반) 뷰 — 색별 종대, 읽기 전용
-  lib/store.svelte.js  # 상태($state) + 변이 함수 + 저장 어댑터
-  lib/strings.js       # UI 문구 팩 — 무협(muhyeop) / 일반(plain)
-  lib/geometry.js      # 緣 기하 — 경로/화살촉 계산 (순수 함수)
-  lib/graph.js         # 緣 그래프 — 봉문(접기) 규칙/탐색/종대 진형 (순수 함수)
-  lib/markdown.js      # 비급.md 역해석 — 들여쓰기 불릿 → 트리 (순수 함수)
-  lib/highlight.js     # 시트 신택스 하이라이트 — JSON/비급.md 토크나이저 (자작)
+  App.svelte           # UI 전체 — 캔버스, 노드, 엣지, 시트 (lang="ts")
+  BoardView.svelte     # 오행진(칸반) 뷰 — 색별 종대 + 키 항법·경량 편집
+  lib/types.ts         # 도메인 타입 — NoteNode/Edge/Color (영속 화이트리스트와 한 몸)
+  lib/store.svelte.ts  # 상태($state) + 변이 함수 + 저장 어댑터
+  lib/strings.ts       # UI 문구 팩 — 무협(muhyeop) / 일반(plain), 키 일치는 타입이 강제
+  lib/geometry.ts      # 緣 기하 — 경로/화살촉 계산 (순수 함수)
+  lib/graph.ts         # 緣 그래프 — 봉문(접기) 규칙/탐색/종대 진형 (순수 함수)
+  lib/markdown.ts      # 비급.md 역해석 — 들여쓰기 불릿 → 트리 (순수 함수)
+  lib/highlight.ts     # 시트 신택스 하이라이트 — JSON/비급.md 토크나이저 (자작)
 ```
 
 저장은 기본 localStorage — 문서(강호)별 본문 `noenae-gangho-doc-<id>` + 서가 인덱스 `noenae-gangho-docs` (옛 단일 키 `noenae-gangho-v1`은 첫 실행 때 자동 이주 후 화석 백업). 말투 선택은 `noenae-gangho-tone`에 따로. 데이터 포맷:
@@ -95,7 +99,7 @@ git branch -M main && git push -u origin main
 
 ## VSCode 확장으로 가는 길 (로드맵)
 
-`store.svelte.js`의 저장 어댑터(`setStorageAdapter`)만 갈아끼우면 된다:
+`store.svelte.ts`의 저장 어댑터(`setStorageAdapter`)만 갈아끼우면 된다:
 웹뷰에서 `postMessage`로 확장 호스트에 보내고, 호스트가 `workspaceState`나
 `*.noegang.json` 파일에 기록. `vite build`가 상대경로(`base: './'`)라서
 `dist/`를 웹뷰에 그대로 로드 가능.

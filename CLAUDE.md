@@ -1,7 +1,7 @@
 # CLAUDE.md — 腦內江湖 (noenae-gangho)
 
-마인드맵형 아이디어 정리 웹앱. **Vite + Svelte 5 (runes)**.
-런타임 의존성 0 — svelte/vite 외 라이브러리 추가 금지 (프로토타입 경량 유지가 원칙).
+마인드맵형 아이디어 정리 웹앱. **Vite + Svelte 5 (runes) + TypeScript(strict, #115)**.
+런타임 의존성 0 — svelte/vite 외 라이브러리 추가 금지 (프로토타입 경량 유지가 원칙. typescript/svelte-check/prettier는 devDependencies — 번들에 안 실린다).
 설계 원칙·불변식의 전문은 **[DESIGN.md](DESIGN.md)** — 이 문서는 세션 작업 규칙(HOW)만.
 
 ## 명령어
@@ -9,25 +9,27 @@
 - `npm run dev` — 개발 서버 (localhost:5173)
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
-- `npm run check` — 정합성 검사 3종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기/순환 시나리오 5종) + 비급 역해석(`scripts/check-markdown.mjs` — 불릿 파서 시나리오 7종). `npm run build` 때 prebuild로 자동 실행
+- `npm run check` — 정합성 검사 3종 + 타입 게이트 2종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기/순환 시나리오 5종) + 비급 역해석(`scripts/check-markdown.mjs` — 불릿 파서 시나리오 7종) + `tsc --noEmit` + `svelte-check`(에러만 게이트 — 기존 경고 6건은 통과). `npm run build` 때 prebuild로 자동 실행. **검사 스크립트가 src/lib의 .ts를 맨 node로 직접 import하므로 node 22.18+ 필수**(타입 스트리핑 기본 활성 — CI도 node 22)
+- `npm run format` — Prettier 일괄 (semi·singleQuote·printWidth 110, .prettierrc) — 세미콜론 종결 컨벤션(#115)의 강제 장치. 코드 수술 후 커밋 전에 돌릴 것
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
-- 테스트·린트·포매터 없음. 자동 검증은 `npm run build`(위 문구 검사 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
+- 테스트 프레임워크·린터 없음 (포매터는 Prettier, 타입은 tsc/svelte-check — #115부터). 자동 검증은 `npm run build`(위 check 전부 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 - 헤드리스 검증(렌더링/조작 버그 재현·수술 확인용): Claude Code 원격 컨테이너엔 전역 playwright가 있다 — `NODE_PATH=/opt/node22/lib/node_modules node 스크립트.cjs` (크로미움 `/opt/pw-browsers`). localhost 접속은 프록시 우회 필수: launch args `--proxy-bypass-list=<-loopback>` + env `NO_PROXY=localhost,127.0.0.1`. 그래프 시드는 `context.addInitScript`로 **로드 전에** localStorage에 심을 것 — 로드 후 setItem은 앱의 500ms 디바운스 저장이 도로 덮는다 (그래프 `noenae-gangho-v1` / 뷰 `noenae-gangho-view` `{x,y,s}`). 드래그 중 상태는 `mouse.down()` 후 `mouse.move()` 반복으로 동결해 검사
 - 재사용 헤드리스 스위트: `scripts/e2e/*.cjs` (앵커/오행진/커서/서가·문서/緣·undo/집중/도움말/하이라이트/아이콘바/모바일/다중 선택 — 11종, 빌드 게이트 아님·수동 실행). `npm run build && npm run preview -- --port 4173` 띄운 뒤 위 env로 `node scripts/e2e/<이름>.cjs`. 관련 부위를 수술하면 해당 스위트를 같이 갱신·재실행할 것 — 기능 추가로 도움말 수가 변하면 `help.cjs`의 요결 수부터 깨진다 (의도된 보초)
 
 ## 구조와 역할 분담
 
-- `src/lib/store.svelte.js` — 모든 상태(`$state`)·변이 함수·저장 어댑터. **로직은 전부 여기로.** 컴포넌트에 도메인 상태 두지 말 것
+- `src/lib/types.ts` — 도메인 타입(`NoteNode`/`Edge`/`Color`) — 영속 화이트리스트(DESIGN 2장)와 한 몸. 영속 필드를 들이면 여기·`snapshot()`·`loadData()` 3곳 동기
+- `src/lib/store.svelte.ts` — 모든 상태(`$state`)·변이 함수·저장 어댑터. **로직은 전부 여기로.** 컴포넌트에 도메인 상태 두지 말 것
   - `graph`/`ui`는 export된 `$state` 객체 — 재할당 금지, `push`/`splice`/`length = 0` 같은 제자리 변이만
   - 선택 변경은 선택 API(`selectNode`/`selectEdge`/`clearSelection`/`addToSelection`/`selectMany`/`pruneSelection`) 경유 — 직접 대입 금지. `ui.selectedIds`가 무리, `ui.selectedId`는 앵커(항상 무리 안, 단일 표적 작업 Tab/F2/Z/Alt+화살표의 기준), 緣 선택과 상호 배타
   - 변이 함수는 첫머리에 `markUndo()`(되돌리기 스택 — 타이핑·드래그 등 연속 제스처는 key로 병합, 복합 변이는 `asOneStep`으로 한 걸음) · 끝에 `scheduleSave()`(500ms 디바운스). 스토어 밖 직접 변이(드래그/넛지의 `n.x/n.y`)는 호출부가 둘 다 챙긴다 — 빠뜨리면 저장 증발/유령 undo
-- `src/lib/strings.js` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
-- `src/lib/geometry.js` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeStart`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만. 緣은 양끝 다 변 중앙 앵커(시작=edgeStart·끝=edgeEnd) — 우세 축 판정을 공유해 양끝 축이 늘 짝 맞는다
-- `src/lib/graph.js` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · `neighborhood` 무방향 이웃(포커스) · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
-- `src/lib/markdown.js` — 비급.md 역해석 순수 함수(`fromMarkdown` — 들여쓰기 불릿 → 트리, 격자 배치 행=줄·열=깊이). 스토어 import 금지: runes 탓에 맨 node(검사 스크립트)가 못 읽는다 — id 생성기를 자체로 갖는 이유. 규칙 바꾸면 `scripts/check-markdown.mjs`도 같이
-- `src/lib/highlight.js` — 시트 신택스 하이라이트 순수 토크나이저(JSON/비급.md, 외부 라이브러리 금지라 자작). 토큰 text를 이어 붙이면 입력과 동일해야 함 — 가져오기 편집 overlay(투명 textarea+pre) 정렬의 전제
+- `src/lib/strings.ts` — UI 문구 팩: `muhyeop`(무협 톤, 기본) / `plain`(일반 톤). 화면에 보이는 문구를 App에 하드코딩하지 말고 팩 키로 — 새 문구는 두 팩에 같은 키로 추가. 팩은 순수 데이터(JSON 직렬화 가능) — 함수 금지, 매개변수 문구는 `{label}` 플레이스홀더 + `fmt()` 치환
+- `src/lib/geometry.ts` — 緣 기하 순수 함수(`nodeBox`/`center`/`edgeStart`/`edgeEnd`/`edgePath`/`arrowPath`/`ghostPath`). DOM·스토어 무관 — 노드 실측 전 폴백(180×48)은 `nodeBox()` 한 곳에만. 緣은 양끝 다 변 중앙 앵커(시작=edgeStart·끝=edgeEnd) — 우세 축 판정을 공유해 양끝 축이 늘 짝 맞는다
+- `src/lib/graph.ts` — 緣 그래프 순수 함수(`computeHidden` 봉문 규칙 본체 · `neighborhood` 무방향 이웃(포커스) · 자식/뿌리 헬퍼). 봉문 규칙을 바꾸면 `scripts/check-graph.mjs` 시나리오도 같이 갱신
+- `src/lib/markdown.ts` — 비급.md 역해석 순수 함수(`fromMarkdown` — 들여쓰기 불릿 → 트리, 격자 배치 행=줄·열=깊이). 스토어 import 금지: runes 탓에 맨 node(검사 스크립트)가 못 읽는다 — id 생성기를 자체로 갖는 이유. 규칙 바꾸면 `scripts/check-markdown.mjs`도 같이
+- `src/lib/highlight.ts` — 시트 신택스 하이라이트 순수 토크나이저(JSON/비급.md, 외부 라이브러리 금지라 자작). 토큰 text를 이어 붙이면 입력과 동일해야 함 — 가져오기 편집 overlay(투명 textarea+pre) 정렬의 전제
 - `src/App.svelte` — UI 전체 (캔버스/노드/엣지/시트/도움말). 단일 컴포넌트 유지가 기본, 새 영역이 300줄 넘을 때만 분리 검토
-- `src/BoardView.svelte` — 오행진(칸반) 뷰 (#42, 첫 분리 컴포넌트). 종대 진형(색별 y→x)은 graph.js `boardColumns`로 App의 보드 키 항법(#111)과 공유 — 따로 세면 어긋난다
+- `src/BoardView.svelte` — 오행진(칸반) 뷰 (#42, 첫 분리 컴포넌트). 종대 진형(색별 y→x)은 graph.ts `boardColumns`로 App의 보드 키 항법(#111)과 공유 — 따로 세면 어긋난다
 - `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙
 
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것
@@ -42,8 +44,9 @@
 ## 컨벤션 / 세계관
 
 - 기본 말투는 무협 톤 한국어: 念=노드, 緣=엣지, 비급=내보내기, 주화입마=에러. `muhyeop` 팩의 새 문구도 이 결 유지 (예: "삭제 실패" 대신 "베기에 실패했다") — `plain` 팩은 담백한 표준어(쪽지→노트, 緣→연결)로
-- 색 5종은 오행 체계: `muk/cheong/dan/hwang/nam` — 추가·변경 시 `COLORS`(store) · `app.css`(`:root`의 `--c-*` 변수와 `.node[data-color]` 규칙 두 군데) · `colorLabel`(strings.js 두 팩) 동기화
-- 조작·단축키를 바꾸면 strings.js 두 팩의 `helpItems`(도움말 카드)와 README '조작 요결' 표도 같이 갱신
+- TypeScript는 strict + **소거 가능 문법만**(tsconfig `erasableSyntaxOnly` — enum/namespace 금지): 검사 스크립트가 .ts를 맨 node로 import하는 구조의 전제. import는 `.ts` 실확장자로(`allowImportingTsExtensions`), 문장은 세미콜론 종결(Prettier가 강제). `any`는 외부 JSON 검역 구간(loadData/ensureDocs)과 동적 합성 키뿐 — 새로 들일 땐 주석으로 경계 사유 명기
+- 색 5종은 오행 체계: `muk/cheong/dan/hwang/nam` — 추가·변경 시 `Color`(types.ts) · `COLORS`(store) · `app.css`(`:root`의 `--c-*` 변수와 `.node[data-color]` 규칙 두 군데) · `colorLabel`(strings.ts 두 팩) 동기화
+- 조작·단축키를 바꾸면 strings.ts 두 팩의 `helpItems`(도움말 카드)와 README '조작 요결' 표도 같이 갱신
 - 커밋 메시지 한국어 환영. 유머 허용, 단 무엇을 왜 바꿨는지는 명확히
 
 ## 로드맵
