@@ -10,7 +10,7 @@
   // ──────────────────────────────────────────────
   import { crossfade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { graph, ui, COLORS, selectNode } from './lib/store.svelte.js';
+  import { graph, ui, COLORS, selectNode } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
   import { boardColumns, childCounts } from './lib/graph.ts';
 

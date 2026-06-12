@@ -26,7 +26,7 @@ for (const tone of rest) {
 
 // 2) 사용 키 — 컴포넌트(App/BoardView)의 정적 t.xxx + store의 STRINGS[톤].xxx + 동적 합성 키
 const app = read('../src/App.svelte') + read('../src/BoardView.svelte');
-const storeSrc = read('../src/lib/store.svelte.js');
+const storeSrc = read('../src/lib/store.svelte.ts');
 const used = new Set([...app.matchAll(/\bt\.([A-Za-z]+)/g)].map((m) => m[1]));
 for (const m of storeSrc.matchAll(/STRINGS\[[^\]]+\]\.([A-Za-z]+)/g)) used.add(m[1]);
 // t[ui.overlay.mode + 'Title']와 sheetMsg(strings 키 보관)의 간접 참조분 — App 쪽을 바꾸면 여기도 갱신
@@ -57,11 +57,12 @@ for (const p of findFns(STRINGS, 'STRINGS'))
   err(`함수 발견: ${p} — 팩은 순수 데이터여야 함 ('{placeholder}' + fmt() 사용)`);
 
 // 4) 오행 색 라벨 / 도움말 쌍 — COLORS는 store 소스에서 그대로 읽어 중복 정의를 피한다
+//    (정규식이 타입 주석 'readonly Color[]'를 건너뛰도록 [^=]* — #115)
 const colors =
-  read('../src/lib/store.svelte.js')
-    .match(/export const COLORS = \[([^\]]*)\]/)?.[1]
+  read('../src/lib/store.svelte.ts')
+    .match(/export const COLORS[^=]*= \[([^\]]*)\]/)?.[1]
     .match(/\w+/g) ?? [];
-if (colors.length === 0) err('store.svelte.js에서 COLORS를 못 읽음 — 이 스크립트의 정규식 갱신 필요');
+if (colors.length === 0) err('store.svelte.ts에서 COLORS를 못 읽음 — 이 스크립트의 정규식 갱신 필요');
 for (const tone of TONES) {
   for (const c of colors) if (!STRINGS[tone].colorLabel?.[c]) err(`${tone}.colorLabel.${c} 없음`);
   if (!STRINGS[tone].helpItems?.every((p) => Array.isArray(p) && p.length === 2))

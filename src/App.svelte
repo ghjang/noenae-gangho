@@ -2,7 +2,7 @@
   // ──────────────────────────────────────────────
   // 뇌내강호(腦內江湖) — 메인 컴포넌트
   // 먹빛 허공에 念(쪽지)을 띄우고 緣(연결)으로 잇는다.
-  // 상태/영속화는 lib/store.svelte.js, 모양은 app.css, 문구는 lib/strings.ts가 담당.
+  // 상태/영속화는 lib/store.svelte.ts, 모양은 app.css, 문구는 lib/strings.ts가 담당.
   // ──────────────────────────────────────────────
   import { onMount, tick } from 'svelte';
   import BoardView from './BoardView.svelte';
@@ -53,7 +53,7 @@
     redo,
     flushSave,
     clampScale,
-  } from './lib/store.svelte.js';
+  } from './lib/store.svelte.ts';
   import { STRINGS, TONES, fmt } from './lib/strings.ts';
   import { nodeBox, center, edgeStart, edgeEnd, edgePath, arrowPath, ghostPath } from './lib/geometry.ts';
   import {
