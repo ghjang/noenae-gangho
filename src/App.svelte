@@ -76,14 +76,22 @@
   // 현재 말투 팩 — 무공봉인 토글(ui.tone)에 따라 문구 전체가 갈린다
   const t = $derived(STRINGS[ui.tone]);
 
-  let viewportEl: HTMLDivElement; // bind:this — 캔버스 분기에서만 산다 (보드에선 부재)
+  // bind:this 참조(viewportEl/mmEl/hlPre/searchEl)는 $state로 받는다 — Svelte 5에선 bind:this
+  // 대상도 $state여야 값 갱신을 컴파일러가 추적해 non_reactive_update 경고가 안 뜬다. 실제론
+  // DOM 메서드 호출용이라 반응형 의존은 없지만 $state가 정석. !는 '캔버스 분기에서만 산다'는
+  // 전제(보드/족보 뷰에선 부재 — 호출부가 viewMode/null 가드로 지킨다)
+  let viewportEl = $state<HTMLDivElement>()!; // bind:this — 캔버스 분기에서만 산다 (보드에선 부재)
   // 움직임 줄이기 설정 사용자는 애니 시간 0 (기존 CSS stamp의 배려를 승계).
   // 문서 전환 중에도 0 — 떠나는 강호와 오는 강호가 겹쳐 보이지 않게 (동기식 절단)
   const REDUCED = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dur = (ms: number) => (REDUCED || ui.docSwitching ? 0 : ms);
   // 쪽지(무리) 드래그
-  let drag: { grabbed: string; moved: boolean; plain: boolean; items: { id: string; ox: number; oy: number }[] } | null =
-    null;
+  let drag: {
+    grabbed: string;
+    moved: boolean;
+    plain: boolean;
+    items: { id: string; ox: number; oy: number }[];
+  } | null = null;
   let dragIds = $state<Set<string> | null>(null); // 실제 이동 중인 쪽지 id 집합 — 그 緣들을 위층에 띄우는 용도
   // 올가미(Shift+빈 곳 드래그), world 좌표
   let marquee = $state<{ x0: number; y0: number; x1: number; y1: number; base: string[] } | null>(null);
@@ -97,19 +105,19 @@
   let edgeHover: string | null = null; // 마우스가 가리키는 緣 id — F 뒤집기용 (키 핸들러만 읽으니 비반응형)
 
   let sheetText = $state(''); // 입출력 시트 본문
-  let hlPre: HTMLElement | null = null; // 가져오기 편집 overlay의 하이라이트 pre — 스크롤 동기화용
+  let hlPre = $state<HTMLElement | null>(null); // 가져오기 편집 overlay 하이라이트 pre — 스크롤 동기화 (위 $state 주석)
   // 시트 하단 메시지 — strings 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let sheetMsg = $state<'' | 'importBadShape' | 'importParseFail' | 'copyOk' | 'copyFail'>('');
   let searchQ = $state<string | null>(null); // 검색 질의 — null이면 닫힘
   let searchIdx = $state(0); // 하이라이트 = 지금/다음에 볼 결과 (화면과 항상 일치)
   let searchJumped = false; // Enter 의미 분기: 처음엔 현재 항목, 그 뒤엔 전진 후 점프
-  let searchEl: HTMLInputElement | null = null; // 검색 input — 재호출 시 전체 선택용
+  let searchEl = $state<HTMLInputElement | null>(null); // 검색 input — 재호출 시 전체 선택 (위 $state 주석)
   let vpW = $state(0),
     vpH = $state(0); // 뷰포트 실측 — 미니맵 뷰 사각형용
   let tidying = $state(false); // 정돈(R) 직후 잠깐 — 쪽지가 미끄러지는 트랜지션
   let tidyTimer: ReturnType<typeof setTimeout> | undefined;
   let mmDrag = false; // 미니맵 스크럽 중
-  let mmEl: SVGSVGElement; // 미니맵 svg (스크럽 좌표 변환용)
+  let mmEl = $state<SVGSVGElement>()!; // 미니맵 svg — 스크럽 좌표 변환 (위 $state 주석)
 
   onMount(() => {
     init();
@@ -1465,6 +1473,9 @@
             {@const E = edgeEnd(a, b)}
             {@const d = edgePath(edgeStart(a, center(b)), E)}
             <g class="edge" class:sel={ui.selectedEdgeId === e.id} transition:fade={{ duration: dur(170) }}>
+              <!-- 緣 선택은 마우스 편의 — 키보드 경로는 Alt 항법(노드 오가기)·F(방향 뒤집기)가 맡는다.
+                   緣마다 tab stop을 두면 항법이 번잡해 role 미부여 (緣 접근성은 #88에서 별도 설계) -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
               <path
                 class="hit"
                 {d}
@@ -1624,6 +1635,9 @@
 
   <!-- ── 미니맵 (전도) — 폰에서는 CSS로 숨김 ── -->
   {#if graph.nodes.length > 0}
+    <!-- 전도(미니맵)는 마우스 전용 보조 항법 — 키보드는 팬(화살표)·검색·全으로 충분.
+         aria-label로 존재만 알리고 인터랙션 role은 안 단다(마우스 한정) -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <svg
       class="minimap"
       bind:this={mmEl}
@@ -1711,8 +1725,8 @@
 <!-- 하이라이트 토큰 렌더 — 읽기 전용 pre와 가져오기 overlay pre가 공유.
      pre 안이라 공백·개행이 그대로 보인다: 한 줄 유지. 끝 개행은 pre가 삼키니 공백 한 칸 보전 -->
 {#snippet toks(list: import('./lib/highlight.ts').Token[], text: string)}{#each list as tk}{#if tk.c}<span
-      class={'tk-' + tk.c}>{tk.t}</span
-    >{:else}{tk.t}{/if}{/each}{text.endsWith('\n') ? ' ' : ''}{/snippet}
+        class={'tk-' + tk.c}>{tk.t}</span
+      >{:else}{tk.t}{/if}{/each}{text.endsWith('\n') ? ' ' : ''}{/snippet}
 {#if ui.overlay}
   <div
     class="overlay"

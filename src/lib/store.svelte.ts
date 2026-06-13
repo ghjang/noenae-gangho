@@ -9,7 +9,8 @@ import type { Color, Edge, NoteNode } from './types.ts';
 
 const KEY = 'noenae-gangho-v1'; // 레거시 단일 문서 본문 — 첫 이주 후엔 읽지 않는다 (화석 백업, 지우지 않음)
 const DOCS_KEY = 'noenae-gangho-docs'; // 문서(강호) 인덱스 — { current, list: [{ id, title, updatedAt }] } (#62)
-const docKey = (id: string) => 'noenae-gangho-doc-' + id; // 문서별 본문 (v3 snapshot — 포맷은 문서 단위로 불변)
+const DOC_PREFIX = 'noenae-gangho-doc-'; // 문서별 본문 키 접두 — docKey()와 ensureDocs 고아 스캔의 단일 출처
+const docKey = (id: string) => DOC_PREFIX + id; // 문서별 본문 (v3 snapshot — 포맷은 문서 단위로 불변)
 const viewKey = (id: string) => 'noenae-gangho-view-' + id; // 문서별 뷰(팬/줌)
 const viewModeKey = (id: string) => 'noenae-gangho-viewmode-' + id; // 문서별 뷰 모드 (#42)
 const outlineKey = (id: string) => 'noenae-gangho-outline-' + id; // 문서별 족보 스코프 — '보던 가지'는 뷰포트와 같은 결
@@ -258,8 +259,8 @@ function ensureDocs(): boolean {
   // 인덱스가 없거나 깨졌어도 본문 키가 남아 있으면 서가를 재건 — 문서 유실 방지
   try {
     const orphans = Object.keys(localStorage)
-      .filter((k) => k.startsWith('noenae-gangho-doc-'))
-      .map((k) => k.slice('noenae-gangho-doc-'.length));
+      .filter((k) => k.startsWith(DOC_PREFIX))
+      .map((k) => k.slice(DOC_PREFIX.length));
     if (orphans.length) {
       orphans.forEach((oid, i) =>
         docs.list.push({
@@ -362,10 +363,7 @@ export function scheduleViewSave(): void {
   clearTimeout(viewTimer);
   viewTimer = setTimeout(() => {
     try {
-      localStorage.setItem(
-        viewKey(docs.current!),
-        JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }),
-      );
+      localStorage.setItem(viewKey(docs.current!), JSON.stringify({ x: ui.pan.x, y: ui.pan.y, s: ui.scale }));
     } catch {
       /* 실패는 조용히 */
     }
@@ -730,9 +728,7 @@ export function removeNodes(ids: string[]): void {
   if (graph.nodes.some((n) => sel.has(n.id) && n.collapsed)) {
     const h1 = computeHidden(graph.nodes, graph.edges);
     // 베일 쪽지들의 봉문만 풀어본 가상 세계 — 차집합이 곧 '그 봉문의 그늘'
-    const probe = graph.nodes.map((n) =>
-      sel.has(n.id) && n.collapsed ? { ...n, collapsed: undefined } : n,
-    );
+    const probe = graph.nodes.map((n) => (sel.has(n.id) && n.collapsed ? { ...n, collapsed: undefined } : n));
     const h2 = computeHidden(probe, graph.edges);
     for (const hid of h1) if (!h2.has(hid) && !sel.has(hid)) all.push(hid);
   }
