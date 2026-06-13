@@ -62,7 +62,7 @@
     {:else}
       <ul>
         {#each rows as r, i (r.node.id + ':' + i)}
-          <li style={`--d: ${r.depth}`}>
+          <li style={`--d: ${r.depth}`} class:root={r.depth === 0}>
             {#if !r.revisit && (kidCount.get(r.node.id) ?? 0) > 0}
               <!-- 봉문 삼각형 — collapsed 필드 그 자체: 캔버스 ▸배지·오행진 ▸N과 한 데이터 -->
               <button

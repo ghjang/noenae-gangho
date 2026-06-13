@@ -758,6 +758,15 @@ button.primary:hover { background: #d6552f; }
   background-size: calc(var(--d) * 20px) 100%;
   background-repeat: no-repeat;
 }
+/* 무관한 무리(뿌리 다른 트리) 사이 호흡 — 간격 + 얇은 먹선. 깊이 0 행이 곧 무리 머리,
+   :not(:first-child)로 '2개 사이에만'(첫 무리 위엔 없음). 가이드 세로선(0.14)보다 한 끗
+   진한 0.2로 무리 경계를 위계보다 또렷이. 스코프 모드는 뿌리가 하나라 자연 무영향
+   (#142, 사용자 발의 — 간격만으론 구분이 약해 구분선 동반) */
+.outline li.root:not(:first-child) {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(42, 36, 28, 0.2);
+}
 .outline .dot {
   flex: none;
   width: 9px;
