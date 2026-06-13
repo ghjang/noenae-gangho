@@ -605,6 +605,21 @@
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       // 오행진(보드)에선 되돌리기 + 색 이동만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
       if (ui.viewMode !== 'canvas') {
+        // 비캔버스 뷰(오행진/족보)엔 줌 대상이 없다 — Ctrl ±/0는 '동작 없이 막기만'.
+        // 양보하면 브라우저 페이지 줌이 새므로(캔버스에서 봉인한 그 동작), 전 뷰 일관 차단.
+        // 단축키 계층(DESIGN 9장): Ctrl는 앱 전역, 비캔버스는 그 부분집합 (사용자 제보)
+        if (
+          e.key === '+' ||
+          e.key === '=' ||
+          e.code === 'NumpadAdd' ||
+          e.key === '-' ||
+          e.code === 'NumpadSubtract' ||
+          e.key === '0' ||
+          e.code === 'Numpad0'
+        ) {
+          e.preventDefault();
+          return;
+        }
         if (e.code === 'KeyZ') {
           e.preventDefault();
           if (e.shiftKey) redo();
