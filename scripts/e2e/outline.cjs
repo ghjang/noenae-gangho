@@ -154,6 +154,21 @@ const ok = (c, m) => {
   await p.waitForTimeout(300);
   ok((await p.locator('.outline button.row').count()) === 4, 'Ctrl+Z → 4행 귀환 (undo는 뷰 불문 전역)');
 
+  // Ctrl ±/0 — 비캔버스엔 줌 대상이 없다: preventDefault로 막기만(브라우저 페이지 줌 봉인, #150 버그 보초)
+  await p.evaluate(() => {
+    window.__zdp = null;
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '0'].includes(e.key)) window.__zdp = e.defaultPrevented;
+    });
+  });
+  for (const zk of ['Control+Equal', 'Control+Minus', 'Control+Digit0']) {
+    await p.evaluate(() => (window.__zdp = null));
+    await p.keyboard.press(zk);
+    await p.waitForTimeout(80);
+    ok((await p.evaluate(() => window.__zdp)) === true, `족보에서 ${zk} 차단 (페이지 줌 봉인)`);
+  }
+  ok((await p.locator('.outline').count()) === 1, '줌키 눌러도 족보 그대로');
+
   // 뷰 직행(1/2/3)·역순환(Shift+V) — 전 뷰 공통
   await p.keyboard.press('1');
   await p.waitForTimeout(250);
