@@ -157,6 +157,22 @@ const ok = (c, m) => {
   await p.waitForTimeout(200);
   ok((await p.locator('.focus-pill').count()) === 0, '보드에서 L 침묵 (집중 배지 없음)');
 
+  // Ctrl ±/0 — 비캔버스엔 줌 대상이 없다: preventDefault로 막기만(브라우저 페이지 줌 봉인, #150 버그 보초).
+  // 캔버스는 가로채 캔버스 줌, 비캔버스는 '동작 없이 차단' — defaultPrevented로 그 차단을 확인
+  await p.evaluate(() => {
+    window.__zdp = null;
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '0'].includes(e.key)) window.__zdp = e.defaultPrevented;
+    });
+  });
+  for (const zk of ['Control+Equal', 'Control+Minus', 'Control+Digit0']) {
+    await p.evaluate(() => (window.__zdp = null));
+    await p.keyboard.press(zk);
+    await p.waitForTimeout(80);
+    ok((await p.evaluate(() => window.__zdp)) === true, `보드에서 ${zk} 차단 (페이지 줌 봉인)`);
+  }
+  ok((await p.locator('.board').count()) === 1, '줌키 눌러도 오행진 그대로 (내용 줌 없음)');
+
   // 보드에서 Ctrl+Z — 데이터 되돌리기는 통한다 (위쪽 먹 생성 취소)
   await p.keyboard.press('Control+z');
   await p.waitForTimeout(300);
