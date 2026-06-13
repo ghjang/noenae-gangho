@@ -25,8 +25,7 @@ for (const tone of rest) {
 }
 
 // 2) 사용 키 — 컴포넌트(App/BoardView/OutlineView)의 정적 t.xxx + store의 STRINGS[톤].xxx + 동적 합성 키
-const app =
-  read('../src/App.svelte') + read('../src/BoardView.svelte') + read('../src/OutlineView.svelte');
+const app = read('../src/App.svelte') + read('../src/BoardView.svelte') + read('../src/OutlineView.svelte');
 const storeSrc = read('../src/lib/store.svelte.ts');
 const used = new Set([...app.matchAll(/\bt\.([A-Za-z]+)/g)].map((m) => m[1]));
 for (const m of storeSrc.matchAll(/STRINGS\[[^\]]+\]\.([A-Za-z]+)/g)) used.add(m[1]);
