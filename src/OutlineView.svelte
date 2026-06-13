@@ -83,8 +83,9 @@
               onclick={() => selectNode(r.node.id)}
               ondblclick={() => onJump(r.node)}
             >
-              <span class="txt">{firstLine(r.node)}</span
-              >{#if multiline(r.node) && !r.revisit}<span class="more" aria-hidden="true">⋯</span
+              <span class="txt">{firstLine(r.node)}</span>{#if multiline(r.node) && !r.revisit}<span
+                  class="more"
+                  aria-hidden="true">⋯</span
                 >{/if}{#if r.revisit}<span class="cyc" title="↻">&nbsp;↻</span>{/if}
             </button>
           </li>

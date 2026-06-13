@@ -79,10 +79,7 @@ const ok = (c, m) => {
     '↑ 머리에서 바닥으로 순환',
   );
   await p.keyboard.press('ArrowLeft');
-  ok(
-    (await p.locator('.outline button.row.sel .txt').textContent()).includes('미분'),
-    '← 잎에서 부모로',
-  );
+  ok((await p.locator('.outline button.row.sel .txt').textContent()).includes('미분'), '← 잎에서 부모로');
   await p.keyboard.press('ArrowLeft'); // 미분(자식 있음·펼침) → 접기
   await p.waitForTimeout(250);
   ok((await p.locator('.outline button.row').count()) === 3, '← 펼친 가지(미분)에서 = 접기 (행 4→3)');

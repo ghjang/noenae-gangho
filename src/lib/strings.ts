@@ -27,10 +27,7 @@ const muhyeop = {
   titleSub: '뇌내강호 · 두서없는 아이디어 정리소',
   colophon: '腦內江湖 — 한 글자의 다름에서',
 
-  colorLabel: { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' } satisfies Record<
-    Color,
-    string
-  >,
+  colorLabel: { muk: '먹', cheong: '청', dan: '단', hwang: '황', nam: '남' } satisfies Record<Color, string>,
   paletteAria: '오행 색',
   paletteSet: '선택한 쪽지를 {label} 색으로',
 
@@ -114,19 +111,13 @@ const muhyeop = {
       '↑↓·←→ 카드 누비기(양끝 순환) · Tab 조준(금테) 중엔 금테만 이동 — Enter면 선택, 다시 Enter면 강호의 그 자리로',
     ],
     ['Ctrl+←→ (오행진)', '선택한 카드를 이웃 종대 색으로 물들여 보내기 — 양끝 순환'],
-    ['족보 항법', '↑↓ 행 순회(순환) · ← 접기/부모로 · → 펼치기/자식으로 · 3 파고들기 · Esc 한 단 위로 · 0 전체로 · Enter 선택→점프 · Delete 베기'],
+    [
+      '족보 항법',
+      '↑↓ 행 순회(순환) · ← 접기/부모로 · → 펼치기/자식으로 · 3 파고들기 · Esc 한 단 위로 · 0 전체로 · Enter 선택→점프 · Delete 베기',
+    ],
   ] as [string, string][],
   // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
-  helpQuick: [
-    '빈 곳 2번',
-    '쪽지 2번',
-    '쪽지 끌기',
-    '붉은 점 끌기',
-    'Tab',
-    'Delete',
-    'Ctrl+Z / Y',
-    'Ctrl+F',
-  ],
+  helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
   // 전체 요결 시트의 묶음 — helpItems 키 전수 분배 (check-strings가 합집합=전체·중복 0 검증)
   helpSections: [
     ['쪽지', ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '좌·우 변 끌기', '오행 팔레트']],
@@ -277,7 +268,10 @@ export const STRINGS: Record<Tone, StringPack> = {
         '↑↓·←→ 카드 이동(끝에서 순환) · Tab 포커스 중엔 포커스만 이동 — Enter = 선택, 다시 Enter = 캔버스 이동',
       ],
       ['Ctrl+←→ (칸반)', '선택한 카드를 옆 컬럼 색으로 변경 — 끝에서 순환'],
-      ['아웃라인 키 탐색', '↑↓ 행 이동(순환) · ← 접기/부모로 · → 펼치기/하위로 · 3 선택 하위로 · Esc 한 단계 위로 · 0 전체로 · Enter 선택→이동 · Delete 삭제'],
+      [
+        '아웃라인 키 탐색',
+        '↑↓ 행 이동(순환) · ← 접기/부모로 · → 펼치기/하위로 · 3 선택 하위로 · Esc 한 단계 위로 · 0 전체로 · Enter 선택→이동 · Delete 삭제',
+      ],
     ],
     helpQuick: [
       '빈 곳 더블클릭',
