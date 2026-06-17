@@ -8,6 +8,7 @@
   // rootId가 있으면 그 가지만(스코프 — 진입 시점의 선택, Workflowy zoom 국룰).
   // 행 클릭=선택 · 더블클릭=캔버스 점프 · ▸/▾=봉문 토글(캔버스 변이 재사용) — 그 외 편집은 본진 몫
   // ──────────────────────────────────────────────
+  import { tick, untrack } from 'svelte';
   import { graph, ui, selectNode, toggleCollapse, byId, setOutlineScope } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
   import { outlineRows, childCounts, parentEdgeOf } from './lib/graph.ts';
@@ -41,6 +42,22 @@
   const kidCount = $derived(childCounts(graph.edges));
   const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0];
   const multiline = (n: NoteNode) => n.text.includes('\n');
+
+  // 스코프가 바뀌면(0/Esc 확장·크럼·3 조준) 선택 앵커 행을 시야로 끌어온다 —
+  // 캔버스 ensureVisible의 족보판(보기를 바꿔도 작업 대상은 시야에, DESIGN 8장).
+  // 스코프 확장이 세로로 길면 선택이 스크롤 밖으로 밀려 길을 잃던 버그(#153) 봉합.
+  // rootId만 추적(선택 이동엔 무반응 — 클릭/항법은 이미 제 시야, focusRow 몫), focus()는
+  // 안 건드림(키보드 포커스 도둑질 방지 — 스크롤만). 'nearest' = 이미 보이면 무동작
+  $effect(() => {
+    void rootId; // 스코프 변경에만 반응 (값은 안 쓰고 의존성만 등록)
+    const id = untrack(() => ui.selectedId);
+    if (!id) return;
+    tick().then(() => {
+      document
+        .querySelector(`.outline button.row[data-id="${CSS.escape(id)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    });
+  });
 </script>
 
 <div class="outline" role="region" aria-label={t.viewOutlineAria}>
