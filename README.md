@@ -13,11 +13,12 @@
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # dist/ 정적 빌드 (상대경로 — 아무 데나 얹어도 동작)
-npm run check    # 정합성 검사 + 타입 게이트 (build 때 자동 실행) — node 22.18+ 필요
+npm run test     # Vitest — 순수층/문구 단위 테스트 (check에도 포함)
+npm run check    # 시나리오(Vitest) + 타입 게이트 (build 때 자동 실행)
 npm run format   # Prettier (세미콜론 종결 컨벤션)
 ```
 
-> check의 검사 스크립트가 `src/lib`의 `.ts`를 맨 node로 직접 import한다 — node 22.18+(타입 스트리핑 기본 활성) 전제.
+> check는 **Vitest**로 순수층(graph/markdown)·문구 팩 정합을 검사하고(`src/lib/*.test.ts`), `tsc`·`svelte-check`로 타입을 막는다. node 22 환경.
 
 ## 조작 요결
 
