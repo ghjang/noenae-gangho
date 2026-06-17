@@ -168,6 +168,7 @@ const muhyeop = {
 
   mdHeading: '# 뇌내강호 — 念 모음',
   mdEmptyNode: '(빈 쪽지)',
+  mdRespectCollapsedLabel: '봉문한 가지 숨기기',
 };
 
 // 두 팩의 키 형상은 muhyeop이 원본 — plain이 키를 빠뜨리거나 더하면 컴파일이 멈춘다
@@ -335,5 +336,6 @@ export const STRINGS: Record<Tone, StringPack> = {
 
     mdHeading: '# 아이디어 맵 — 노트 모음',
     mdEmptyNode: '(빈 노트)',
+    mdRespectCollapsedLabel: '접힌 가지 숨기기',
   },
 };

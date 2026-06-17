@@ -67,6 +67,7 @@
   // 값 갱신을 컴파일러가 추적해 non_reactive_update 경고가 안 뜬다. 실제론 DOM 메서드 호출용
   let colorHover = $state<import('./lib/types.ts').Color | null>(null); // 팔레트 호버 중인 오행색 — 선택 없을 때 같은 색 비추기
   let sheetText = $state(''); // 입출력 시트 본문
+  let mdRespectCollapsed = $state(false); // 비급.md 봉문 반영 옵션 (#147) — 시트 열 때마다 꺼짐(전체가 안전 기본)
   let hlPre = $state<HTMLElement | null>(null); // 가져오기 편집 overlay 하이라이트 pre — 스크롤 동기화 (위 $state 주석)
   // 시트 하단 메시지 — strings 키 (톤이 바뀌어도 현재 팩으로 그리기 위해)
   let sheetMsg = $state<'' | 'importBadShape' | 'importParseFail' | 'copyOk' | 'copyFail'>('');
@@ -313,6 +314,7 @@
   }
   function openMd() {
     sheetMsg = '';
+    mdRespectCollapsed = false; // 열 때마다 전체로 리셋 — 취향 저장 안 함('왜 일부만 나오지?' 혼란 방지)
     sheetText = toMarkdown();
     ui.overlay = { mode: 'md' };
   }
@@ -361,7 +363,9 @@
   }
 
   // 그래프 → 마크다운 개요 (루트부터 가지치기, 순환은 ↻ 표시)
-  function toMarkdown() {
+  // respectCollapsed=true면 봉문(접힌) 가지의 후손을 생략 — 족보 뷰(graph.outlineRows)와
+  // 한 순회 율법으로 합류(#147). 기본(false)은 전체 트리 — 백업·전체 공유의 안전 기본값
+  function toMarkdown(respectCollapsed = false) {
     const out = [t.mdHeading, ''];
     const incoming = new Set(graph.edges.map((e) => e.b));
     const kidsOf = (id: string) =>
@@ -377,10 +381,14 @@
       }
       seen.add(n.id);
       out.push(`${'  '.repeat(d)}- ${label(n)}`);
+      if (respectCollapsed && n.collapsed) return; // 봉문 존중 — outlineRows와 동일
       for (const k of kidsOf(n.id)) walk(k, d + 1);
     };
     for (const r of graph.nodes.filter((n) => !incoming.has(n.id))) walk(r, 0);
-    for (const n of graph.nodes) if (!seen.has(n.id)) walk(n, 0);
+    // 잔여(뿌리 없는 순환 덩어리) — 봉문 반영 땐 그늘 속은 구제 금지(접힌 가지가 뿌리로
+    // 부활하는 사고 방지, outlineRows와 동일). 전체 모드(기본)에선 종전대로 빠짐없이.
+    const hidden = respectCollapsed ? computeHidden(graph.nodes, graph.edges) : null;
+    for (const n of graph.nodes) if (!seen.has(n.id) && !hidden?.has(n.id)) walk(n, 0);
     return out.join('\n');
   }
 
@@ -1017,6 +1025,20 @@
             <button onclick={() => (ui.overlay = null)}>{t.cancelButton}</button>
             <button class="primary" onclick={applyImport}>{t.applyImportButton}</button>
           {:else}
+            {#if ui.overlay.mode === 'md'}
+              <!-- 봉문 반영 옵션 (#147) — footer 좌측, 체크 시 미리보기(pre) 즉시 갱신. 인주색 커스텀 -->
+              <label class="md-opt">
+                <input
+                  type="checkbox"
+                  checked={mdRespectCollapsed}
+                  onchange={(e) => {
+                    mdRespectCollapsed = e.currentTarget.checked;
+                    sheetText = toMarkdown(mdRespectCollapsed);
+                  }}
+                />
+                <span>{t.mdRespectCollapsedLabel}</span>
+              </label>
+            {/if}
             <button onclick={() => (ui.overlay = null)}>{t.closeButton}</button>
             <button class="primary" onclick={copySheet}>{t.copyButton}</button>
           {/if}

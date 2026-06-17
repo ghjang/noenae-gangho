@@ -540,6 +540,46 @@ button.primary:hover { background: #d6552f; }
   justify-content: flex-end;
   margin-top: 10px;
 }
+/* 비급.md 봉문 반영 옵션 (#147) — footer 좌측(margin-right:auto로 버튼을 우측 끝에).
+   네이티브 체크박스는 한지/먹빛 미감을 깨므로 인주색 ✓로 자작 (DESIGN 10장: OS 위젯 불신) */
+.sheet .row .md-opt {
+  margin-right: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-dim);
+  cursor: var(--cursor-pointer), pointer;
+  user-select: none;
+}
+.sheet .row .md-opt:hover { color: var(--ink); }
+.sheet .row .md-opt input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1px solid rgba(42, 36, 28, 0.4);
+  border-radius: 3px;
+  background: rgba(255, 252, 244, 0.7);
+  display: grid;
+  place-content: center;
+  cursor: var(--cursor-pointer), pointer;
+}
+.sheet .row .md-opt input::before {
+  content: '✓';
+  font-size: 11px;
+  line-height: 1;
+  color: #fff6ea;
+  transform: scale(0);
+  transition: transform 90ms ease;
+}
+.sheet .row .md-opt input:checked {
+  background: var(--inju);
+  border-color: var(--inju);
+}
+.sheet .row .md-opt input:checked::before { transform: scale(1); }
 .sheet button {
   color: var(--ink);
   background: rgba(42, 36, 28, 0.06);
