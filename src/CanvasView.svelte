@@ -22,7 +22,6 @@
     addChild,
     addSibling,
     updateText,
-    setColorMany,
     setNodeWidth,
     removeNodes,
     addEdge,
@@ -32,13 +31,10 @@
     revealNode,
     arrange,
     commitEditing,
-    setViewMode,
     scheduleSave,
     scheduleViewSave,
     markUndo,
     asOneStep,
-    undo,
-    redo,
     clampScale,
   } from './lib/store.svelte.ts';
   import { STRINGS, fmt } from './lib/strings.ts';
