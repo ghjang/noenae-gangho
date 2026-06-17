@@ -9,7 +9,7 @@
 - `npm run dev` — 개발 서버 (localhost:5173)
 - `npm run build` — `dist/` 정적 빌드. `vite.config.js`의 `base: './'`(상대경로)는 VSCode 웹뷰 이식용이니 절대 바꾸지 말 것
 - `npm run preview` — 빌드 결과물 로컬 확인
-- `npm run check` — 정합성 검사 3종 + 타입 게이트 2종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기·정돈·이웃·족보 시나리오 14종) + 비급 역해석(`scripts/check-markdown.mjs` — 불릿 파서 시나리오 7종) + `tsc --noEmit` + `svelte-check`(에러만 게이트 — 현재 경고 0, #149에서 6건 정리). `npm run build` 때 prebuild로 자동 실행. **검사 스크립트가 src/lib의 .ts를 맨 node로 직접 import하므로 node 22.18+ 필수**(타입 스트리핑 기본 활성 — CI도 node 22)
+- `npm run check` — 정합성 검사 3종 + 타입 게이트 2종: 문구 팩(`scripts/check-strings.mjs` — 키 일치·App 사용 키·고아 금지·순수 데이터) + 봉문 규칙(`scripts/check-graph.mjs` — 접기·정돈·이웃·족보 시나리오 15종) + 비급 역해석(`scripts/check-markdown.mjs` — 불릿 파서 시나리오 7종) + `tsc --noEmit` + `svelte-check`(에러만 게이트 — 현재 경고 0, #149에서 6건 정리). `npm run build` 때 prebuild로 자동 실행. **검사 스크립트가 src/lib의 .ts를 맨 node로 직접 import하므로 node 22.18+ 필수**(타입 스트리핑 기본 활성 — CI도 node 22)
 - `npm run format` — Prettier 일괄 (semi·singleQuote·printWidth 110, .prettierrc) — 세미콜론 종결 컨벤션(#115)의 강제 장치. 코드 수술 후 커밋 전에 돌릴 것
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트 프레임워크·린터 없음 (포매터는 Prettier, 타입은 tsc/svelte-check — #115부터). 자동 검증은 `npm run build`(위 check 전부 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검

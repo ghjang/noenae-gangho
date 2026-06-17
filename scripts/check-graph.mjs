@@ -3,7 +3,13 @@
 // 하루에 세 번 규칙이 바뀐 사고 다발 지역이라 시나리오로 못 박는다.
 // 규칙 본체는 src/lib/graph.ts의 computeHidden().
 // ──────────────────────────────────────────────
-import { computeHidden, tidyLayout, neighborhood, outlineRows } from '../src/lib/graph.ts';
+import {
+  computeHidden,
+  tidyLayout,
+  separateComponents,
+  neighborhood,
+  outlineRows,
+} from '../src/lib/graph.ts';
 
 let fail = 0;
 const err = (m) => {
@@ -84,6 +90,42 @@ const ids = (s) => [...s].sort().join(',');
   if (a && z && !(z.x > a.x)) err('정돈 순환 구제: 자식 z가 첫 부모 a의 오른쪽이 아님');
 }
 
+// 7.5) 정돈 겹침 제거 — 무관한 두 트리(연결 성분)가 겹치면 떼어놓는다 (#125)
+{
+  // r1·c1 트리와 r2·c2 트리: 뿌리가 거의 포개져((0,0)/(0,30)) 정돈하면 좌우 같은 폭이라 겹친다
+  const nodes = [
+    { id: 'r1', x: 0, y: 0, w: 80, h: 40 },
+    { id: 'c1', x: 0, y: 0, w: 80, h: 40 },
+    { id: 'r2', x: 0, y: 30, w: 80, h: 40 },
+    { id: 'c2', x: 0, y: 30, w: 80, h: 40 },
+  ];
+  const edges = [E('r1', 'c1'), E('r2', 'c2')];
+  const box = (pos, mem) => {
+    let mnx = Infinity,
+      mny = Infinity,
+      mxx = -Infinity,
+      mxy = -Infinity;
+    for (const id of mem) {
+      const p = pos.get(id),
+        n = nodes.find((x) => x.id === id);
+      mnx = Math.min(mnx, p.x);
+      mny = Math.min(mny, p.y);
+      mxx = Math.max(mxx, p.x + n.w);
+      mxy = Math.max(mxy, p.y + n.h);
+    }
+    return { mnx, mny, mxx, mxy };
+  };
+  const hit = (A, B) => A.mnx < B.mxx && B.mnx < A.mxx && A.mny < B.mxy && B.mny < A.mxy;
+  // 거짓 통과 방지 — tidy만으로는 두 트리가 실제로 겹쳐 있어야 이 시나리오가 유의미하다
+  // (안 겹치면 패스가 무동작이어도 통과해버린다. 이른바 negative control)
+  const raw = tidyLayout(nodes, edges);
+  if (!hit(box(raw, ['r1', 'c1']), box(raw, ['r2', 'c2'])))
+    err('정돈 겹침제거: 사전 조건 — tidy만으로는 두 트리가 겹쳐 있어야 한다');
+  // 겹침 제거 후 — 교집합 0
+  const sep = separateComponents(nodes, edges, tidyLayout(nodes, edges));
+  if (hit(box(sep, ['r1', 'c1']), box(sep, ['r2', 'c2']))) err('정돈 겹침제거: 패스 뒤에도 두 트리가 겹친다');
+}
+
 // 8) 이웃(포커스) — 무방향 1촌/2촌: 부모·자식·또 다른 부모 가리지 않는다
 {
   const edges = [E('a', 'b'), E('b', 'c'), E('c', 'd'), E('x', 'b')];
@@ -137,4 +179,4 @@ if (fail) {
   console.error(`봉문 검사 실패 — ${fail}건`);
   process.exit(1);
 }
-console.log('봉문 검사 통과 — 시나리오 14종 (접기 5 + 정돈 2 + 이웃 2 + 족보 5)');
+console.log('봉문 검사 통과 — 시나리오 15종 (접기 5 + 정돈 3 + 이웃 2 + 족보 5)');
