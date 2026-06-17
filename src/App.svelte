@@ -573,7 +573,9 @@
     }
     const isArrow =
       e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight';
-    if (!isArrow && e.key !== 'Enter') return;
+    // 봉문/개문 토글 — 캔버스 C·Space와 같은 키(방향 없는 토글, #168). 하위 있을 때만, 없으면 무동작
+    const isFold = e.code === 'Space' || e.key === 'c' || e.key === 'C';
+    if (!isArrow && e.key !== 'Enter' && !isFold) return;
     const rid = ui.outlineRootId && byId(ui.outlineRootId) ? ui.outlineRootId : null;
     const rows = outlineRows(graph.nodes, graph.edges, rid).filter((r) => !r.revisit);
     const tgt = e.target as HTMLElement | null;
@@ -600,6 +602,11 @@
       return;
     }
     const cur = rows[i];
+    if (isFold) {
+      // 캔버스 C·Space와 같은 봉문/개문 — 방향 없는 토글, 하위 있을 때만 (e.preventDefault는 위에서)
+      if ((kidCount.get(cur.node.id) ?? 0) > 0) toggleCollapse(cur.node.id);
+      return;
+    }
     let next: NoteNode | null = null;
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       next = rows[(i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length].node; // 양끝 순환
