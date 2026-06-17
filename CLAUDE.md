@@ -29,10 +29,10 @@
 - `src/lib/markdown.ts` — 비급.md 역해석 순수 함수(`fromMarkdown` — 들여쓰기 불릿 → 트리, 격자 배치 행=줄·열=깊이). 스토어 import 금지: runes 탓에 맨 node(검사 스크립트)가 못 읽는다 — id 생성기를 자체로 갖는 이유. 규칙 바꾸면 `scripts/check-markdown.mjs`도 같이
 - `src/lib/highlight.ts` — 시트 신택스 하이라이트 순수 토크나이저(JSON/비급.md, 외부 라이브러리 금지라 자작). 토큰 text를 이어 붙이면 입력과 동일해야 함 — 가져오기 편집 overlay(투명 textarea+pre) 정렬의 전제
 - `src/App.svelte` — UI 셸: 상단 바·시트(입출력/도움말/서가)·키 라우터(`onKey`)·뷰 디스패치(`viewKey`)·검색(`.search-card`, 셸 잔류). 3뷰(캔버스/오행진/족보)는 형제 컴포넌트로 분리됨(#42·#152) — 캔버스 기하가 필요한 점프/맞춤은 `canvasRef?.`(bind:this) 위임. 큰 영역·새 뷰는 컴포넌트로(300줄 넘으면)
-- `src/CanvasView.svelte` — 캔버스(마인드맵) 뷰 (#152, #151 키 라우터 위에서 분리). 캔버스 로컬 상태(드래그/올가미/팬/줌/리사이즈/핀치/호버)·기하(`toWorld`/`zoomAt`/`fitAll`/`fitSelection`/`centerOn`/`ensureVisible`)·노드/미니맵 조작·`onCanvasKey`·자기 `svelte:window`(포인터/keyup) 소유. 셸이 `bind:this`로 seam(`onKey`/`fitAll`/`fitSelection`/`jumpTo`/`addAtCenter`/`zoomCenter`/`resetView`) 호출, `hue`(팔레트 호버색)·`closeSearch` 주입. 보초: `scripts/e2e/canvas.cjs`. 캔버스 전용 CSS는 자기 스코프 `<style>`로 이주됨(#160 1단계) — 토큰·공유 규칙(오행 `[data-color]` 매핑·버튼 베이스·`.hud`)은 app.css 잔류. 보드/족보 CSS 이주는 #160 후속
-- `src/BoardView.svelte` — 오행진(칸반) 뷰 (#42, 첫 분리 컴포넌트). 종대 진형(색별 y→x)은 graph.ts `boardColumns`로 App의 보드 키 항법(#111)과 공유 — 따로 세면 어긋난다
-- `src/OutlineView.svelte` — 족보(아웃라인) 뷰 (#42 셋째 식구). 행 목록은 graph.ts `outlineRows`(비급.md와 같은 순회 율법 — ↻ 재방문·봉문 생략·스코프) — 규칙 바꾸면 check-graph 족보 시나리오도 같이
-- `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙
+- `src/CanvasView.svelte` — 캔버스(마인드맵) 뷰 (#152, #151 키 라우터 위에서 분리). 캔버스 로컬 상태(드래그/올가미/팬/줌/리사이즈/핀치/호버)·기하(`toWorld`/`zoomAt`/`fitAll`/`fitSelection`/`centerOn`/`ensureVisible`)·노드/미니맵 조작·`onCanvasKey`·자기 `svelte:window`(포인터/keyup) 소유. 셸이 `bind:this`로 seam(`onKey`/`fitAll`/`fitSelection`/`jumpTo`/`addAtCenter`/`zoomCenter`/`resetView`) 호출, `hue`(팔레트 호버색)·`closeSearch` 주입. 보초: `scripts/e2e/canvas.cjs`. 캔버스 전용 CSS는 자기 스코프 `<style>`로 이주됨(#160 1단계) — 토큰·공유 규칙(오행 `[data-color]` 매핑·버튼 베이스·`.hud`)은 app.css 잔류. 보드/족보 CSS도 각 컴포넌트 스코프로 이주 완료(#160 완결)
+- `src/BoardView.svelte` — 오행진(칸반) 뷰 (#42, 첫 분리 컴포넌트). 종대 진형(색별 y→x)은 graph.ts `boardColumns`로 App의 보드 키 항법(#111)과 공유 — 따로 세면 어긋난다. 스타일은 자기 스코프 `<style>`(#160)
+- `src/OutlineView.svelte` — 족보(아웃라인) 뷰 (#42 셋째 식구). 행 목록은 graph.ts `outlineRows`(비급.md와 같은 순회 율법 — ↻ 재방문·봉문 생략·스코프) — 규칙 바꾸면 check-graph 족보 시나리오도 같이. 스타일은 자기 스코프 `<style>`(#160)
+- `src/app.css` — 디자인 토큰. 색은 반드시 CSS 변수 경유 (`--hanji`, `--inju`, `--c-*`). 하드코딩 hex 금지. 면 위계: 부유 패널(HUD·미니맵·검색 카드)은 `--panel`+`--hairline-strong`+그림자, 전폭 상단 바만 `--chrome`(다크) — 캔버스와의 분리감 규칙. **뷰별 CSS는 각 컴포넌트 스코프 `<style>`로 이주(#160)** — app.css엔 토큰·전역 리셋·공유 규칙(오행 `[data-color]` 색매핑·버튼 베이스)·셸 크롬(상단바/시트/HUD/검색/서가)만 잔류
 
 ## 핵심 설계 결정 — 바꾸기 전에 사용자에게 물을 것
 
