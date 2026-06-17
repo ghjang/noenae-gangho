@@ -217,6 +217,11 @@ export function selectMany(ids: string[]): void {
   ui.selectedId = ui.selectedId != null && ids.includes(ui.selectedId) ? ui.selectedId : (ids.at(-1) ?? null);
 }
 export const isSelected = (id: string): boolean => ui.selectedIds.includes(id);
+// 편집 확정 — 열린 textarea를 닫는다(blur·확정·다른 곳 클릭의 공통 종착). 캔버스와
+// 셸(App)이 함께 부르므로 store에 둔다 (#152 분리 — 뷰 불문 같은 종착)
+export function commitEditing(): void {
+  if (ui.editingId) ui.editingId = null;
+}
 // 무리에서 죽은/숨은 쪽지 솎아내기 — 삭제·봉문이 부른다
 export function pruneSelection(dead: Set<string>): void {
   if (!ui.selectedIds.some((id) => dead.has(id))) return;
