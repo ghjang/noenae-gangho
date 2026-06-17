@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────
 import { STRINGS, TONES, fmt, type Tone } from './strings.ts';
 import { nodeBox } from './geometry.ts';
-import { ancestorIds, computeHidden, parentEdgeOf, tidyLayout } from './graph.ts';
+import { ancestorIds, computeHidden, parentEdgeOf, separateComponents, tidyLayout } from './graph.ts';
 import type { Color, Edge, NoteNode } from './types.ts';
 
 const KEY = 'noenae-gangho-v1'; // 레거시 단일 문서 본문 — 첫 이주 후엔 읽지 않는다 (화석 백업, 지우지 않음)
@@ -756,9 +756,13 @@ export function removeEdge(id: string): void {
   scheduleSave();
 }
 
-// 가지런히(Tidy) — rootId의 하위 트리(없으면 전체)를 정돈. undo 한 걸음
+// 가지런히(Tidy) — rootId의 하위 트리(없으면 전체)를 정돈. undo 한 걸음.
+// 전체 정돈(rootId 없음)은 트리별 배치 뒤 성분 간 겹침 제거 패스를 한 번 더 — 인접한
+// 두 무리가 각자 펴지며 서로 겹치던 흠(#125)을 메운다. Shift+R(가지 하나 정돈)은
+// 상대가 없으니 그대로. 전략 교체(#157)가 붙으면 이 분기에 합류
 export function arrange(rootId: string | null = null): void {
   const pos = tidyLayout(graph.nodes, graph.edges, rootId);
+  if (rootId === null) separateComponents(graph.nodes, graph.edges, pos);
   if (pos.size === 0) return;
   markUndo();
   for (const n of graph.nodes) {

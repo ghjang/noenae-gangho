@@ -228,3 +228,136 @@ export function tidyLayout(
   }
   return pos;
 }
+
+// 성분 간 겹침 제거 — 전체 정돈(R)의 후처리 패스 (#125).
+// tidyLayout은 "뿌리는 제자리" 율법이라 트리(연결 성분)를 저마다 독립 배치할 뿐,
+// 트리들 *사이*의 충돌은 안 본다 — 인접한 두 뿌리를 정돈하면 각자는 이쁘게 펴지지만
+// 서로 겹친다(사용자 제보). 이 패스가 tidyLayout이 만든 좌표(pos) 위에서 겹친 성분만
+// 최소 거리로 밀어내 그 흠을 메운다.
+//
+// ── 왜 이 방식인가 (국룰 조사 결론, 이슈 #125) ──
+// ①성분 패킹(전부 재배열)이 아니라 ②겹침 제거를 택했다 — "뿌리 제자리" 철학을 보존해
+// 사용자의 공간 기억을 안 깨려고. 읽기 순서(y→x)의 첫 성분은 닻으로 고정, 나머지만
+// 닻에서 멀어지는 쪽으로 민다. 결정적(맨 node 검증 가능) · 순수층.
+//
+// ── 전략 이음매 (#157) ──
+// 일부러 tidyLayout/arrange에 인라인하지 않고 독립 함수로 뺐다. 이게 "성분 간 전략 1번
+// (겹침 제거)"이고, 나중에 "전략 2번(패킹)"이나 트리 방향(세로/방사형)은 함수 하나 +
+// arrange 분기 한 줄로 붙는다. 지금 레지스트리·토글 틀을 미리 짓진 말 것(#82 경계) —
+// 씨앗만, 틀은 두 번째 전략이 실제로 필요해질 때.
+//
+// pos를 제자리 변이하고 그대로 반환한다(arrange가 주인). 봉문 후손도 같은 성분으로 묶여
+// 통째로 따라 움직인다(緣으로 연결돼 있으니 자연히). margin = 성분 사이 최소 여백(px).
+export function separateComponents(
+  nodes: NoteNode[],
+  edges: Edge[],
+  pos: Map<string, { x: number; y: number }>,
+  margin = 48,
+): Map<string, { x: number; y: number }> {
+  const byIdM = new Map(nodes.map((n) => [n.id, n]));
+  const ids = [...pos.keys()].filter((id) => byIdM.has(id));
+  if (ids.length < 2) return pos;
+
+  // 무방향 인접 — 배치된 쪽지끼리만 (봉문 후손도 緣으로 이어져 같은 성분에 들어온다)
+  const inPos = new Set(ids);
+  const adj = new Map<string, string[]>(ids.map((id) => [id, []]));
+  for (const e of edges) {
+    if (inPos.has(e.a) && inPos.has(e.b)) {
+      adj.get(e.a)!.push(e.b);
+      adj.get(e.b)!.push(e.a);
+    }
+  }
+  // 연결 성분 (BFS) — comp[id] = 성분 번호
+  const comp = new Map<string, number>();
+  let nc = 0;
+  for (const id of ids) {
+    if (comp.has(id)) continue;
+    const stack = [id];
+    comp.set(id, nc);
+    while (stack.length) {
+      const cur = stack.pop()!;
+      for (const nb of adj.get(cur)!)
+        if (!comp.has(nb)) {
+          comp.set(nb, nc);
+          stack.push(nb);
+        }
+    }
+    nc++;
+  }
+  if (nc < 2) return pos; // 단일 성분 — 겹칠 상대가 없다
+
+  // 성분별 멤버 · 바운딩 박스 (좌표 + 실측 박스)
+  const members: string[][] = Array.from({ length: nc }, () => []);
+  for (const id of ids) members[comp.get(id)!].push(id);
+  type Box = { minX: number; minY: number; maxX: number; maxY: number };
+  const boxes: Box[] = members.map((mem) => {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const id of mem) {
+      const p = pos.get(id)!;
+      const b = nodeBox(byIdM.get(id)!);
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x + b.w);
+      maxY = Math.max(maxY, p.y + b.h);
+    }
+    return { minX, minY, maxX, maxY };
+  });
+
+  // 읽기 순서(y→x) — 첫(맨 위·왼쪽) 성분이 닻, 뒤 성분만 밀린다. 결정적 정렬
+  const order = [...boxes.keys()].sort(
+    (i, j) => boxes[i].minY - boxes[j].minY || boxes[i].minX - boxes[j].minX || i - j,
+  );
+  // margin만큼 떨어졌으면 OK — 두 박스를 margin만큼 부풀려 교차하면 '너무 가깝다'
+  const tooClose = (a: Box, b: Box): boolean =>
+    a.minX < b.maxX + margin &&
+    b.minX < a.maxX + margin &&
+    a.minY < b.maxY + margin &&
+    b.minY < a.maxY + margin;
+
+  const dx = new Array(nc).fill(0),
+    dy = new Array(nc).fill(0);
+  // 반복 수렴 — 뒤 성분(b)만 밀어 닻 쪽은 불변. 밀면 또 다른 성분과 겹칠 수 있어 패스
+  // 반복, 한 바퀴에 아무도 안 움직이면 종료. cap은 발산 안전판(현실 규모에선 1~2바퀴)
+  for (let iter = 0; iter < 64; iter++) {
+    let moved = false;
+    for (let oi = 0; oi < order.length; oi++) {
+      for (let oj = oi + 1; oj < order.length; oj++) {
+        const A = boxes[order[oi]], // 먼저(닻 쪽) — 안 움직임
+          B = boxes[order[oj]]; // 뒤 — 이쪽을 민다
+        if (!tooClose(A, B)) continue;
+        // B를 A에서 margin만큼 떼는 최소 이동을 x·y축 각각 구해 작은 쪽으로 (MTV)
+        const right = A.maxX + margin - B.minX, // +x로
+          left = B.maxX - (A.minX - margin), // -x로
+          down = A.maxY + margin - B.minY, // +y로
+          up = B.maxY - (A.minY - margin); // -y로
+        const bx = right < left ? right : -left;
+        const by = down < up ? down : -up;
+        let mx = 0,
+          my = 0;
+        if (Math.abs(bx) < Math.abs(by)) mx = bx;
+        else my = by; // 동률이면 세로(가로로 긴 트리는 아래로 쌓는 게 자연)
+        B.minX += mx;
+        B.maxX += mx;
+        B.minY += my;
+        B.maxY += my;
+        dx[order[oj]] += mx;
+        dy[order[oj]] += my;
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  // 누적 이동을 성분 멤버 전원에 적용
+  for (let c = 0; c < nc; c++) {
+    if (!dx[c] && !dy[c]) continue;
+    for (const id of members[c]) {
+      const p = pos.get(id)!;
+      p.x += dx[c];
+      p.y += dy[c];
+    }
+  }
+  return pos;
+}
