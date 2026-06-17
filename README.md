@@ -67,7 +67,8 @@ npm run format   # Prettier (세미콜론 종결 컨벤션)
 src/
   main.ts              # 마운트
   app.css              # 디자인 토큰 (먹/한지/인주/오행)
-  App.svelte           # UI 전체 — 캔버스, 노드, 엣지, 시트 (lang="ts")
+  App.svelte           # UI 셸 — 상단 바·시트·키 라우터·뷰 디스패치 (lang="ts")
+  CanvasView.svelte    # 캔버스(마인드맵) 뷰 — 노드/緣·줌·팬·미니맵·검색 (#152)
   BoardView.svelte     # 오행진(칸반) 뷰 — 색별 종대 + 키 항법·경량 편집
   OutlineView.svelte   # 족보(아웃라인) 뷰 — 트리 개요 + 스코프·봉문 토글
   lib/types.ts         # 도메인 타입 — NoteNode/Edge/Color (영속 화이트리스트와 한 몸)
