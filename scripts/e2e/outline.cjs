@@ -237,6 +237,27 @@ const ok = (c, m) => {
   const crumbBox = await q.locator('.outline .scope').boundingBox();
   ok(lastVisible, '바닥 행까지 스크롤 도달');
   ok(crumbBox && crumbBox.y <= 120, `sticky 크럼 — 스크롤해도 머리에 (y=${Math.round(crumbBox.y)})`);
+
+  // #153 — 스코프 확장(0/Esc) 시 선택 행을 시야로 (캔버스 ensureVisible의 족보판, DESIGN 8장).
+  // 깊은 막내 선택 → 3으로 그 잎만(1행, 상단) → 0으로 전체 30행 확장: 선택이 목록 바닥이라
+  // 스크롤 밖 → 확장 시 자동으로 시야에 들어와야. (Esc도 같은 applyOutlineScope 문을 지난다)
+  await q.setViewportSize({ width: 1280, height: 400 }); // 30행이 확실히 넘치게
+  await q.keyboard.press('0'); // 전체로 리셋
+  await q.waitForTimeout(200);
+  await q.locator('.outline button.row', { hasText: '계보 29' }).click(); // 깊은 막내 (Playwright가 스크롤해 클릭)
+  await q.keyboard.press('3'); // 그 잎만 스코프 (1행, scrollTop 0)
+  await q.waitForTimeout(200);
+  await q.keyboard.press('0'); // 전체 30행 확장 — 선택(계보 29)은 목록 바닥
+  await q.waitForTimeout(250);
+  const selBox = await q.locator('.outline button.row.sel').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, ih: window.innerHeight };
+  });
+  ok(
+    selBox.top >= 0 && selBox.bottom <= selBox.ih + 1,
+    `#153 0 확장 시 선택 행이 시야 안으로 (top=${Math.round(selBox.top)} bottom=${Math.round(selBox.bottom)} vh=${selBox.ih})`,
+  );
+
   await ctx2.close();
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '#42 족보(아웃라인) — 전 시나리오 통과');
