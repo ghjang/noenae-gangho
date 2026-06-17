@@ -44,6 +44,16 @@ const ok = (c, m) => {
   await p.waitForTimeout(250);
   ok((await p.locator('.outline button.row').count()) === 4, '▸ 토글 → 개문: 행 복원');
 
+  // Space — 봉문/개문 키 토글 (캔버스 C·Space와 일관, #168). 선택 행에 하위가 있을 때만
+  await p.locator('.outline button.row', { hasText: '미분' }).click(); // 미분 = 자식 '브로' 있음
+  await p.waitForTimeout(150);
+  await p.keyboard.press('Space');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 3, 'Space → 봉문: 후손(브로) 숨음 (행 4→3)');
+  await p.keyboard.press('Space');
+  await p.waitForTimeout(250);
+  ok((await p.locator('.outline button.row').count()) === 4, 'Space 또 → 개문: 행 복원');
+
   // 더블클릭 = 캔버스 점프 + 그 쪽지 선택 (오행진 카드와 같은 어휘)
   await p.locator('.outline button.row', { hasText: '깨다름' }).dblclick();
   await p.waitForTimeout(400);
