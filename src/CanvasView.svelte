@@ -755,6 +755,7 @@
 <div
   class="viewport"
   class:lasso={shiftHeld || marquee}
+  class:linking={!!ui.linking}
   bind:this={viewportEl}
   bind:clientWidth={vpW}
   bind:clientHeight={vpH}
@@ -996,6 +997,30 @@
   .viewport.lasso,
   .viewport.lasso:active {
     cursor: var(--cursor-cross), crosshair;
+  }
+
+  /* 緣 잇기 드래그 중 (#169) — 놓을 때까지 표적 커서 유지(올가미처럼 :active 주먹·노드 손을 덮는다).
+     빨간점(핸들)은 '잡는 자리'일 뿐 연결선 위치가 아니라 숨기고, 놓이게 될 타겟 念엔 부드러운 글로우. */
+  .viewport.linking,
+  .viewport.linking:active,
+  .viewport.linking .node,
+  .viewport.linking .node:active,
+  .viewport.linking .fold,
+  .viewport.linking .rsz {
+    cursor: var(--cursor-cross), crosshair;
+  }
+  .viewport.linking .node .handle {
+    display: none; /* 소스·타겟 양쪽 빨간점 숨김 — 앵커는 geometry가 두 박스로 계산하므로 점은 군더더기 */
+  }
+  .viewport.linking .node:hover {
+    /* 타겟 강조 — 어두운 허공(--muk-void)에서 읽히는 한지빛 글로우. 선택의 인주 sharp 링과 구분되는
+       부드러운 헤일로. 자기 자신 포함 호버 念 모두 일관(놓으면 addEdge가 자기 緣·중복을 조용히 무산) */
+    filter: brightness(1.06);
+    box-shadow:
+      0 0 0 1px rgba(242, 233, 214, 0.4),
+      0 0 20px 4px rgba(242, 233, 214, 0.32),
+      0 1px 0 rgba(0, 0, 0, 0.35),
+      0 9px 22px -10px rgba(0, 0, 0, 0.75);
   }
 
   .world {

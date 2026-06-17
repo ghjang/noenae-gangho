@@ -70,6 +70,40 @@ const ok = (c, m) => {
   await p.waitForTimeout(300);
   ok((await posX('미분')) === x1, 'redo 보존: 중복 시도 후에도 Ctrl+Y 동작');
 
+  // #169 — 연결 드래그 중: 빨간점 숨김 · 표적 커서 유지 · 타겟 念 글로우 (놓기 전 동결 검사)
+  {
+    const f = p.locator('.node', { hasText: '깨다름' }).first();
+    await f.hover();
+    const h = await f.locator('.handle').boundingBox();
+    await p.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+    await p.mouse.down();
+    const mb = await p.locator('.node', { hasText: '미분' }).first().boundingBox();
+    await p.mouse.move(mb.x + mb.width / 2, mb.y + mb.height / 2, { steps: 4 }); // 타겟 위에서 동결
+    await p.waitForTimeout(120);
+    ok((await p.locator('.viewport.linking').count()) === 1, '#169 드래그 중 .viewport.linking 활성');
+    const handleShown = await p
+      .locator('.node .handle')
+      .first()
+      .evaluate((el) => getComputedStyle(el).display !== 'none');
+    ok(!handleShown, '#169 드래그 중 빨간점(핸들) 숨김');
+    const cur = await p
+      .locator('.node', { hasText: '미분' })
+      .first()
+      .evaluate((el) => getComputedStyle(el).cursor);
+    ok(/crosshair|url\(/.test(cur), `#169 드래그 중 타겟 위 표적 커서 (실측 ${cur.slice(0, 30)})`);
+    const fx = await p
+      .locator('.node', { hasText: '미분' })
+      .first()
+      .evaluate((el) => getComputedStyle(el).boxShadow + ' ' + getComputedStyle(el).filter);
+    ok(/242, 233, 214|brightness/.test(fx), '#169 타겟 念 글로우(한지빛/brightness)');
+    const fb = await f.boundingBox();
+    await p.mouse.move(fb.x + fb.width / 2, fb.y + fb.height / 2, { steps: 3 }); // 소스로 되돌려 — 자기 緣 금지라 무산
+    await p.mouse.up();
+    await p.waitForTimeout(200);
+    ok((await p.locator('.viewport.linking').count()) === 0, '#169 놓으면 linking 해제');
+    ok((await edgeCount()) === 3, '#169 자기 위에 놓음 → 緣 불변(부작용 없음)');
+  }
+
   // '베기는 보이는 것을 벤다'(사용자 결정) — 접힌 쪽지 삭제 = 봉문 그늘 동반
   await dragBy('미분', -60); // (undo 깨끗이) — 위 redo 검증 잔재 정리용 한 걸음
   await p.keyboard.press('Control+z');
