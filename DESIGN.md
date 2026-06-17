@@ -171,15 +171,19 @@
 
 ## 12. 의존과 검증
 
-- **런타임 의존성 0** — svelte/vite 외 금지. 필요한 건 자작(신택스 하이라이트)하거나
-  인라인(아이콘 SVG — 출처·라이선스를 주석에 명기: Phosphor=MIT, Markdown 마크=PD).
-  TypeScript/svelte-check/Prettier는 devDependencies — 번들엔 한 바이트도 안 실린다 (#115).
-- 자동 게이트는 `npm run check` = 시나리오 3종(문구/봉문/비급 역해석) + 타입 2종(tsc·
-  svelte-check) — 시나리오 검사가 곧 명세. **규칙을 바꾸면 시나리오를 같이 바꾼다.**
-  렌더링/조작은 `scripts/e2e/` 13종(수동)이 보초.
-- 순수층(`geometry/graph/markdown/highlight`)은 DOM·스토어 무관 — 맨 node로 검증 가능해야
-  한다. 스토어 import 금지(runes는 맨 node가 못 읽는다). .ts 전환(#115) 후에도 같은 원칙:
-  node 22.18+ 타입 스트리핑이 .ts를 그대로 읽는다 — 그래서 **소거 가능 문법만**
-  (enum/namespace 금지). [보초: tsconfig `erasableSyntaxOnly`]
+- **런타임 의존성 0** = _번들(배포물)_에 실리는 외부 라이브러리만 0 — svelte/vite 외 런타임
+  의존 금지. 이유: 프로토타입 경량 + **VSCode 웹뷰 이식**(상대경로 dist를 그대로 얹기).
+  런타임에 필요한 건 자작(신택스 하이라이트)하거나 인라인(아이콘 SVG — 라이선스 주석:
+  Phosphor=MIT, Markdown 마크=PD). ⚠️ **devDependency는 이 율법 밖** — TypeScript·svelte-check·
+  Prettier·Vitest·@types/node는 번들엔 한 바이트도 안 실린다(#115·#166). 검증된 표준 dev
+  도구는 환영하되 '최소화는 미덕'(표준 하나로).
+- 자동 게이트는 `npm run check` = **Vitest**(시나리오: 문구 `strings.test.ts`/봉문·정돈·이웃·족보
+  `graph.test.ts`/비급 역해석 `markdown.test.ts`) + 타입 2종(tsc·svelte-check) — 시나리오 검사가
+  곧 명세. **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 13종(수동)이 보초.
+- 순수층(`geometry/graph/markdown/highlight`)은 DOM·스토어 무관 — **Vitest(node 환경)로 단위
+  검증**(`src/lib/*.test.ts`, #166). 스토어 import 금지(`vitest.config.ts`엔 svelte 플러그인이 없어
+  runes가 안 굴러간다 — 순수층이 store를 물면 테스트가 깨져 그게 곧 보초). TS는 **소거 가능
+  문법만**(enum/namespace 금지) — `verbatimModuleSyntax`와 한 결의 '타입만' 율법. [보초: tsconfig
+  `erasableSyntaxOnly`]
 - 두 팩 키 일치(`StringPack = typeof muhyeop`)와 colorLabel↔Color 5색 동기(`satisfies`)는
   컴파일 타임 보초 — check-strings의 깊은 검사(전수 분배 등)와 이중 방벽.
