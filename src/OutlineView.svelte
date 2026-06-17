@@ -111,3 +111,158 @@
     {/if}
   </div>
 </div>
+
+<style>
+  /* ── 족보(族譜) — 트리 아웃라인 뷰 (#42 셋째 식구) ──
+   두루마리를 활짝 편다 — 뷰 영역 전체가 한지, 트리는 좌측 정박 (사용자 결).
+   중앙 부유 카드(테두리+그림자)는 면 위계상 '시트(팝업)'의 어휘라 뷰엔 부적격 */
+  .outline {
+    position: absolute;
+    inset: var(--bar-h) 0 0 0;
+    overflow-y: auto;
+    background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
+    color: var(--ink);
+    padding: 26px 32px 64px;
+  }
+  .outline .scroll {
+    max-width: 880px; /* 행 글줄의 호흡 — 가운데 띄우지 않고 왼쪽에 정박 */
+  }
+  .outline .scope {
+    position: sticky; /* 긴 족보를 내려가도 사다리(크럼)는 머리에 — 길 잃지 않게 */
+    top: 0;
+    z-index: 1;
+    background: var(--hanji); /* 스크롤 시 행이 비쳐 보이지 않게 — 컨테이너 그라데이션 머리색과 동일 */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+    padding: 10px 6px;
+    border-bottom: 1px solid rgba(42, 36, 28, 0.18);
+    font: 12.5px var(--sans); /* 행 본문과 같은 산세리프 — 명조/고딕 뒤섞임 정리 (사용자 제보) */
+    color: var(--ink-dim);
+  }
+  .outline .scope .sep {
+    flex: none;
+    opacity: 0.55;
+  }
+  .outline .scope .cur {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--ink); /* 현재 가지 — 크럼 끝, 또렷하게 */
+  }
+  .outline .scope button.crumb {
+    flex: none;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 600 12px/1 var(--sans);
+    color: var(--ink);
+    background: rgba(42, 36, 28, 0.06);
+    border: 1px solid rgba(42, 36, 28, 0.25);
+    border-radius: 999px; /* 알약 — 머릿수 칩·팔레트와 같은 결 */
+    padding: 5px 11px;
+    cursor: var(--cursor-pointer), pointer;
+  }
+  .outline .scope button.crumb:hover {
+    background: rgba(42, 36, 28, 0.12);
+  }
+  .outline button.row:focus-visible {
+    outline: 3px solid var(--c-hwang); /* 조준 금테 — 보드 카드와 같은 어휘 (.sel 인주가 이긴다) */
+    outline-offset: 0;
+  }
+  .outline ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .outline li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-left: calc(var(--d) * 20px); /* 깊이 들여쓰기 — 행=쪽지, 열=깊이 (비급.md와 같은 격자 감각) */
+    /* 들여쓰기 가이드 선 (IDE 트리 국룰) — 조상 열(20px 단위)마다 중앙에 옅은 세로선:
+     같은 깊이의 잎/가지가 누구 밑인지 선으로 읽힌다 (x 정렬만으론 부족 — 사용자 제보) */
+    background-image: repeating-linear-gradient(
+      to right,
+      transparent 0 9.5px,
+      rgba(42, 36, 28, 0.14) 9.5px 10.5px,
+      transparent 10.5px 20px
+    );
+    background-size: calc(var(--d) * 20px) 100%;
+    background-repeat: no-repeat;
+  }
+  /* 무관한 무리(뿌리 다른 트리) 사이 호흡 — 간격 + 얇은 먹선. 깊이 0 행이 곧 무리 머리,
+   :not(:first-child)로 '2개 사이에만'(첫 무리 위엔 없음). 가이드 세로선(0.14)보다 한 끗
+   진한 0.2로 무리 경계를 위계보다 또렷이. 스코프 모드는 뿌리가 하나라 자연 무영향
+   (#142, 사용자 발의 — 간격만으론 구분이 약해 구분선 동반) */
+  .outline li.root:not(:first-child) {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(42, 36, 28, 0.2);
+  }
+  .outline .dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin: 0 5.5px; /* 점(9px)도 삼각형(20px)과 같은 거터 폭 — 잎/가지 행의 글줄 x를 맞춰 위계 헛읽힘 방지 */
+    border-radius: 50%;
+    border: 1px solid rgba(42, 36, 28, 0.35); /* 한지 위 오행 점 — 먹 점도 또렷 */
+  }
+  .outline button.fold {
+    flex: none;
+    width: 20px;
+    padding: 0 2px;
+    font: 600 12px/1.6 var(--sans);
+    color: var(--ink-dim);
+    background: none;
+    border: none;
+  }
+  .outline button.row {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font: 13.5px/1.7 var(--sans);
+    color: var(--ink);
+    background: none;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    display: flex;
+    align-items: baseline;
+    cursor: var(--cursor-pointer), pointer;
+  }
+  .outline button.row:hover {
+    background: rgba(42, 36, 28, 0.07);
+  }
+  .outline button.row.sel {
+    outline: 2px solid var(--inju); /* 낙관 — 카드/쪽지 선택 링과 같은 어휘 */
+    outline-offset: 0;
+  }
+  .outline button.row .txt {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* 행 하나 = 첫 줄 — 전문은 캔버스에서 */
+  }
+  .outline button.row .more {
+    flex: none;
+    margin-left: 4px;
+    color: var(--ink-dim); /* 멀티라인 표지 ⋯ — 뒤가 더 있다 */
+  }
+  .outline button.row.revisit {
+    color: var(--ink-dim); /* 재방문(순환·다중 부모) — 본문은 위에 이미 한 번 */
+  }
+  .outline button.row .cyc {
+    color: var(--inju);
+  }
+  .outline .none {
+    margin: 8px 0 2px;
+    text-align: center;
+    font-family: var(--serif);
+    color: var(--ink-dim);
+  }
+</style>
