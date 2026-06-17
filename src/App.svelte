@@ -600,8 +600,10 @@
       return;
     }
     if (ui.overlay) return;
-    // Ctrl/Cmd 조합 — 줌(±/0)과 검색(F)은 입력 필드에 포커스가 있어도 캔버스 몫
-    // (검색창 띄운 채 Ctrl+±로 찾은 쪽지 확대). 나머지는 필드 네이티브에 양보
+    // ── Ctrl/Cmd 층 (앱 전역 수식자 — DESIGN 9장) ── 뷰별 디스패치 위에 둔다: undo/redo는
+    // 어느 뷰서나, 줌(±/0)·검색(F)은 '의미는 캔버스지만 Ctrl이라' 이 층에서 처리(회색지대 —
+    // v1은 뷰별로 안 쪼갠다). 줌/검색은 입력 필드 포커스 중에도 캔버스 몫(검색창 띄운 채
+    // Ctrl+±로 찾은 쪽지 확대), 나머지 Ctrl 조합은 필드 네이티브에 양보
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       // 오행진(보드)에선 되돌리기 + 색 이동만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
       if (ui.viewMode !== 'canvas') {
@@ -733,13 +735,18 @@
       goView(e.code === 'Digit1' ? 'canvas' : e.code === 'Digit2' ? 'kanban' : 'outline');
       return;
     }
-    if (ui.viewMode !== 'canvas') {
-      // 캔버스 단축키(이동/가지/집중/올가미…)는 비캔버스 뷰에선 침묵 —
-      // 각 뷰의 항법만 받는다 (Esc·Ctrl Z/Y·V·1/2/3은 위에서 이미 통과)
-      if (ui.viewMode === 'kanban') onBoardKey(e);
-      else onOutlineKey(e);
-      return;
-    }
+    // ── 뷰별 디스패치 ── 전역(Esc·Ctrl·V·1/2/3·검색창)을 다 지난 뒤, 나머지 키는 현재
+    // 뷰의 핸들러에게 넘긴다. 캔버스도 onCanvasKey로 빠져 세 뷰가 대칭 — onKey는 '전역 먼저
+    // → 뷰 핸들러' 얇은 라우터로 남는다. 새 뷰 = 핸들러 1개 + viewKey 한 줄 (#151)
+    viewKey[ui.viewMode](e);
+  }
+  // 키 디스패치 테이블 — viewMode → 그 뷰의 (전역이 아닌) 키 핸들러. DESIGN 9장 단축키
+  // 계층의 코드판: 한 글자 키 = 그 뷰의 도구. 새 뷰는 여기 한 줄 + 핸들러 하나면 입주
+  const viewKey = { canvas: onCanvasKey, kanban: onBoardKey, outline: onOutlineKey };
+  // 캔버스 전용 키 — 이동/넛지/팬·줌·집중(L)·정돈(R)·緣 타기(Alt+화살표)·가지치기(Tab/Enter)·
+  // 편집(F2)·봉문(C/Space)·베기(Del). 비캔버스 뷰에선 디스패치가 안 부른다(전역 키는 onKey가 처리)
+  function onCanvasKey(e: KeyboardEvent) {
+    const el = e.target as HTMLElement | null; // Tab 진입점이 버튼 포커스를 구분하는 데 쓴다
     // 화살표 키 — 쪽지가 선택돼 있으면 그 쪽지를 옮기고(nudge), 아니면 강호 유람(팬).
     // Alt 조합은 여기서 삼키지 않는다 — 아래 緣 타기(트리 탐색) 몫
     if (e.key.startsWith('Arrow') && !e.altKey) {
