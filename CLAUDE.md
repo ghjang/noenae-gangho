@@ -14,7 +14,7 @@
 - 배포: `main` 푸시마다 GitHub Actions(`.github/workflows/deploy.yml`)가 빌드 → GitHub Pages 자동 배포, PR에서는 빌드 검증만. 사이트: https://ghjang.github.io/noenae-gangho/
 - 테스트 프레임워크·린터 없음 (포매터는 Prettier, 타입은 tsc/svelte-check — #115부터). 자동 검증은 `npm run build`(위 check 전부 포함) 통과가 전부 — 나머지는 맨 아래 수동 체크리스트로 직접 논검
 - 헤드리스 검증(렌더링/조작 버그 재현·수술 확인용): Claude Code 원격 컨테이너엔 전역 playwright가 있다 — `NODE_PATH=/opt/node22/lib/node_modules node 스크립트.cjs` (크로미움 `/opt/pw-browsers`). localhost 접속은 프록시 우회 필수: launch args `--proxy-bypass-list=<-loopback>` + env `NO_PROXY=localhost,127.0.0.1`. 그래프 시드는 `context.addInitScript`로 **로드 전에** localStorage에 심을 것 — 로드 후 setItem은 앱의 500ms 디바운스 저장이 도로 덮는다 (그래프 `noenae-gangho-v1` / 뷰 `noenae-gangho-view` `{x,y,s}`). 드래그 중 상태는 `mouse.down()` 후 `mouse.move()` 반복으로 동결해 검사
-- 재사용 헤드리스 스위트: `scripts/e2e/*.cjs` (앵커/오행진/커서/서가·문서/緣·undo/집중/도움말/하이라이트/아이콘바/모바일/다중 선택/족보 — 12종, 빌드 게이트 아님·수동 실행). `npm run build && npm run preview -- --port 4173` 띄운 뒤 위 env로 `node scripts/e2e/<이름>.cjs`. 관련 부위를 수술하면 해당 스위트를 같이 갱신·재실행할 것 — 기능 추가로 도움말 수가 변하면 `help.cjs`의 요결 수부터 깨진다 (의도된 보초)
+- 재사용 헤드리스 스위트: `scripts/e2e/*.cjs` (앵커/오행진/커서/서가·문서/緣·undo/집중/도움말/하이라이트/아이콘바/모바일/다중 선택/족보/캔버스 메커니즘 — 13종, 빌드 게이트 아님·수동 실행). `canvas.cjs`는 줌(휠/Z/Ctrl±)·팬(드래그/화살표)·맞춤(Shift+1/2)·미니맵·리사이즈·緣 뒤집기(F)·검색 점프 — `.world` 인라인 transform 파싱으로 관찰(#152 분리 안전망). `npm run build && npm run preview -- --port 4173` 띄운 뒤 위 env로 `node scripts/e2e/<이름>.cjs`. 관련 부위를 수술하면 해당 스위트를 같이 갱신·재실행할 것 — 기능 추가로 도움말 수가 변하면 `help.cjs`의 요결 수부터 깨진다 (의도된 보초)
 
 ## 구조와 역할 분담
 
