@@ -167,6 +167,21 @@ const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
     '검색 Enter → 결과 쪽지 선택+점프',
   );
 
+  // #180 — 결과를 마우스 클릭한 뒤 ↑↓는 결과 순회여야 한다(선택 노드 넛지 아님). 클릭이
+  // 포커스를 검색 input에 돌려주므로 onSearchKey가 화살표를 잡는다. (회귀 = 노드 좌표 이동)
+  const topOf = async () =>
+    p
+      .locator('.node', { hasText: 'difference' })
+      .first()
+      .evaluate((el) => el.style.top);
+  const before = await topOf();
+  await p.locator('.search-card li button').first().click();
+  await p.waitForTimeout(150);
+  await p.keyboard.press('ArrowDown');
+  await p.waitForTimeout(150);
+  ok((await p.locator('.search-card').count()) === 1, '#180 결과 클릭 후에도 검색 카드 유지');
+  ok((await topOf()) === before, '#180 결과 클릭+↓ → 노드 넛지 안 됨 (결과 순회 모드 유지)');
+
   await b.close();
   console.log(process.exitCode ? '검증 실패' : '캔버스 메커니즘 보초 — 통과');
 })().catch((e) => {
