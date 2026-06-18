@@ -229,10 +229,18 @@
     overflow-y: auto;
     background: linear-gradient(173deg, var(--hanji), var(--hanji-2));
     color: var(--ink);
-    padding: 26px 32px 64px;
+    /* 상단 패딩 0 — sticky 머리(검색/크럼)가 스크롤포트 꼭대기에 빈틈없이 도킹하게.
+       패딩을 주면 sticky top:0이 콘텐츠 박스(패딩 아래)에 붙어, 그 위 패딩 띠로 스크롤된
+       행이 머리 위로 비쳐 보였다(#183). 상단 숨은 머리 없을 때만 첫 콘텐츠에 따로 준다 */
+    padding: 0 32px 64px;
   }
   .outline .scroll {
     max-width: 880px; /* 행 글줄의 호흡 — 가운데 띄우지 않고 왼쪽에 정박 */
+  }
+  /* 머리(검색 필터·스코프 크럼)가 없을 때만 상단 숨 — 있으면 머리가 꼭대기에 flush 도킹(#183) */
+  .outline .scroll > ul:first-child,
+  .outline .scroll > .none:first-child {
+    padding-top: 26px;
   }
   /* sticky 머리 — 검색 필터 + 스코프 크럼을 한 데 묶는다 (#154). 둘 다 top:0 sticky라
      따로 두면 충돌(겹침) — 한 머리로 묶어 한 줄의 구분선·여백을 공유 */
