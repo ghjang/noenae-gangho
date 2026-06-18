@@ -290,15 +290,22 @@
       goView((e.shiftKey ? PREV_VIEW : NEXT_VIEW)[ui.viewMode]);
       return;
     }
+    // 3 = 족보 직행. 기본은 전체 족보 + 선택 念을 화면 중앙(1·2와 같은 결 — 직행은 선택을
+    // 시야에 비출 뿐 시야를 좁히지 않는다), Shift+3은 선택 가지로 집중(스코프). #185
+    if (!e.ctrlKey && !e.metaKey && !e.altKey && e.code === 'Digit3') {
+      e.preventDefault();
+      goView('outline', { scopeOutline: e.shiftKey });
+      return;
+    }
     if (
       !e.ctrlKey &&
       !e.metaKey &&
       !e.altKey &&
       !e.shiftKey &&
-      (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3')
+      (e.code === 'Digit1' || e.code === 'Digit2')
     ) {
       e.preventDefault();
-      goView(e.code === 'Digit1' ? 'canvas' : e.code === 'Digit2' ? 'kanban' : 'outline');
+      goView(e.code === 'Digit1' ? 'canvas' : 'kanban');
       return;
     }
     // ── 뷰별 디스패치 ── 전역(Esc·Ctrl·V·1/2/3·검색창)을 다 지난 뒤, 나머지 키는 현재
@@ -437,10 +444,11 @@
   // ── 뷰 모드 (#42) — 캔버스 → 오행진(칸반) → 족보(아웃라인) 순환 ────
   const NEXT_VIEW = { canvas: 'kanban', kanban: 'outline', outline: 'canvas' } as const;
   const PREV_VIEW = { canvas: 'outline', kanban: 'canvas', outline: 'kanban' } as const;
-  // 족보 스코프(ui.outlineRootId)는 store 소관 — 진입 시점의 선택을 뿌리로 포착(선택 이동에
-  // 출렁이지 않게 동결, Workflowy zoom 국룰), 문서별로 영속(setOutlineScope), 전환 시 그 문서 것 복원
-  // 모든 뷰 이동의 공용 길 — 순환(V/토글)·역순환(Shift+V)·직행(1/2/3)이 다 이 문을 지난다
-  async function goView(mode: 'canvas' | 'kanban' | 'outline') {
+  // 족보 스코프(ui.outlineRootId)는 store 소관 — 문서별로 영속(setOutlineScope), 전환 시 복원.
+  // 모든 뷰 이동의 공용 길 — 순환(V/토글)·역순환(Shift+V)·직행(1/2/3)이 다 이 문을 지난다.
+  // 족보 진입(#185): 기본(3·V·토글)은 전체 족보 + 선택 念을 화면 중앙(1·2와 같은 결 — 직행은
+  // 선택을 시야에 비출 뿐 시야를 좁히지 않는다). opts.scopeOutline(Shift+3)일 때만 선택 가지로 집중
+  async function goView(mode: 'canvas' | 'kanban' | 'outline', opts: { scopeOutline?: boolean } = {}) {
     commitEditing();
     searchQ = null;
     ui.linking = null;
@@ -448,10 +456,12 @@
     // 좁힌 hidden으로 버블 밖 카드 선택을 증발시킨다. 렌즈 끄고 입장
     ui.focusId = null;
     if (mode === 'outline') {
-      // 선택해 두고 들어가면 그 가지만. 족보 안 3 재타 = 그 선택으로 재조준(파고들기),
-      // 빈손 재타는 no-op. 크럼/Esc는 구조적 조상 경로에서 파생 — 사다리 상태가 따로 없다
-      if (ui.viewMode !== 'outline') setOutlineScope(ui.selectedId);
-      else if (ui.selectedId) setOutlineScope(ui.selectedId);
+      // Shift+3 = 선택 가지로 집중(스코프, 선택 있을 때만). 그 외(3·V·토글)는 전체 족보(스코프 해제)
+      if (opts.scopeOutline) {
+        if (ui.selectedId) setOutlineScope(ui.selectedId);
+      } else {
+        setOutlineScope(null);
+      }
     }
     // 비캔버스 → 캔버스 전환 시 선택 念을 화면 중앙으로 — 작업 흐름 유지(#178). 선택 있을 때만:
     // 없으면 저장 뷰포트 복원 그대로(특정 念 줌/이동 없음). 팬만(centerOn) — 줌은 안 건드린다.
@@ -460,6 +470,12 @@
     if (land) {
       await tick(); // 캔버스가 서야 canvasRef.centerOn 가능 (boardJump와 같은 패턴)
       canvasRef?.centerOn(land);
+    }
+    // 전체 족보 진입 + 선택 있으면 그 행을 화면 중앙으로(#185) — 캔버스 centerOn의 족보판.
+    // 스코프(Shift+3)는 OutlineView의 rootId 변경 effect가 이미 시야로 끌어온다(scrollIntoView)
+    if (mode === 'outline' && !opts.scopeOutline && ui.selectedId) {
+      await tick(); // 족보가 서야 outlineRef.centerSelected 가능
+      outlineRef?.centerSelected();
     }
   }
   function toggleView() {
@@ -585,7 +601,7 @@
       return;
     }
     if (e.code === 'Digit0' && !e.shiftKey) {
-      // 0 — 전체 족보로 (1·2·3 직행 가족의 귀환 번호. 3=조준 파고들기와 짝)
+      // 0 — 전체 족보로 (1·2·3 직행 가족의 귀환 번호. Shift+3 집중과 짝 — 0은 펼치고 Shift+3은 좁힌다)
       if (ui.outlineRootId) {
         e.preventDefault();
         setOutlineScope(null);

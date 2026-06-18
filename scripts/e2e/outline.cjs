@@ -60,14 +60,25 @@ const ok = (c, m) => {
   ok((await p.locator('.viewport').count()) === 1, '더블클릭 → 캔버스 점프');
   ok((await p.locator('.node.selected').textContent()).includes('깨다름'), '점프: 그 쪽지가 선택돼 있다');
 
-  // 스코프 — 선택해 두고 들어가면 그 가지만 (Workflowy zoom 국룰, 진입 시점 동결)
+  // #185 — 선택해 두고 직행(3)은 '전체 족보 + 선택 念 화면 중앙'(1·2와 같은 결, 시야만 비춤)
   await p.locator('.node', { hasText: 'difference' }).click();
-  await p.keyboard.press('v');
-  await p.keyboard.press('v');
+  await p.keyboard.press('3'); // 캔버스 → 족보 직행 (전체)
   await p.waitForTimeout(300);
-  ok((await p.locator('.outline .scope').count()) === 1, '스코프 배지 등장');
+  ok(
+    (await p.locator('.outline .scope').count()) === 0 &&
+      (await p.locator('.outline button.row').count()) === 4,
+    '3 직행 → 전체 족보(4행·스코프 없음)',
+  );
+  ok(
+    (await p.locator('.outline button.row.sel .txt').textContent()).includes('difference'),
+    '3 직행 → 선택(difference)이 족보에서도 선택',
+  );
+  // Shift+3 = 선택 가지로 집중(스코프, Workflowy zoom)
+  await p.keyboard.press('Shift+3');
+  await p.waitForTimeout(300);
+  ok((await p.locator('.outline .scope').count()) === 1, 'Shift+3 → 스코프 배지 등장');
   const sub = await p.$$eval('.outline button.row .txt', (els) => els.map((e) => e.textContent));
-  ok(sub.length === 3 && sub[0].includes('difference'), `그 가지만 3행 (실측 ${sub.length})`);
+  ok(sub.length === 3 && sub[0].includes('difference'), `Shift+3 → 그 가지만 3행 (실측 ${sub.length})`);
   await p.locator('.outline .scope button.crumb').first().click(); // 全 크럼 — 전체로
   await p.waitForTimeout(250);
   ok(
@@ -106,12 +117,12 @@ const ok = (c, m) => {
   await p.keyboard.press('Enter');
   await p.waitForTimeout(400);
   ok((await p.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프');
-  await p.keyboard.press('3'); // 족보 복귀 (브로 선택 중 — 스코프 재조준)
+  await p.keyboard.press('Shift+3'); // 족보 복귀 — 브로 선택 가지로 집중
   await p.waitForTimeout(250);
   ok(
     (await p.locator('.outline .scope').count()) === 1 &&
       (await p.locator('.outline button.row').count()) === 1,
-    '3 재진입 = 선택 가지(잎 하나)로 재조준',
+    'Shift+3 재진입 = 선택 가지(잎 하나)로 집중',
   );
   await p.keyboard.press('0'); // 숫자 가족의 귀환 번호
   await p.waitForTimeout(250);
@@ -122,9 +133,9 @@ const ok = (c, m) => {
   );
   // 크럼 = 구조적 조상 경로 (온 길이 아니라 '있는 자리' — 직행 조준에도 조상 전부) · Esc = 부모로 한 단
   await p.locator('.outline button.row', { hasText: '미분' }).click();
-  await p.keyboard.press('3'); // 전체에서 미분으로 다이렉트 조준
+  await p.keyboard.press('Shift+3'); // 전체에서 미분으로 집중(직행 스코프)
   await p.waitForTimeout(200);
-  ok((await p.locator('.outline button.row').count()) === 2, '직행 조준 — 미분 가지(2행)');
+  ok((await p.locator('.outline button.row').count()) === 2, 'Shift+3 집중 — 미분 가지(2행)');
   ok(
     (await p.locator('.outline .scope button.crumb').count()) === 3,
     '직행에도 크럼은 조상 경로 전부: 全 › 깨다름 › difference',
@@ -137,7 +148,7 @@ const ok = (c, m) => {
     '크럼 클릭 → 그 조상 가지로',
   );
   await p.locator('.outline button.row', { hasText: '미분' }).click(); // 다시 미분으로 — Esc 시나리오
-  await p.keyboard.press('3');
+  await p.keyboard.press('Shift+3');
   await p.waitForTimeout(200);
   await p.keyboard.press('Escape');
   await p.waitForTimeout(200);
@@ -196,7 +207,7 @@ const ok = (c, m) => {
 
   // 모드·스코프 영속 — '보던 가지'는 뷰포트와 같은 결 (Workflowy zoom 국룰, 사용자 결)
   await p.locator('.outline button.row', { hasText: 'difference' }).click();
-  await p.keyboard.press('3'); // 그 가지로 조준
+  await p.keyboard.press('Shift+3'); // 그 가지로 집중
   await p.waitForTimeout(250);
   await p.reload({ waitUntil: 'networkidle' });
   await p.waitForTimeout(400);
@@ -236,7 +247,7 @@ const ok = (c, m) => {
   await q.waitForTimeout(300);
   ok((await q.locator('.outline button.row').count()) === 30, '긴 족보 30행');
   await q.locator('.outline button.row').first().click();
-  await q.keyboard.press('3'); // 스코프 — 크럼 등장
+  await q.keyboard.press('Shift+3'); // 스코프 — 크럼 등장
   await q.waitForTimeout(250);
   await q.locator('.outline').evaluate((el) => (el.scrollTop = el.scrollHeight)); // 바닥까지
   await q.waitForTimeout(200);
@@ -255,7 +266,7 @@ const ok = (c, m) => {
   await q.keyboard.press('0'); // 전체로 리셋
   await q.waitForTimeout(200);
   await q.locator('.outline button.row', { hasText: '계보 29' }).click(); // 깊은 막내 (Playwright가 스크롤해 클릭)
-  await q.keyboard.press('3'); // 그 잎만 스코프 (1행, scrollTop 0)
+  await q.keyboard.press('Shift+3'); // 그 잎만 스코프 (1행, scrollTop 0)
   await q.waitForTimeout(200);
   await q.keyboard.press('0'); // 전체 30행 확장 — 선택(계보 29)은 목록 바닥
   await q.waitForTimeout(250);
@@ -288,6 +299,53 @@ const ok = (c, m) => {
   });
   ok(dock.gap <= 1, `#183 Ctrl+F → 검색바 꼭대기에 flush 도킹 (머리 위 틈=${dock.gap}px)`);
   ok(!dock.rowOnTop, '#183 검색바 띠 위로 행이 비치지 않음 (머리가 덮음)');
+
+  // #185 — 3 직행 = 전체 족보 + 선택 행 화면 중앙(스코프 아님), Shift+3만 집중, V 순환도 전체.
+  // 긴 족보(30행·뷰포트 400)라 '중앙'을 좌표로 관찰.
+  await q.keyboard.press('Escape'); // #183 검색 필터 닫기
+  await q.waitForTimeout(120);
+  await q.keyboard.press('0'); // 전체
+  await q.waitForTimeout(150);
+  await q.locator('.outline button.row', { hasText: '계보 20' }).click(); // 중간 깊이 선택
+  await q.keyboard.press('1'); // 캔버스로 (선택 가져감)
+  await q.waitForTimeout(300);
+  await q.keyboard.press('3'); // 다시 족보 — 전체 + 선택 중앙
+  await q.waitForTimeout(350);
+  const c185 = await q.evaluate(() => {
+    const out = document.querySelector('.outline').getBoundingClientRect();
+    const sel = document.querySelector('.outline button.row.sel');
+    if (!sel) return { rows: 0 };
+    const r = sel.getBoundingClientRect();
+    return {
+      scope: document.querySelectorAll('.outline .scope').length,
+      rows: document.querySelectorAll('.outline button.row').length,
+      selText: sel.textContent.trim(),
+      offFromCenter: Math.abs((r.top + r.bottom) / 2 - (out.top + out.height / 2)),
+      vh: out.height,
+    };
+  });
+  ok(c185.scope === 0 && c185.rows === 30, `#185 3 직행 → 전체 족보(30행·스코프 없음, 실측 ${c185.rows})`);
+  ok(c185.selText.includes('계보 20'), '#185 3 직행 → 선택(계보 20) 유지·표시');
+  ok(
+    c185.offFromCenter < c185.vh * 0.25,
+    `#185 3 직행 → 선택 행이 화면 중앙 부근 (중앙서 ${Math.round(c185.offFromCenter)}px / vh ${Math.round(c185.vh)})`,
+  );
+  await q.keyboard.press('Shift+3'); // 그 가지로 집중
+  await q.waitForTimeout(250);
+  ok((await q.locator('.outline .scope').count()) === 1, '#185 Shift+3 → 집중(스코프)');
+  // V 순환 진입도 전체(스코프 아님) — 1·2·3과 일관
+  await q.keyboard.press('0'); // 스코프 해제
+  await q.waitForTimeout(150);
+  await q.locator('.outline button.row', { hasText: '계보 10' }).click();
+  await q.keyboard.press('v'); // → 캔버스
+  await q.keyboard.press('v'); // → 오행진
+  await q.keyboard.press('v'); // → 족보
+  await q.waitForTimeout(300);
+  ok(
+    (await q.locator('.outline .scope').count()) === 0 &&
+      (await q.locator('.outline button.row').count()) === 30,
+    '#185 V 순환 진입도 전체 족보(스코프 아님)',
+  );
 
   await ctx2.close();
 
