@@ -1,4 +1,4 @@
-// 족보(아웃라인 뷰, #42 셋째 식구) 검증 — V 순환 진입/행·깊이/선택·점프/봉문 토글/스코프/영속
+// 족보(아웃라인 뷰, #42 셋째 식구) 검증 — V 순환 진입/행·깊이/선택·점프/봉문 토글/스코프/영속/검색 필터(#154)
 const { chromium } = require('playwright');
 const fail = (m) => {
   console.error('✗ ' + m);
@@ -269,6 +269,115 @@ const ok = (c, m) => {
   );
 
   await ctx2.close();
+
+  // ── #154 족보 검색 필터 ── Ctrl+F 인라인 필터: 매칭 ∪ 조상만, 접기 무시(드러내기),
+  // <mark> 강조, 접기 멈춤(점만), Enter 캔버스 점프, Esc 비파괴 복원. 텍스트 통제용 별도 시드.
+  const ctx3 = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await ctx3.addInitScript(() => {
+    const nodes = [
+      { id: 'A', x: 0, y: 0, text: 'apple 사과', color: 'muk' },
+      { id: 'B', x: 0, y: 100, text: 'banana 바나나', color: 'cheong', collapsed: true }, // 접힘 — 필터가 무시?
+      { id: 'C', x: 0, y: 200, text: 'cherry 체리', color: 'dan' },
+      { id: 'D', x: 0, y: 300, text: 'date 대추', color: 'hwang' },
+    ];
+    const edges = [
+      { id: 'e1', a: 'A', b: 'B' },
+      { id: 'e2', a: 'B', b: 'C' },
+      { id: 'e3', a: 'A', b: 'D' },
+    ];
+    localStorage.setItem('noenae-gangho-v1', JSON.stringify({ app: 'noenae-gangho', v: 3, nodes, edges }));
+  });
+  const f = await ctx3.newPage();
+  await f.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+  await f.waitForTimeout(400);
+  await f.keyboard.press('Escape');
+  await f.keyboard.press('v');
+  await f.keyboard.press('v');
+  await f.waitForTimeout(300);
+  // B가 접혀 있어 평소엔 C 생략 — A·B·D 3행 (봉문 존중)
+  ok((await f.locator('.outline button.row').count()) === 3, '필터 전: B 봉문이라 C 숨음 (3행)');
+
+  // Ctrl+F → 인라인 검색 입력 등장
+  await f.keyboard.press('Control+f');
+  await f.waitForTimeout(200);
+  ok((await f.locator('.outline .filter input').count()) === 1, 'Ctrl+F → 족보 검색 입력 등장');
+
+  // 'cherry' → C 매칭 + 조상(A·B) 유지, D 탈락. 접힌 B 속 C도 드러난다(접기 무시)
+  await f.locator('.outline .filter input').fill('cherry');
+  await f.waitForTimeout(250);
+  const ftxt = await f.$$eval('.outline button.row .txt', (els) => els.map((e) => e.textContent));
+  ok(
+    ftxt.length === 3 &&
+      ftxt[0].includes('apple') &&
+      ftxt[1].includes('banana') &&
+      ftxt[2].includes('cherry'),
+    `'cherry' → A>B>C 경로만 (접힌 B 속 C도 드러남, 실측 ${ftxt.length}: ${ftxt})`,
+  );
+  ok((await f.locator('.outline button.fold').count()) === 0, '필터 중 접기 삼각형 멈춤(모두 점)');
+  ok((await f.locator('.outline mark').count()) === 1, '매칭 1건 <mark> 강조');
+  ok((await f.locator('.outline mark').first().textContent()) === 'cherry', '<mark> 텍스트 = 질의');
+
+  // 부분 매칭 다건 — 'a'는 apple/banana/date에, cherry엔 없음 → C 탈락
+  await f.locator('.outline .filter input').fill('a');
+  await f.waitForTimeout(250);
+  const atxt = await f.$$eval('.outline button.row .txt', (els) => els.map((e) => e.textContent));
+  ok(
+    atxt.length === 3 && atxt.some((x) => x.includes('date')) && !atxt.some((x) => x.includes('cherry')),
+    `'a' → apple·banana·date (cherry 탈락, 실측 ${atxt.length})`,
+  );
+
+  // 매칭 없음 → 행 0 + 안내
+  await f.locator('.outline .filter input').fill('zzzznope');
+  await f.waitForTimeout(250);
+  ok(
+    (await f.locator('.outline button.row').count()) === 0 &&
+      (await f.locator('.outline .none').count()) === 1,
+    '매칭 없음 → 행 0 + 안내',
+  );
+
+  // Esc(입력 포커스) → 필터 닫힘 + 봉문 복원(B 다시 접힘 3행 · 삼각형 부활) — 비파괴 증명
+  await f.locator('.outline .filter input').fill('cherry');
+  await f.waitForTimeout(200);
+  await f.keyboard.press('Escape');
+  await f.waitForTimeout(200);
+  ok((await f.locator('.outline .filter input').count()) === 0, 'Esc → 검색 입력 사라짐');
+  ok(
+    (await f.locator('.outline button.row').count()) === 3 &&
+      (await f.locator('.outline button.fold').count()) >= 1,
+    'Esc → 봉문 복원(3행·삼각형 부활) — 필터는 collapsed를 안 건드린다',
+  );
+
+  // ↑↓ 골드 커서(선택과 분리 — 접힌 매칭도 store 봉문 가지치기에 안 깎이게) + Enter 점프
+  await f.keyboard.press('Control+f');
+  await f.waitForTimeout(150);
+  await f.locator('.outline .filter input').fill('cherry');
+  await f.waitForTimeout(200);
+  // 커서는 첫 행(apple)에 기본 안착
+  ok(
+    (await f.locator('.outline button.row.active .txt').textContent()) === 'apple 사과',
+    '필터 커서 기본 = 첫 행(골드 링)',
+  );
+  await f.keyboard.press('ArrowDown'); // apple→banana
+  await f.waitForTimeout(120);
+  ok(
+    await f.evaluate(() => document.activeElement?.tagName === 'INPUT'),
+    '↓ 후에도 포커스는 검색 입력에 (계속 타이핑 가능)',
+  );
+  await f.keyboard.press('ArrowDown'); // banana→cherry(접힌 가지 속 매칭)
+  await f.waitForTimeout(120);
+  ok(
+    (await f.locator('.outline button.row.active .txt').textContent()).includes('cherry'),
+    '↓↓ → 커서가 접힌 매칭 cherry에 (선택 안 깎임 — 골드 커서 분리)',
+  );
+  await f.keyboard.press('Enter');
+  await f.waitForTimeout(400);
+  ok((await f.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프');
+  ok(
+    (await f.locator('.node.selected').first().textContent()).includes('cherry'),
+    '점프: cherry 쪽지 선택(접힌 B 개문돼 드러남)',
+  );
+
+  await ctx3.close();
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '#42 족보(아웃라인) — 전 시나리오 통과');
 })().catch((e) => {

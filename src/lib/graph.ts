@@ -102,6 +102,7 @@ export interface OutlineRow {
   node: NoteNode;
   depth: number;
   revisit: boolean;
+  match?: boolean; // 검색 필터(#154)에서 이 행 자체가 질의에 매칭인지 — 하이라이트 대상
 }
 export function outlineRows(nodes: NoteNode[], edges: Edge[], rootId: string | null = null): OutlineRow[] {
   const byIdM = new Map(nodes.map((n) => [n.id, n]));
@@ -131,6 +132,41 @@ export function outlineRows(nodes: NoteNode[], edges: Edge[], rootId: string | n
     const hidden = computeHidden(nodes, edges);
     for (const n of nodes) if (!seen.has(n.id) && !hidden.has(n.id)) walk(n, 0);
   }
+  return out;
+}
+
+// 족보 검색 필터(#154) — 매칭 노드 ∪ 조상 경로만, collapsed 무시(접힌 가지 속 매칭도 드러낸다).
+// 비파괴: collapsed 필드는 읽지도 쓰지도 않는다(필터는 뷰 오버레이) — Esc로 닫으면 원래 족보 복원.
+// match=true 행이 질의 매칭(하이라이트 대상), 나머지는 경로 맥락(조상). 재방문(↻)은 필터에선 생략.
+export function outlineFilterRows(
+  nodes: NoteNode[],
+  edges: Edge[],
+  rootId: string | null,
+  query: string,
+): OutlineRow[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return outlineRows(nodes, edges, rootId); // 빈 질의 = 전체(봉문 존중)
+  const byIdM = new Map(nodes.map((n) => [n.id, n]));
+  const isMatch = (n: NoteNode) => n.text.toLowerCase().includes(q);
+  const kidsOf = (id: string) =>
+    childIdsOf(edges, id)
+      .map((k) => byIdM.get(k))
+      .filter((m): m is NoteNode => !!m);
+  const seen = new Set<string>();
+  // 부분트리에서 keep된 행들을 반환 — 자기 매칭이거나 매칭 후손이 있으면 자기도 포함(조상 경로 유지)
+  const walk = (n: NoteNode, d: number): OutlineRow[] => {
+    if (seen.has(n.id)) return []; // 재방문(다중 부모·순환)은 첫 경로에서만 — 필터에선 ↻ 생략
+    seen.add(n.id);
+    const kids = kidsOf(n.id).flatMap((k) => walk(k, d + 1)); // collapsed 무시 — 매칭은 늘 드러난다
+    const self = isMatch(n);
+    return self || kids.length ? [{ node: n, depth: d, revisit: false, match: self }, ...kids] : [];
+  };
+  const root = rootId ? byIdM.get(rootId) : undefined;
+  if (root) return walk(root, 0);
+  const incoming = new Set(edges.map((e) => e.b));
+  const out: OutlineRow[] = [];
+  for (const r of nodes.filter((n) => !incoming.has(n.id))) out.push(...walk(r, 0));
+  for (const n of nodes) if (!seen.has(n.id)) out.push(...walk(n, 0)); // 뿌리 없는 잔여(순환)도 훑기
   return out;
 }
 
