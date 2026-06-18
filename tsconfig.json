@@ -6,7 +6,7 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true, // 맨 node가 .ts 실파일 경로를 요구 — import도 .ts로 통일
+    "allowImportingTsExtensions": true, // import를 .ts 실확장자로 통일 (bundler 해석)
     "verbatimModuleSyntax": true, // import type 강제 — 스트리핑/번들러가 타입 import를 안전히 소거
     "erasableSyntaxOnly": true,
     "strict": true,

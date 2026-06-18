@@ -4,7 +4,7 @@
 // 선택은 ui.tone, 전환은 상단 바 '무공봉인' 토글(store.toggleTone).
 // 새 문구를 들일 때는 반드시 두 팩 모두에 같은 키로 추가할 것 —
 // 키 일치는 타입(StringPack = typeof muhyeop)이 컴파일 타임에 강제하고,
-// 깊은 정합(헬프 전수 분배 등)은 scripts/check-strings.mjs(npm run check)가 지킨다.
+// 깊은 정합(헬프 전수 분배 등)은 src/lib/strings.test.ts(npm run check → vitest)가 지킨다.
 // 팩은 순수 데이터(JSON 직렬화 가능) 유지 — 함수 금지. 매개변수가 필요한
 // 문구는 '{label}' 같은 플레이스홀더로 쓰고 fmt()로 치환한다.
 // ──────────────────────────────────────────────
@@ -116,9 +116,9 @@ const muhyeop = {
       '↑↓ 행 순회(순환) · ← 접기/부모로 · → 펼치기/자식으로 · Space·C 봉문/개문 · 3 파고들기 · Esc 한 단 위로 · 0 전체로 · Enter 선택→점프 · Delete 베기',
     ],
   ] as [string, string][],
-  // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, check-strings가 실존 검증)
+  // 퀵 카드에 올릴 필수 요결 — helpItems의 키 목록 (본문 중복 금지, strings.test.ts가 실존 검증)
   helpQuick: ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '붉은 점 끌기', 'Tab', 'Delete', 'Ctrl+Z / Y', 'Ctrl+F'],
-  // 전체 요결 시트의 묶음 — helpItems 키 전수 분배 (check-strings가 합집합=전체·중복 0 검증)
+  // 전체 요결 시트의 묶음 — helpItems 키 전수 분배 (strings.test.ts가 합집합=전체·중복 0 검증)
   helpSections: [
     ['쪽지', ['빈 곳 2번', '쪽지 2번', '쪽지 끌기', '좌·우 변 끌기', '오행 팔레트']],
     ['緣과 가지', ['붉은 점 끌기', 'Tab', 'Enter', 'F', 'F2', 'Delete']],
