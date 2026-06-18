@@ -62,6 +62,9 @@
   // 캔버스 뷰 핸들 — bind:this. 캔버스가 마운트된 동안만 실존(보드/족보 뷰에선 null) —
   // 셸의 키 라우터·검색·점프가 canvasRef?.로 부른다 (#152 분리). 보초: scripts/e2e/canvas.cjs
   let canvasRef = $state<CanvasView>();
+  // 족보 뷰 핸들 — bind:this. 셸의 Ctrl+F가 검색 필터를 열고(openSearch), 단계식 Esc가 닫는다
+  // (closeSearch). 족보 뷰일 때만 실존(다른 뷰에선 null) (#154)
+  let outlineRef = $state<OutlineView>();
 
   // bind:this 참조(hlPre/searchEl)는 $state로 받는다 — Svelte 5에선 bind:this 대상도 $state여야
   // 값 갱신을 컴파일러가 추적해 non_reactive_update 경고가 안 뜬다. 실제론 DOM 메서드 호출용
@@ -135,6 +138,10 @@
     )
       return;
     if (e.key === 'Escape') {
+      // 족보 검색 필터(#154)가 열려 있으면 그것부터 닫는다(한 단계) — 스코프 팝/선택해제는 다음 Esc.
+      // 입력창에 포커스가 있을 땐 OutlineView가 stopPropagation으로 먼저 닫아 여긴 안 온다 — 여기는
+      // 행 등 다른 데로 포커스가 옮겨간 뒤의 Esc 길(closeSearch는 닫았을 때만 true)
+      if (ui.viewMode === 'outline' && outlineRef?.closeSearch()) return;
       // 단계식 — 열린 것(시트/도움말/검색/연결/편집/비우기 무장)을 먼저 닫고,
       // 닫을 게 없을 때의 Esc는 선택 해제 (캔버스 툴 관행)
       const hadOpen =
@@ -163,6 +170,13 @@
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
       // 오행진(보드)에선 되돌리기 + 색 이동만 — 줌/검색/편집 진입은 캔버스 몫, 나머진 브라우저에
       if (ui.viewMode !== 'canvas') {
+        // 족보 Ctrl+F — 인라인 검색 필터 열기 (#154). 캔버스 Ctrl+F(念 수소문)의 족보판:
+        // 캔버스는 부유 검색 카드, 족보는 상단 인라인 필터(매칭 ∪ 조상만 남긴다). 오행진엔 아직 없다
+        if (e.code === 'KeyF' && ui.viewMode === 'outline') {
+          e.preventDefault();
+          outlineRef?.openSearch();
+          return;
+        }
         // 비캔버스 뷰(오행진/족보)엔 줌 대상이 없다 — Ctrl ±/0는 '동작 없이 막기만'.
         // 양보하면 브라우저 페이지 줌이 새므로(캔버스에서 봉인한 그 동작), 전 뷰 일관 차단.
         // 단축키 계층(DESIGN 9장): Ctrl는 앱 전역, 비캔버스는 그 부분집합 (사용자 제보)
@@ -828,7 +842,12 @@
 {#if ui.viewMode === 'kanban'}
   <BoardView onJump={boardJump} hue={colorHover} />
 {:else if ui.viewMode === 'outline'}
-  <OutlineView onJump={boardJump} rootId={ui.outlineRootId} onScopeClear={() => setOutlineScope(null)} />
+  <OutlineView
+    bind:this={outlineRef}
+    onJump={boardJump}
+    rootId={ui.outlineRootId}
+    onScopeClear={() => setOutlineScope(null)}
+  />
 {:else}
   <CanvasView bind:this={canvasRef} hue={colorHover} closeSearch={() => (searchQ = null)} />
 {/if}

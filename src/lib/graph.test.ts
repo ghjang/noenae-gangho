@@ -3,7 +3,14 @@
 // 타입 보강(NoteNode/Edge 필수 필드)만 팩토리가 채운다(접기·위상 로직엔 무영향).
 // 규칙을 바꾸면 여기 시나리오도 같이 — "시나리오 검사가 곧 명세"(DESIGN 12장).
 import { describe, it, expect } from 'vitest';
-import { computeHidden, tidyLayout, separateComponents, neighborhood, outlineRows } from './graph.ts';
+import {
+  computeHidden,
+  tidyLayout,
+  separateComponents,
+  neighborhood,
+  outlineRows,
+  outlineFilterRows,
+} from './graph.ts';
 import type { NoteNode, Edge } from './types.ts';
 
 const N = (id: string, collapsed = false): NoteNode =>
@@ -156,5 +163,46 @@ describe('족보(outlineRows) — toMarkdown과 같은 순회 율법, 족보 5',
   it('E) 스코프 — rootId를 주면 그 가지만', () => {
     const rows = outlineRows([N('a'), N('b'), N('c')], [E('a', 'b'), E('b', 'c')], 'b');
     expect(rows.map((r) => r.node.id + r.depth).join(' ')).toBe('b0 c1');
+  });
+});
+
+describe('족보 검색 필터(outlineFilterRows) — #154', () => {
+  const T = (id: string, text: string, collapsed = false): NoteNode =>
+    collapsed
+      ? { id, x: 0, y: 0, text, color: 'muk', collapsed: true }
+      : { id, x: 0, y: 0, text, color: 'muk' };
+  // id+depth(+ * 매칭) 시그니처
+  const sigM = (rows: ReturnType<typeof outlineFilterRows>) =>
+    rows.map((r) => r.node.id + r.depth + (r.match ? '*' : '')).join(' ');
+
+  it('F1) 매칭 + 조상 경로만 유지, 무관 가지는 제거', () => {
+    const ns = [T('a', 'apple'), T('b', 'banana'), T('c', 'cherry'), T('d', 'date')];
+    const es = [E('a', 'b'), E('b', 'c'), E('a', 'd')];
+    expect(sigM(outlineFilterRows(ns, es, null, 'cherry'))).toBe('a0 b1 c2*');
+  });
+  it('F2) collapsed 무시 — 접힌 가지 속 매칭도 드러난다', () => {
+    const ns = [T('a', 'root', true), T('b', 'target')];
+    const es = [E('a', 'b')];
+    // 일반 outlineRows는 봉문 존중이라 b 생략(a만), 필터는 b를 드러낸다
+    expect(
+      outlineRows(ns, es)
+        .map((r) => r.node.id)
+        .join(' '),
+    ).toBe('a');
+    expect(sigM(outlineFilterRows(ns, es, null, 'target'))).toBe('a0 b1*');
+  });
+  it('F3) 매칭 없음 → 빈 배열', () => {
+    const ns = [T('a', 'apple'), T('b', 'banana')];
+    expect(outlineFilterRows(ns, [E('a', 'b')], null, 'zzz')).toEqual([]);
+  });
+  it('F4) 빈 질의 → 전체(outlineRows와 동일)', () => {
+    const ns = [T('a', 'apple'), T('b', 'banana')];
+    const es = [E('a', 'b')];
+    expect(sigM(outlineFilterRows(ns, es, null, '  '))).toBe(sigM(outlineRows(ns, es)));
+  });
+  it('F5) 대소문자 무시 + 스코프 안에서만', () => {
+    const ns = [T('a', 'Apple'), T('b', 'BANANA'), T('c', 'cherry'), T('x', 'apple too')];
+    const es = [E('a', 'b'), E('b', 'c')]; // x는 스코프 밖 별도 뿌리
+    expect(sigM(outlineFilterRows(ns, es, 'a', 'apple'))).toBe('a0*');
   });
 });

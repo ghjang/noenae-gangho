@@ -11,7 +11,7 @@
   import { tick, untrack } from 'svelte';
   import { graph, ui, selectNode, toggleCollapse, byId, setOutlineScope } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
-  import { outlineRows, childCounts, parentEdgeOf } from './lib/graph.ts';
+  import { outlineRows, outlineFilterRows, childCounts, parentEdgeOf } from './lib/graph.ts';
   import type { NoteNode } from './lib/types.ts';
 
   let {
@@ -38,9 +38,95 @@
     }
     return out;
   });
-  const rows = $derived(outlineRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null));
+  // ── 검색 필터 (#154) — Ctrl+F로 열고(openSearch) Esc로 닫는다(closeSearch). 비파괴 오버레이:
+  // 질의가 있으면 collapsed를 무시하고 매칭 ∪ 조상만 드러낸다(outlineFilterRows) — 접기 상태는
+  // 읽지도 쓰지도 않아 닫으면 원래 족보 복원. 닫힘=null, 열림·빈질의=''(전체), 질의 있으면 필터.
+  let query = $state<string | null>(null);
+  let inputEl = $state<HTMLInputElement | null>(null);
+  const q = $derived(query?.trim() ?? '');
+  const filtering = $derived(q !== '');
+  const rows = $derived(
+    filtering
+      ? outlineFilterRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null, q)
+      : outlineRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null),
+  );
+  // 필터 중 키보드 커서 — 선택(ui.selectedId)과 분리한다: 접힌 가지 속 매칭을 선택하면
+  // store의 봉문 가지치기($effect의 pruneSelection)가 곧장 깎아버리기 때문(캔버스 검색이
+  // searchIdx로 결과를 가리키되 점프할 때만 선택하는 것과 같은 결). activeRowId는 늘 유효한
+  // 커서 — 질의가 바뀌면 첫 매칭으로 떨어진다. Enter가 점프할 표적이자 골드 링의 자리
+  let activeId = $state<string | null>(null);
+  const activeRowId = $derived.by(() => {
+    if (!filtering) return null;
+    const nav = rows.filter((r) => !r.revisit);
+    if (activeId && nav.some((r) => r.node.id === activeId)) return activeId;
+    return nav.length ? nav[0].node.id : null;
+  });
   const kidCount = $derived(childCounts(graph.edges));
   const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0]; // 크럼(경로) 전용 — 행은 전문
+
+  // 셸(App)의 Ctrl+F가 부른다 — 이미 열려 있으면 질의 유지 + 전체 선택(찾기 관행)
+  export function openSearch() {
+    if (query === null) query = '';
+    tick().then(() => {
+      inputEl?.focus();
+      inputEl?.select();
+    });
+  }
+  // 셸의 단계식 Esc도 부른다 — 열려 있었으면 닫고 true(그 Esc는 거기서 멈춤, 스코프 팝은 다음)
+  export function closeSearch(): boolean {
+    if (query === null) return false;
+    query = null;
+    activeId = null;
+    return true;
+  }
+  // 검색창 키 — ↑↓ 필터 커서(골드 링) 순회(포커스는 input에 둔 채 커서만 이동·시야로),
+  // Enter 캔버스 점프, Esc 닫기. 포커스가 input에 있어 전역 라우터는 inField로 비켜선다(이중 처리 없음)
+  function onFilterKey(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.stopPropagation(); // 전역 Esc(단계식)가 같은 키로 또 동작하지 않게
+      closeSearch();
+      return;
+    }
+    const nav = rows.filter((r) => !r.revisit); // 재방문(↻) 행은 항법에서 건너뛴다
+    if (!nav.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const cur = Math.max(
+        0,
+        nav.findIndex((r) => r.node.id === activeRowId),
+      ); // 커서 자리(없으면 0)
+      const ni = (cur + (e.key === 'ArrowDown' ? 1 : -1) + nav.length) % nav.length; // 양끝 순환
+      activeId = nav[ni].node.id;
+      tick().then(() =>
+        document
+          .querySelector(`.outline button.row[data-id="${CSS.escape(nav[ni].node.id)}"]`)
+          ?.scrollIntoView({ block: 'nearest' }),
+      );
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const cur = nav.find((r) => r.node.id === activeRowId) ?? nav[0];
+      if (cur) onJump(cur.node); // 캔버스로 점프(개문+선택+중앙) — 캔버스 검색 Enter와 같은 결
+    }
+  }
+  // 매칭 텍스트를 질의 기준으로 토막 — <mark> 강조용(대소문자 무시, 모든 출현). 자른 조각을
+  // 이으면 원문과 동일(highlight.ts 토크나이저와 같은 불변식)
+  function segs(text: string, needle: string): { s: string; hit: boolean }[] {
+    if (!needle) return [{ s: text, hit: false }];
+    const out: { s: string; hit: boolean }[] = [];
+    const low = text.toLowerCase();
+    let i = 0;
+    for (;;) {
+      const j = low.indexOf(needle, i);
+      if (j < 0) {
+        if (i < text.length) out.push({ s: text.slice(i), hit: false });
+        break;
+      }
+      if (j > i) out.push({ s: text.slice(i, j), hit: false });
+      out.push({ s: text.slice(j, j + needle.length), hit: true });
+      i = j + needle.length;
+    }
+    return out;
+  }
 
   // 스코프가 바뀌면(0/Esc 확장·크럼·3 조준) 선택 앵커 행을 시야로 끌어온다 —
   // 캔버스 ensureVisible의 족보판(보기를 바꿔도 작업 대상은 시야에, DESIGN 8장).
@@ -61,26 +147,46 @@
 
 <div class="outline" role="region" aria-label={t.viewOutlineAria}>
   <div class="scroll">
-    {#if scopeNode}
-      <!-- 조상 경로 브레드크럼 — 全 › 조상들 › 현재 가지. 조상 클릭 = 그 가지로 -->
-      <nav class="scope" aria-label={t.outlineCrumbsAria}>
-        <button class="crumb" onclick={onScopeClear}>{t.outlineCrumbAll}</button>
-        {#each crumbs as a (a.id)}
-          <span class="sep" aria-hidden="true">›</span>
-          <button class="crumb" onclick={() => setOutlineScope(a.id)}>{firstLine(a)}</button>
-        {/each}
-        <span class="sep" aria-hidden="true">›</span>
-        <span class="cur">{firstLine(scopeNode)}</span>
-      </nav>
+    {#if query !== null || scopeNode}
+      <!-- sticky 머리 — 검색 필터 + 스코프 크럼을 한 데 (스크롤해도 머리에, #154) -->
+      <div class="head">
+        {#if query !== null}
+          <!-- 인라인 검색 필터 (#154) — 입력에 따라 매칭 ∪ 조상만 남는다(접기 무시) -->
+          <div class="filter">
+            <input
+              bind:this={inputEl}
+              type="text"
+              aria-label={t.searchPlaceholder}
+              placeholder={t.searchPlaceholder}
+              value={query}
+              oninput={(e) => (query = e.currentTarget.value)}
+              onkeydown={onFilterKey}
+            />
+          </div>
+        {/if}
+        {#if scopeNode}
+          <!-- 조상 경로 브레드크럼 — 全 › 조상들 › 현재 가지. 조상 클릭 = 그 가지로 -->
+          <nav class="scope" aria-label={t.outlineCrumbsAria}>
+            <button class="crumb" onclick={onScopeClear}>{t.outlineCrumbAll}</button>
+            {#each crumbs as a (a.id)}
+              <span class="sep" aria-hidden="true">›</span>
+              <button class="crumb" onclick={() => setOutlineScope(a.id)}>{firstLine(a)}</button>
+            {/each}
+            <span class="sep" aria-hidden="true">›</span>
+            <span class="cur">{firstLine(scopeNode)}</span>
+          </nav>
+        {/if}
+      </div>
     {/if}
     {#if rows.length === 0}
-      <p class="none">{t.emptyTitle}</p>
+      <p class="none">{filtering ? t.searchEmpty : t.emptyTitle}</p>
     {:else}
       <ul>
         {#each rows as r, i (r.node.id + ':' + i)}
           <li style={`--d: ${r.depth}`} class:root={r.depth === 0}>
-            {#if !r.revisit && (kidCount.get(r.node.id) ?? 0) > 0}
-              <!-- 봉문 삼각형 — collapsed 필드 그 자체: 캔버스 ▸배지·오행진 ▸N과 한 데이터 -->
+            {#if !filtering && !r.revisit && (kidCount.get(r.node.id) ?? 0) > 0}
+              <!-- 봉문 삼각형 — collapsed 필드 그 자체: 캔버스 ▸배지·오행진 ▸N과 한 데이터.
+                   검색 중엔 접기를 멈추고(filtering) 점으로: 필터는 '드러내기'라 접기와 모순 (#154) -->
               <button
                 class="fold"
                 title={t.foldBadgeTitle}
@@ -94,16 +200,17 @@
             <button
               class="row"
               class:sel={!r.revisit && ui.selectedIds.includes(r.node.id)}
+              class:active={r.node.id === activeRowId}
               class:revisit={r.revisit}
               data-id={r.node.id}
               title={t.outlineRowTitle}
-              onclick={() => selectNode(r.node.id)}
+              onclick={() => (filtering ? (activeId = r.node.id) : selectNode(r.node.id))}
               ondblclick={() => onJump(r.node)}
             >
-              <span class="txt">{r.node.text || t.mdEmptyNode}</span>{#if r.revisit}<span
-                  class="cyc"
-                  title="↻">&nbsp;↻</span
-                >{/if}
+              <span class="txt"
+                >{#if r.match}{#each segs(r.node.text, q.toLowerCase()) as g}{#if g.hit}<mark>{g.s}</mark
+                      >{:else}{g.s}{/if}{/each}{:else}{r.node.text || t.mdEmptyNode}{/if}</span
+              >{#if r.revisit}<span class="cyc" title="↻">&nbsp;↻</span>{/if}
             </button>
           </li>
         {/each}
@@ -127,17 +234,43 @@
   .outline .scroll {
     max-width: 880px; /* 행 글줄의 호흡 — 가운데 띄우지 않고 왼쪽에 정박 */
   }
-  .outline .scope {
-    position: sticky; /* 긴 족보를 내려가도 사다리(크럼)는 머리에 — 길 잃지 않게 */
+  /* sticky 머리 — 검색 필터 + 스코프 크럼을 한 데 묶는다 (#154). 둘 다 top:0 sticky라
+     따로 두면 충돌(겹침) — 한 머리로 묶어 한 줄의 구분선·여백을 공유 */
+  .outline .head {
+    position: sticky; /* 긴 족보를 내려가도 검색창·사다리(크럼)는 머리에 — 길 잃지 않게 */
     top: 0;
     z-index: 1;
     background: var(--hanji); /* 스크롤 시 행이 비쳐 보이지 않게 — 컨테이너 그라데이션 머리색과 동일 */
+    margin: 0 0 14px;
+    border-bottom: 1px solid rgba(42, 36, 28, 0.18);
+  }
+  .outline .filter {
+    padding: 10px 6px;
+  }
+  .outline .filter input {
+    width: 100%;
+    box-sizing: border-box;
+    font: 14px var(--sans);
+    color: var(--ink);
+    background: var(--hanji-2);
+    border: 1px solid rgba(42, 36, 28, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .outline .filter input::placeholder {
+    color: var(--ink-dim);
+  }
+  .outline .filter input:focus-visible {
+    outline: 2px solid var(--c-hwang); /* 조준 금테 — 행/카드 포커스와 같은 어휘 */
+    outline-offset: 0;
+    border-color: transparent;
+  }
+  .outline .scope {
+    /* sticky·배경·여백·구분선은 .head로 — 필터 바와 한 머리(#154) */
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 0 0 14px;
-    padding: 10px 6px;
-    border-bottom: 1px solid rgba(42, 36, 28, 0.18);
+    padding: 6px 6px 10px;
     font: 12.5px var(--sans); /* 행 본문과 같은 산세리프 — 명조/고딕 뒤섞임 정리 (사용자 제보) */
     color: var(--ink-dim);
   }
@@ -248,6 +381,15 @@
     outline: 2px solid var(--inju); /* 낙관 — 카드/쪽지 선택 링과 같은 어휘 */
     outline-offset: 0;
   }
+  .outline button.row.active {
+    /* 필터 키보드 커서 — 골드 링(조준). 행 :focus-visible과 같은 어휘지만 포커스는 input에
+       있으니 이 클래스가 커서를 그린다. .sel(인주)과 겹치면 인주가 이긴다(아래 순서) */
+    outline: 2px solid var(--c-hwang);
+    outline-offset: 0;
+  }
+  .outline button.row.active.sel {
+    outline-color: var(--inju); /* 선택과 커서가 한 행이면 낙관(선택)을 우선 */
+  }
   .outline button.row .txt {
     flex: 1;
     min-width: 0;
@@ -259,6 +401,13 @@
   }
   .outline button.row .cyc {
     color: var(--inju);
+  }
+  .outline mark {
+    /* 한지에 스민 치자빛 형광 — 검색 매칭 강조 (#154, 보드 카드 색섞임과 같은 어휘) */
+    background: color-mix(in srgb, var(--c-hwang) 38%, var(--hanji));
+    color: var(--ink);
+    border-radius: 2px;
+    padding: 0 1px;
   }
   .outline .none {
     margin: 8px 0 2px;
