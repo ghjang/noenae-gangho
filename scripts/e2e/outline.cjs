@@ -426,28 +426,42 @@ const ok = (c, m) => {
     'Esc → 봉문 복원(3행·삼각형 부활) — 필터는 collapsed를 안 건드린다',
   );
 
-  // ↑↓ 골드 커서(선택과 분리 — 접힌 매칭도 store 봉문 가지치기에 안 깎이게) + Enter 점프
+  // #190 — 필터도 평소 항법: ↑↓·클릭 = 선택링(빨강) 직접 이동, Enter = 점프. 접힌 가지 속
+  // 매칭을 선택해도 검색 중엔 prune이 봉인돼 안 깎인다(골드 커서 폐지).
   await f.keyboard.press('Control+f');
   await f.waitForTimeout(150);
   await f.locator('.outline .filter input').fill('cherry');
   await f.waitForTimeout(200);
-  // 커서는 첫 행(apple)에 기본 안착
-  ok(
-    (await f.locator('.outline button.row.active .txt').textContent()) === 'apple 사과',
-    '필터 커서 기본 = 첫 행(골드 링)',
-  );
-  await f.keyboard.press('ArrowDown'); // apple→banana
+  await f.keyboard.press('ArrowDown'); // 첫 매칭(apple) 선택
   await f.waitForTimeout(120);
   ok(
     await f.evaluate(() => document.activeElement?.tagName === 'INPUT'),
     '↓ 후에도 포커스는 검색 입력에 (계속 타이핑 가능)',
   );
-  await f.keyboard.press('ArrowDown'); // banana→cherry(접힌 가지 속 매칭)
+  ok(
+    (await f.locator('.outline button.row.sel .txt').textContent()) === 'apple 사과',
+    '↓ → 첫 매칭이 선택링(빨강) — 골드 아님',
+  );
+  await f.keyboard.press('ArrowDown'); // banana
+  await f.keyboard.press('ArrowDown'); // cherry (접힌 가지 속 매칭)
   await f.waitForTimeout(120);
   ok(
-    (await f.locator('.outline button.row.active .txt').textContent()).includes('cherry'),
-    '↓↓ → 커서가 접힌 매칭 cherry에 (선택 안 깎임 — 골드 커서 분리)',
+    (await f.locator('.outline button.row.sel .txt').textContent()).includes('cherry') &&
+      (await f.locator('.outline button.row.sel').count()) === 1,
+    '↓↓↓ → 접힌 매칭 cherry가 선택링 유지 (검색 중 prune 봉인 — 안 깎임)',
   );
+  // 클릭도 선택링(빨강), 그리고 클릭 후에도 ↑↓는 필터 항법 유지(포커스 input 복귀)
+  await f.locator('.outline button.row', { hasText: 'apple' }).click();
+  await f.waitForTimeout(120);
+  ok((await f.locator('.outline button.row.sel .txt').textContent()) === 'apple 사과', '클릭 → 선택링(빨강)');
+  await f.keyboard.press('ArrowDown'); // apple→banana (필터 항법 유지)
+  await f.waitForTimeout(120);
+  ok(
+    (await f.locator('.outline button.row.sel .txt').textContent()).includes('banana'),
+    '클릭 후 ↓ → 필터 항법 유지(다음 매칭 선택)',
+  );
+  await f.keyboard.press('ArrowDown'); // banana→cherry
+  await f.waitForTimeout(120);
   await f.keyboard.press('Enter');
   await f.waitForTimeout(400);
   ok((await f.locator('.viewport').count()) === 1, 'Enter → 캔버스 점프');

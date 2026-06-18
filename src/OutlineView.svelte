@@ -50,16 +50,13 @@
       ? outlineFilterRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null, q)
       : outlineRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null),
   );
-  // 필터 중 키보드 커서 — 선택(ui.selectedId)과 분리한다: 접힌 가지 속 매칭을 선택하면
-  // store의 봉문 가지치기($effect의 pruneSelection)가 곧장 깎아버리기 때문(캔버스 검색이
-  // searchIdx로 결과를 가리키되 점프할 때만 선택하는 것과 같은 결). activeRowId는 늘 유효한
-  // 커서 — 질의가 바뀌면 첫 매칭으로 떨어진다. Enter가 점프할 표적이자 골드 링의 자리
-  let activeId = $state<string | null>(null);
-  const activeRowId = $derived.by(() => {
-    if (!filtering) return null;
-    const nav = rows.filter((r) => !r.revisit);
-    if (activeId && nav.some((r) => r.node.id === activeId)) return activeId;
-    return nav.length ? nav[0].node.id : null;
+  // 필터가 열린 동안 store에 알린다(#190) — App의 봉문 가지치기 $effect가 이걸 보고 prune을
+  // 봉인한다(접힌 가지 속 매칭도 ↑↓·클릭으로 선택 유지, 그래프는 비파괴). 떠날 땐 다시 false로.
+  $effect(() => {
+    ui.outlineFiltering = filtering;
+    return () => {
+      ui.outlineFiltering = false;
+    };
   });
   const kidCount = $derived(childCounts(graph.edges));
   const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0]; // 크럼(경로) 전용 — 행은 전문
@@ -76,7 +73,6 @@
   export function closeSearch(): boolean {
     if (query === null) return false;
     query = null;
-    activeId = null;
     return true;
   }
   // 셸의 3(전체 족보 직행)이 부른다 — 선택 행을 화면 중앙으로(#185). 캔버스 centerOn의 족보판.
@@ -91,8 +87,9 @@
         ?.scrollIntoView({ block: 'center' }),
     );
   }
-  // 검색창 키 — ↑↓ 필터 커서(골드 링) 순회(포커스는 input에 둔 채 커서만 이동·시야로),
-  // Enter 캔버스 점프, Esc 닫기. 포커스가 input에 있어 전역 라우터는 inField로 비켜선다(이중 처리 없음)
+  // 검색창 키 — ↑↓ 선택링(빨강) 직접 이동(평소 항법과 동일, 포커스는 input에 둔 채 스크롤만),
+  // Enter 캔버스 점프, Esc 닫기. 접힌 가지 속 매칭을 선택해도 검색 중엔 prune이 봉인돼 안 깎인다
+  // (#190). 포커스가 input에 있어 전역 라우터는 inField로 비켜선다(onOutlineKey와 이중 처리 없음)
   function onFilterKey(e: KeyboardEvent) {
     if (e.key === 'Escape') {
       e.stopPropagation(); // 전역 Esc(단계식)가 같은 키로 또 동작하지 않게
@@ -103,12 +100,14 @@
     if (!nav.length) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      const cur = Math.max(
-        0,
-        nav.findIndex((r) => r.node.id === activeRowId),
-      ); // 커서 자리(없으면 0)
-      const ni = (cur + (e.key === 'ArrowDown' ? 1 : -1) + nav.length) % nav.length; // 양끝 순환
-      activeId = nav[ni].node.id;
+      const i = nav.findIndex((r) => r.node.id === ui.selectedId);
+      const ni =
+        i < 0
+          ? e.key === 'ArrowDown'
+            ? 0
+            : nav.length - 1
+          : (i + (e.key === 'ArrowDown' ? 1 : -1) + nav.length) % nav.length; // 양끝 순환
+      selectNode(nav[ni].node.id); // 선택링 직접 이동 (검색 중 prune 봉인이라 접힌 매칭도 유지)
       tick().then(() =>
         document
           .querySelector(`.outline button.row[data-id="${CSS.escape(nav[ni].node.id)}"]`)
@@ -116,8 +115,8 @@
       );
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const cur = nav.find((r) => r.node.id === activeRowId) ?? nav[0];
-      if (cur) onJump(cur.node); // 캔버스로 점프(개문+선택+중앙) — 캔버스 검색 Enter와 같은 결
+      const cur = nav.find((r) => r.node.id === ui.selectedId) ?? nav[0];
+      if (cur) onJump(cur.node); // 선택 행(없으면 첫 행)으로 캔버스 점프 — revealNode가 조상만 개문
     }
   }
   // 매칭 텍스트를 질의 기준으로 토막 — <mark> 강조용(대소문자 무시, 모든 출현). 자른 조각을
@@ -212,11 +211,13 @@
             <button
               class="row"
               class:sel={!r.revisit && ui.selectedIds.includes(r.node.id)}
-              class:active={r.node.id === activeRowId}
               class:revisit={r.revisit}
               data-id={r.node.id}
               title={t.outlineRowTitle}
-              onclick={() => (filtering ? (activeId = r.node.id) : selectNode(r.node.id))}
+              onclick={() => {
+                selectNode(r.node.id); // 클릭 = 선택링(빨강), 평소 행과 동일 (#190)
+                if (query !== null) inputEl?.focus(); // 검색 중엔 키보드를 input에 돌려줘 ↑↓가 필터 항법 유지
+              }}
               ondblclick={() => onJump(r.node)}
             >
               <span class="txt"
@@ -398,17 +399,8 @@
     background: rgba(42, 36, 28, 0.07);
   }
   .outline button.row.sel {
-    outline: 2px solid var(--inju); /* 낙관 — 카드/쪽지 선택 링과 같은 어휘 */
+    outline: 2px solid var(--inju); /* 낙관 — 카드/쪽지 선택 링과 같은 어휘 (검색 필터도 같은 선택링 — #190) */
     outline-offset: 0;
-  }
-  .outline button.row.active {
-    /* 필터 키보드 커서 — 골드 링(조준). 행 :focus-visible과 같은 어휘지만 포커스는 input에
-       있으니 이 클래스가 커서를 그린다. .sel(인주)과 겹치면 인주가 이긴다(아래 순서) */
-    outline: 2px solid var(--c-hwang);
-    outline-offset: 0;
-  }
-  .outline button.row.active.sel {
-    outline-color: var(--inju); /* 선택과 커서가 한 행이면 낙관(선택)을 우선 */
   }
   .outline button.row .txt {
     flex: 1;

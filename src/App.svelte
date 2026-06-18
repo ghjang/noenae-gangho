@@ -708,7 +708,13 @@
   // 숨은(봉문) 쪽지가 무리·편집 상태로 남지 않게, 끊긴 緣 선택도 정리
   $effect(() => {
     if (ui.focusId && !byId(ui.focusId)) ui.focusId = null; // 표적이 베이면 집중도 풀린다
-    const dead = new Set(ui.selectedIds.filter((id) => hidden.has(id)));
+    // 족보 검색 필터가 열린 동안엔 봉문 가지치기를 봉인한다(#190) — 필터는 일부러 접힌 가지 속
+    // 매칭까지 펼쳐 보여주므로, 그걸 ↑↓·클릭으로 선택해도 '숨었다'고 깎으면 안 된다. 그래프는
+    // 손대지 않는 비파괴(접힘 그대로) — 필터를 닫으면 다시 깨어나 아직 숨은 선택을 정리한다.
+    // (focus는 비캔버스 진입 시 꺼지니 족보에선 hidden=봉문뿐 — 봉인해도 緣/편집 정리는 아래 유지)
+    const dead = ui.outlineFiltering
+      ? new Set<string>()
+      : new Set(ui.selectedIds.filter((id) => hidden.has(id)));
     if (dead.size) pruneSelection(dead);
     if (ui.editingId && hidden.has(ui.editingId)) ui.editingId = null;
     if (ui.selectedEdgeId) {
