@@ -221,7 +221,10 @@ const ok = (c, m) => {
   await p.keyboard.press('Control+z');
   await p.waitForTimeout(600);
 
-  // 빈손 팔레트 호버 = 같은 색 종대 비추기 (캔버스 '같은 색 비추기'의 보드 번역 — undo가 선택을 비워 빈손)
+  // 빈손 팔레트 호버 = 같은 색 종대 비추기 (캔버스 '같은 색 비추기'의 보드 번역). 호버 비추기는
+  // 선택이 없을 때만이라 Escape로 빈손을 만든다 (#187부터 undo는 선택을 보존 — 더는 안 비운다)
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(150);
   await p.locator('.palette button').nth(1).hover(); // 청
   await p.waitForTimeout(300);
   ok((await p.locator('.board .col.fade').count()) === 4, '빈손 호버 → 다른 종대 4개 흐림 (청만 또렷)');

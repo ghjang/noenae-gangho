@@ -484,16 +484,38 @@ function applyDoc(json: string): void {
   scheduleSave();
 }
 
+// 언두/리두는 선택을 보존한다(#187) — applyDoc→loadData가 clearSelection으로 비우지만,
+// 변경에 닿은 대상을 잃지 않게 직전 선택을 기억했다 살아남은 것만 되살린다(국룰: 되돌린 걸
+// 보고 바로 이어 작업). 봉문으로 숨은 건 App 정리 effect가 다시 깎는다 — 여긴 실존만 본다.
+function captureSel(): { ids: string[]; anchor: string | null; edge: string | null } {
+  return { ids: [...ui.selectedIds], anchor: ui.selectedId, edge: ui.selectedEdgeId };
+}
+function restoreSel(s: { ids: string[]; anchor: string | null; edge: string | null }): void {
+  const nodeIds = new Set(graph.nodes.map((n) => n.id));
+  const alive = s.ids.filter((id) => nodeIds.has(id));
+  if (alive.length) {
+    ui.selectedId = s.anchor; // selectMany가 앵커 생존 시 유지(아니면 마지막)
+    selectMany(alive);
+  } else if (s.edge && graph.edges.some((e) => e.id === s.edge)) {
+    selectEdge(s.edge);
+  }
+  // 살아남은 게 없으면 loadData가 비운 그대로 (예: 생성을 언두 — 사라진 念은 되살릴 게 없다)
+}
+
 export function undo(): void {
   if (!undoStack.length) return;
   redoStack.push(JSON.stringify(snapshot()));
+  const sel = captureSel();
   applyDoc(undoStack.pop()!);
+  restoreSel(sel);
 }
 
 export function redo(): void {
   if (!redoStack.length) return;
   undoStack.push(JSON.stringify(snapshot()));
+  const sel = captureSel();
   applyDoc(redoStack.pop()!);
+  restoreSel(sel);
 }
 
 function resetHistory(): void {
