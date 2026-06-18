@@ -222,7 +222,7 @@
     justify-content: center;
     padding: 0;
     /* 삼각형을 잎 오행 점(9px)과 시각 무게 맞춤 — 너무 작아 색 인지가 약하던 것 키움 (#174 후속) */
-    font: 600 18px/1 var(--sans);
+    font: 600 20px/1 var(--sans);
     /* 색은 인라인 style로 그 노드의 오행색 — 가지 노드도 색을 잃지 않게 (#174) */
     background: none;
     border: none;

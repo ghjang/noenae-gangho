@@ -221,7 +221,8 @@
     ui.pan.y = (r.height - (b.y * 2 + b.h) * s) / 2;
   }
   // 쪽지를 화면 중앙으로 (배율 유지)
-  function centerOn(n: NoteNode) {
+  // 셸 seam(#178) — 비캔버스→캔버스 전환 시 선택 念을 화면 중앙으로(팬만, 줌 유지). jumpTo와 달리 개문·줌변경 없음
+  export function centerOn(n: NoteNode) {
     const r = viewportEl.getBoundingClientRect();
     const b = nodeBox(n);
     ui.pan.x = r.width / 2 - (b.x + b.w / 2) * ui.scale;
