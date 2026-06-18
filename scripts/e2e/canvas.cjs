@@ -182,6 +182,34 @@ const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
   ok((await p.locator('.search-card').count()) === 1, '#180 결과 클릭 후에도 검색 카드 유지');
   ok((await topOf()) === before, '#180 결과 클릭+↓ → 노드 넛지 안 됨 (결과 순회 모드 유지)');
 
+  // #187 — 선택한 채 넛지 후 Ctrl+Z/Y 해도 선택 유지(언두/리두가 변경 대상 선택을 보존).
+  // 예전엔 applyDoc→loadData의 clearSelection이 선택을 증발시켜 자리를 잃었다.
+  await p.keyboard.press('Escape'); // 검색 카드 닫기
+  await p.waitForTimeout(120);
+  const pick = p.locator('.node', { hasText: '깨다름' }).first();
+  await pick.click();
+  await p.waitForTimeout(120);
+  const left0 = await pick.evaluate((el) => el.style.left);
+  await p.keyboard.press('ArrowRight'); // 넛지 (x+)
+  await p.waitForTimeout(150);
+  ok((await pick.evaluate((el) => el.style.left)) !== left0, '#187 넛지로 위치 이동(사전조건)');
+  await p.keyboard.press('Control+z'); // 언두 — 위치 복귀 + 선택 유지여야
+  await p.waitForTimeout(300);
+  const selU = p.locator('.node.selected');
+  ok(
+    (await selU.count()) === 1 &&
+      (await selU.first().textContent()).includes('깨다름') &&
+      (await selU.first().evaluate((el) => el.style.left)) === left0,
+    '#187 언두: 위치 복귀 + 그 쪽지 선택 유지',
+  );
+  await p.keyboard.press('Control+y'); // 리두 — 역시 선택 유지
+  await p.waitForTimeout(300);
+  ok(
+    (await p.locator('.node.selected').count()) === 1 &&
+      (await p.locator('.node.selected').first().textContent()).includes('깨다름'),
+    '#187 리두 후에도 그 쪽지 선택 유지',
+  );
+
   await b.close();
   console.log(process.exitCode ? '검증 실패' : '캔버스 메커니즘 보초 — 통과');
 })().catch((e) => {
