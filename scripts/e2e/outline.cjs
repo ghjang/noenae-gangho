@@ -140,6 +140,26 @@ const ok = (c, m) => {
     (await p.locator('.outline .scope button.crumb').count()) === 3,
     '직행에도 크럼은 조상 경로 전부: 全 › 깨다름 › difference',
   );
+  // 스코프 안에서만 검색 (#154 outlineFilterRows rootId — F5 단위의 UI판). 미분 가지로 스코프된 상태:
+  // '브로'(스코프 안)는 잡히고, '깨다름'(스코프 밖 조상)은 안 잡힌다. Esc는 필터만 닫고 스코프 유지
+  await p.keyboard.press('Control+f');
+  await p.waitForTimeout(150);
+  await p.locator('.outline .filter input').fill('브로');
+  await p.waitForTimeout(200);
+  ok((await p.locator('.outline mark').count()) === 1, '스코프 내 검색 — 브로 매칭(미분 가지 안)');
+  await p.locator('.outline .filter input').fill('깨다름'); // 스코프 밖(조상)
+  await p.waitForTimeout(200);
+  ok(
+    (await p.locator('.outline button.row').count()) === 0,
+    '스코프 밖(조상 깨다름)은 안 잡힘 — 검색은 스코프 안에서만',
+  );
+  await p.keyboard.press('Escape'); // 필터만 닫기(포커스 input → 스코프 유지)
+  await p.waitForTimeout(150);
+  ok(
+    (await p.locator('.outline .scope').count()) === 1 &&
+      (await p.locator('.outline button.row').count()) === 2,
+    '필터 Esc → 스코프(미분 가지 2행) 유지',
+  );
   await p.locator('.outline .scope button.crumb').nth(2).click(); // 조상 difference 클릭
   await p.waitForTimeout(200);
   ok(
@@ -375,6 +395,15 @@ const ok = (c, m) => {
   await f.waitForTimeout(300);
   // B가 접혀 있어 평소엔 C 생략 — A·B·D 3행 (봉문 존중)
   ok((await f.locator('.outline button.row').count()) === 3, '필터 전: B 봉문이라 C 숨음 (3행)');
+
+  // #188 — 빈손 팔레트 호버 = 같은 색 행만 또렷, 나머지 흐림(캔버스·오행진의 족보판).
+  // 전체(B 봉문) = A(muk)·B(cheong)·D(hwang) 3행. 청 호버 → B만 또렷, A·D 흐림(2행)
+  await f.locator('.palette button').nth(1).hover(); // 청(cheong)
+  await f.waitForTimeout(200);
+  ok((await f.locator('.outline li.fade').count()) === 2, '#188 청 호버 → 비매칭 행 흐림(A·D), B 또렷');
+  await f.locator('.outline').hover({ position: { x: 20, y: 220 } }); // 호버 해제
+  await f.waitForTimeout(200);
+  ok((await f.locator('.outline li.fade').count()) === 0, '#188 호버 해제 → 전 행 원상');
 
   // Ctrl+F → 인라인 검색 입력 등장
   await f.keyboard.press('Control+f');

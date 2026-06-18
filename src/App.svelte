@@ -869,6 +869,7 @@
     onJump={boardJump}
     rootId={ui.outlineRootId}
     onScopeClear={() => setOutlineScope(null)}
+    hue={colorHover}
   />
 {:else}
   <CanvasView bind:this={canvasRef} hue={colorHover} closeSearch={() => (searchQ = null)} />
