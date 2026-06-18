@@ -79,6 +79,18 @@
     activeId = null;
     return true;
   }
+  // 셸의 3(전체 족보 직행)이 부른다 — 선택 행을 화면 중앙으로(#185). 캔버스 centerOn의 족보판.
+  // 선택은 봉문 가지치기(App $effect)를 이미 통과했으니(숨은 念은 선택 못 함) 전체 족보에 늘
+  // 행이 있다 — 개문 없이 스크롤만. 'center'로 가운데, 짧아 안 넘치면 자연히 무동작
+  export function centerSelected() {
+    const id = ui.selectedId;
+    if (!id) return;
+    tick().then(() =>
+      document
+        .querySelector(`.outline button.row[data-id="${CSS.escape(id)}"]`)
+        ?.scrollIntoView({ block: 'center' }),
+    );
+  }
   // 검색창 키 — ↑↓ 필터 커서(골드 링) 순회(포커스는 input에 둔 채 커서만 이동·시야로),
   // Enter 캔버스 점프, Esc 닫기. 포커스가 input에 있어 전역 라우터는 inField로 비켜선다(이중 처리 없음)
   function onFilterKey(e: KeyboardEvent) {
