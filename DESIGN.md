@@ -202,7 +202,7 @@
   도구는 환영하되 '최소화는 미덕'(표준 하나로).
 - 자동 게이트는 `npm run check` = **Vitest**(시나리오: 문구 `strings.test.ts`/봉문·정돈·이웃·족보
   `graph.test.ts`/비급 역해석 `markdown.test.ts`) + 타입 2종(tsc·svelte-check) — 시나리오 검사가
-  곧 명세. **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 13종(수동)이 보초.
+  곧 명세. **규칙을 바꾸면 시나리오를 같이 바꾼다.** 렌더링/조작은 `scripts/e2e/` 15종(수동)이 보초.
 - 순수층(`geometry/graph/markdown/highlight`)은 DOM·스토어 무관 — **Vitest(node 환경)로 단위
   검증**(`src/lib/*.test.ts`, #166). 스토어 import 금지(`vitest.config.ts`엔 svelte 플러그인이 없어
   runes가 안 굴러간다 — 순수층이 store를 물면 테스트가 깨져 그게 곧 보초). TS는 **소거 가능

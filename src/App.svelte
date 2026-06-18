@@ -1075,8 +1075,7 @@
                   hlPre.scrollTop = e.currentTarget.scrollTop;
                   hlPre.scrollLeft = e.currentTarget.scrollLeft;
                 }
-              }}
-            ></textarea>
+              }}></textarea>
           </div>
         {:else}
           <pre class="code ro">{@render toks(
