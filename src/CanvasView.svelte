@@ -718,6 +718,17 @@
       e.preventDefault();
       commitEditing();
       addChild(n.id);
+    } else if (
+      e.key === 'Backspace' &&
+      !e.isComposing &&
+      (e.currentTarget as HTMLTextAreaElement).value === ''
+    ) {
+      // 빈 입력서 Backspace = 그 念 바로 베기 (아웃라이너 국룰 — 갓 친 빈 念을 무르기, #195).
+      // IME 가드(isComposing) 필수: 한글 조합 중 백스페이스가 念을 베면 참사.
+      // removeNodes 재사용이라 undo 한 걸음 — 실수로 지워도 Ctrl+Z로 되살아난다.
+      e.preventDefault();
+      commitEditing();
+      removeNodes([n.id]);
     }
   }
 
@@ -866,8 +877,7 @@
             oninput={(e) => updateText(n.id, e.currentTarget.value)}
             onkeydown={(e) => onEditorKey(e, n)}
             onblur={commitEditing}
-            onpointerdown={(e) => e.stopPropagation()}
-          ></textarea>
+            onpointerdown={(e) => e.stopPropagation()}></textarea>
         {:else}
           <div class="ntext">{n.text || '…'}</div>
         {/if}
