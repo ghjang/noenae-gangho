@@ -268,6 +268,27 @@ const ok = (c, m) => {
     `#153 0 확장 시 선택 행이 시야 안으로 (top=${Math.round(selBox.top)} bottom=${Math.round(selBox.bottom)} vh=${selBox.ih})`,
   );
 
+  // #183 — 스크롤된 상태에서 Ctrl+F 시 검색바(sticky 머리)가 스크롤포트 꼭대기에 빈틈없이
+  // 도킹해야 그 위로 행이 비치지 않는다. 상단 패딩이 머리 위에 26px 틈을 남기던 버그 보초.
+  await q.keyboard.press('0'); // 전체 30행 (스코프 해제)
+  await q.waitForTimeout(150);
+  await q.locator('.outline').evaluate((el) => (el.scrollTop = 300)); // 중간으로 스크롤
+  await q.waitForTimeout(120);
+  await q.keyboard.press('Control+f');
+  await q.waitForTimeout(250);
+  const dock = await q.evaluate(() => {
+    const out = document.querySelector('.outline').getBoundingClientRect();
+    const head = document.querySelector('.outline .head').getBoundingClientRect();
+    // 머리 띠 한가운데가 행으로 덮이면(=행이 머리 위로 비침) 버그 — 입력/머리여야 정상
+    const mid = document.elementFromPoint(out.left + 120, (head.top + head.bottom) / 2);
+    return {
+      gap: Math.round(head.top - out.top),
+      rowOnTop: !!(mid && mid.closest && mid.closest('button.row')),
+    };
+  });
+  ok(dock.gap <= 1, `#183 Ctrl+F → 검색바 꼭대기에 flush 도킹 (머리 위 틈=${dock.gap}px)`);
+  ok(!dock.rowOnTop, '#183 검색바 띠 위로 행이 비치지 않음 (머리가 덮음)');
+
   await ctx2.close();
 
   // ── #154 족보 검색 필터 ── Ctrl+F 인라인 필터: 매칭 ∪ 조상만, 접기 무시(드러내기),
