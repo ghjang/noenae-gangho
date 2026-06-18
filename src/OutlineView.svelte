@@ -215,9 +215,14 @@
   .outline button.fold {
     flex: none;
     width: 20px;
-    margin-top: 4px; /* 첫 줄 세로 중앙 (멀티라인 행 대응) */
-    padding: 0 2px;
-    font: 600 12px/1.6 var(--sans);
+    height: 23px; /* 행 첫 줄 높이 — 글리프를 그 안에서 세로 중앙 (멀티라인 행 대응) */
+    margin-top: 2px; /* 행 padding-top(2px) 보정 → 첫 줄 세로 중앙 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    /* 삼각형을 잎 오행 점(9px)과 시각 무게 맞춤 — 너무 작아 색 인지가 약하던 것 키움 (#174 후속) */
+    font: 600 15px/1 var(--sans);
     /* 색은 인라인 style로 그 노드의 오행색 — 가지 노드도 색을 잃지 않게 (#174) */
     background: none;
     border: none;
