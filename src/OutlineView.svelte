@@ -40,8 +40,7 @@
   });
   const rows = $derived(outlineRows(graph.nodes, graph.edges, scopeNode ? scopeNode.id : null));
   const kidCount = $derived(childCounts(graph.edges));
-  const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0];
-  const multiline = (n: NoteNode) => n.text.includes('\n');
+  const firstLine = (n: NoteNode) => (n.text || t.mdEmptyNode).split('\n')[0]; // 크럼(경로) 전용 — 행은 전문
 
   // 스코프가 바뀌면(0/Esc 확장·크럼·3 조준) 선택 앵커 행을 시야로 끌어온다 —
   // 캔버스 ensureVisible의 족보판(보기를 바꿔도 작업 대상은 시야에, DESIGN 8장).
@@ -86,6 +85,7 @@
                 class="fold"
                 title={t.foldBadgeTitle}
                 aria-label={t.foldBadgeAria}
+                style={`color: var(--c-${r.node.color})`}
                 onclick={() => toggleCollapse(r.node.id)}>{r.node.collapsed ? '▸' : '▾'}</button
               >
             {:else}
@@ -100,10 +100,10 @@
               onclick={() => selectNode(r.node.id)}
               ondblclick={() => onJump(r.node)}
             >
-              <span class="txt">{firstLine(r.node)}</span>{#if multiline(r.node) && !r.revisit}<span
-                  class="more"
-                  aria-hidden="true">⋯</span
-                >{/if}{#if r.revisit}<span class="cyc" title="↻">&nbsp;↻</span>{/if}
+              <span class="txt">{r.node.text || t.mdEmptyNode}</span>{#if r.revisit}<span
+                  class="cyc"
+                  title="↻">&nbsp;↻</span
+                >{/if}
             </button>
           </li>
         {/each}
@@ -181,7 +181,7 @@
   }
   .outline li {
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* 멀티라인 행에서 배지/점이 첫 줄에 붙게 (전문 표시, #173) */
     gap: 7px;
     padding-left: calc(var(--d) * 20px); /* 깊이 들여쓰기 — 행=쪽지, 열=깊이 (비급.md와 같은 격자 감각) */
     /* 들여쓰기 가이드 선 (IDE 트리 국룰) — 조상 열(20px 단위)마다 중앙에 옅은 세로선:
@@ -208,16 +208,17 @@
     flex: none;
     width: 9px;
     height: 9px;
-    margin: 0 5.5px; /* 점(9px)도 삼각형(20px)과 같은 거터 폭 — 잎/가지 행의 글줄 x를 맞춰 위계 헛읽힘 방지 */
+    margin: 8px 5.5px 0; /* 점(9px)도 삼각형(20px)과 같은 거터 폭 — 잎/가지 행의 글줄 x를 맞춰 위계 헛읽힘 방지. 위 8px = 첫 줄 세로 중앙 */
     border-radius: 50%;
     border: 1px solid rgba(42, 36, 28, 0.35); /* 한지 위 오행 점 — 먹 점도 또렷 */
   }
   .outline button.fold {
     flex: none;
     width: 20px;
+    margin-top: 4px; /* 첫 줄 세로 중앙 (멀티라인 행 대응) */
     padding: 0 2px;
     font: 600 12px/1.6 var(--sans);
-    color: var(--ink-dim);
+    /* 색은 인라인 style로 그 노드의 오행색 — 가지 노드도 색을 잃지 않게 (#174) */
     background: none;
     border: none;
   }
@@ -243,15 +244,10 @@
     outline-offset: 0;
   }
   .outline button.row .txt {
+    flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap; /* 행 하나 = 첫 줄 — 전문은 캔버스에서 */
-  }
-  .outline button.row .more {
-    flex: none;
-    margin-left: 4px;
-    color: var(--ink-dim); /* 멀티라인 표지 ⋯ — 뒤가 더 있다 */
+    white-space: pre-wrap; /* 전문 표시 — 줄바꿈 보존 + 자동 줄바꿈 (족보 = 읽기 렌즈, #173) */
+    overflow-wrap: anywhere; /* 끊을 데 없는 긴 문자열도 가로 넘침 없이 */
   }
   .outline button.row.revisit {
     color: var(--ink-dim); /* 재방문(순환·다중 부모) — 본문은 위에 이미 한 번 */
