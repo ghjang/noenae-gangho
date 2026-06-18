@@ -426,7 +426,7 @@
   // 족보 스코프(ui.outlineRootId)는 store 소관 — 진입 시점의 선택을 뿌리로 포착(선택 이동에
   // 출렁이지 않게 동결, Workflowy zoom 국룰), 문서별로 영속(setOutlineScope), 전환 시 그 문서 것 복원
   // 모든 뷰 이동의 공용 길 — 순환(V/토글)·역순환(Shift+V)·직행(1/2/3)이 다 이 문을 지난다
-  function goView(mode: 'canvas' | 'kanban' | 'outline') {
+  async function goView(mode: 'canvas' | 'kanban' | 'outline') {
     commitEditing();
     searchQ = null;
     ui.linking = null;
@@ -439,7 +439,14 @@
       if (ui.viewMode !== 'outline') setOutlineScope(ui.selectedId);
       else if (ui.selectedId) setOutlineScope(ui.selectedId);
     }
+    // 비캔버스 → 캔버스 전환 시 선택 念을 화면 중앙으로 — 작업 흐름 유지(#178). 선택 있을 때만:
+    // 없으면 저장 뷰포트 복원 그대로(특정 念 줌/이동 없음). 팬만(centerOn) — 줌은 안 건드린다.
+    const land = mode === 'canvas' && ui.viewMode !== 'canvas' && ui.selectedId ? byId(ui.selectedId) : null;
     setViewMode(mode);
+    if (land) {
+      await tick(); // 캔버스가 서야 canvasRef.centerOn 가능 (boardJump와 같은 패턴)
+      canvasRef?.centerOn(land);
+    }
   }
   function toggleView() {
     goView(NEXT_VIEW[ui.viewMode]);
