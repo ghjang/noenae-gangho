@@ -144,6 +144,7 @@ export interface UiState {
   docSwitching: boolean; // 문서 전환 중 — 퇴장/입장 애니를 꺼서 두 강호가 겹쳐 보이지 않게
   viewMode: ViewMode; // 문서별 취향(#42), snapshot/undo 밖
   outlineRootId: string | null; // 족보 스코프 — 문서별 영속(setOutlineScope), snapshot/undo 밖
+  outlineFiltering: boolean; // 족보 검색 필터가 열려 있나(#190) — 켜진 동안 봉문 가지치기 봉인(접힌 매칭도 선택 유지). 세션 전용, snapshot/undo 밖
   tone: Tone; // strings.ts 팩 선택
   ink: Color; // 현재 붓 색 — 새 쪽지(+/더블클릭)의 기본색. 칠하기/빈손 클릭이 갱신
 }
@@ -163,6 +164,7 @@ export const ui: UiState = $state({
   docSwitching: false,
   viewMode: 'canvas',
   outlineRootId: null,
+  outlineFiltering: false,
   tone: loadTone(),
   ink: 'muk',
 });
