@@ -8,6 +8,7 @@
   // 경량 편집(팔레트 칠하기·Ctrl+←→ 색 이동·Delete 베기·+ 추가)은 App 키 경로가
   // 캔버스 변이 함수를 재사용 — 보드 전용 변이 경로는 두지 않는다. 緣·배치는 캔버스 몫
   // ──────────────────────────────────────────────
+  import { tick } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { graph, ui, COLORS, selectNode } from './lib/store.svelte.ts';
@@ -30,6 +31,19 @@
   const cols = $derived(
     boardColumns(graph.nodes, graph.edges, COLORS).map((ns, i): [Color, NoteNode[]] => [COLORS[i], ns]),
   );
+
+  // 셸의 오행진 진입(goView)이 부른다 — 선택 카드를 종대 안에서 시야로(#193). 캔버스 centerOn·
+  // 족보 centerSelected의 보드판: 긴 종대서 다른 뷰 선택이 아래에 있어도 진입 시 보이게.
+  // 'nearest' = 이미 보이면 무동작(세로 스크롤만 — 가로 종대 선택은 #111 키 항법 몫)
+  export function scrollSelectedIntoView() {
+    const id = ui.selectedId;
+    if (!id) return;
+    tick().then(() =>
+      document
+        .querySelector(`.board .card[data-id="${CSS.escape(id)}"]`)
+        ?.scrollIntoView({ block: 'nearest' }),
+    );
+  }
 </script>
 
 <div class="board" role="region" aria-label={t.viewKanbanAria}>
