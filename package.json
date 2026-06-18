@@ -14,14 +14,14 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@types/node": "^22.19.21",
     "prettier": "^3.8.4",
-    "prettier-plugin-svelte": "^4.1.0",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.0.0",
     "svelte-check": "^4.6.0",
     "typescript": "^6.0.3",
-    "vite": "^5.4.0",
-    "vitest": "^2.1.9"
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
   }
 }

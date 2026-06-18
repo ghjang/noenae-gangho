@@ -11,6 +11,10 @@
     "erasableSyntaxOnly": true,
     "strict": true,
     "noEmit": true,
+    // node 앰비언트 타입 명시 — 문구 정합 테스트(strings.test.ts)의 node:fs·import.meta용.
+    // vite8/vitest4 업글(#197) 후 @types/node 자동 전역 포함이 끊겨 명시로 못박음(프로젝트의
+    // 유일한 @types라 비용 0). vitest/vite 타입은 import로 들어와 이 목록과 무관
+    "types": ["node"],
     "skipLibCheck": true,
     "isolatedModules": true,
     "allowJs": true // 전환 중 .js 공존용 — 전환 완료 후에도 e2e/검사 스크립트 무해
