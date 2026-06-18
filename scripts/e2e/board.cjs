@@ -352,6 +352,46 @@ const ok = (c, m) => {
     .catch(() => {});
   await p.keyboard.press('Escape');
   await p.screenshot({ path: '/tmp/board-view.png' });
+  await p.context().close();
+
+  // #193 — 긴 종대서 다른 뷰 선택이 아래에 묻혀도, 오행진 진입 시 그 카드를 시야로.
+  // 같은 색(muk) 24장 → 한 종대가 뷰포트 넘게 길다. 깊은 카드 선택 후 재진입 → 보이는가.
+  const ctx2 = await browser.newContext({ viewport: { width: 1100, height: 640 } });
+  await ctx2.addInitScript(() => {
+    const nodes = [];
+    for (let i = 0; i < 24; i++)
+      nodes.push({ id: 'k' + i, x: 0, y: i * 60, text: '카드 ' + i, color: 'muk' });
+    localStorage.setItem(
+      'noenae-gangho-v1',
+      JSON.stringify({ app: 'noenae-gangho', v: 3, nodes, edges: [] }),
+    );
+  });
+  const q = await ctx2.newPage();
+  await q.goto('http://localhost:4173/', { waitUntil: 'networkidle' });
+  await q.waitForTimeout(400);
+  await q.keyboard.press('2'); // 오행진
+  await q.waitForTimeout(300);
+  // 깊은 카드(카드 23)를 보드에서 클릭해 선택 (Playwright가 종대를 스크롤해 클릭)
+  await q.locator('.board .card', { hasText: '카드 23' }).click();
+  await q.waitForTimeout(150);
+  await q.keyboard.press('1'); // 캔버스로 (선택 유지)
+  await q.waitForTimeout(300);
+  await q.keyboard.press('2'); // 다시 오행진 — 종대는 fresh(scrollTop 0), 선택은 깊은 카드 23
+  await q.waitForTimeout(350);
+  const vis = await q.evaluate(() => {
+    const sel = document.querySelector('.board .card.sel');
+    if (!sel) return { ok: false, reason: 'no sel' };
+    const r = sel.getBoundingClientRect();
+    return {
+      ok: r.top >= 0 && r.bottom <= window.innerHeight + 1,
+      top: Math.round(r.top),
+      vh: window.innerHeight,
+      txt: sel.textContent.trim().slice(0, 8),
+    };
+  });
+  ok(vis.ok, `#193 오행진 재진입 → 깊은 선택 카드(${vis.txt}) 시야 안 (top=${vis.top} vh=${vis.vh})`);
+
+  await ctx2.close();
   await browser.close();
   console.log(process.exitCode ? '검증 실패' : '#42 오행진 — 전 시나리오 통과');
 })().catch((e) => {

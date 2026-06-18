@@ -114,6 +114,9 @@
   가지로 한 단, 0은 전체 직행. 히스토리 상태는 두지 않는다. **스코프를 바꾸면(0/Esc/크럼/Shift+3)
   선택 앵커 행을 시야로 끌어온다**(scrollIntoView, #153) — 캔버스 `ensureVisible`과 같은 결:
   보기를 바꿔도 작업 대상은 시야에. [보초: e2e/outline.cjs]
+- **"보기를 바꿔도 작업 대상은 시야에"는 세 뷰 공통** — 캔버스 진입=`centerOn`(#178·#185)·
+  족보 진입=`centerSelected`(#185)·오행진 진입=`scrollSelectedIntoView`(#193, 긴 종대서 깊은
+  선택도 보이게). 모두 `goView`가 진입 시 선택 있으면 부른다(seam: `canvasRef`/`outlineRef`/`boardRef`).
 - **족보 검색 필터(#154)는 비파괴 뷰 오버레이** — Ctrl+F로 상단 인라인 검색창을 열면(셸이
   `openSearch`/`closeSearch` seam으로 위임) 입력에 따라 매칭 ∪ 조상 경로만 남는다
   (`outlineFilterRows`). **스코프(Shift+3) 중이면 그 가지 안에서만 검색** — 필터가 현재

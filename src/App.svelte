@@ -65,6 +65,8 @@
   // 족보 뷰 핸들 — bind:this. 셸의 Ctrl+F가 검색 필터를 열고(openSearch), 단계식 Esc가 닫는다
   // (closeSearch). 족보 뷰일 때만 실존(다른 뷰에선 null) (#154)
   let outlineRef = $state<OutlineView>();
+  // 오행진 뷰 핸들 — bind:this. 진입 시 선택 카드를 시야로 끌어온다(scrollSelectedIntoView, #193)
+  let boardRef = $state<BoardView>();
 
   // bind:this 참조(hlPre/searchEl)는 $state로 받는다 — Svelte 5에선 bind:this 대상도 $state여야
   // 값 갱신을 컴파일러가 추적해 non_reactive_update 경고가 안 뜬다. 실제론 DOM 메서드 호출용
@@ -477,6 +479,12 @@
       await tick(); // 족보가 서야 outlineRef.centerSelected 가능
       outlineRef?.centerSelected();
     }
+    // 오행진 진입 + 선택 있으면 그 카드를 종대 안에서 시야로(#193) — 캔버스 centerOn·족보
+    // centerSelected의 보드판. 긴 종대서 다른 뷰 선택이 아래에 묻혀 안 보이던 것 봉합
+    if (mode === 'kanban' && ui.selectedId) {
+      await tick(); // 오행진이 서야 boardRef.scrollSelectedIntoView 가능
+      boardRef?.scrollSelectedIntoView();
+    }
   }
   function toggleView() {
     goView(NEXT_VIEW[ui.viewMode]);
@@ -862,7 +870,7 @@
 <!-- 캔버스(강호)는 #152로 BoardView/OutlineView와 형제인 CanvasView로 분리 — 셸은 bind:this로
      잡아 키 라우팅·검색·점프를 위임하고 hue(팔레트 호버색)/closeSearch만 내려준다 -->
 {#if ui.viewMode === 'kanban'}
-  <BoardView onJump={boardJump} hue={colorHover} />
+  <BoardView bind:this={boardRef} onJump={boardJump} hue={colorHover} />
 {:else if ui.viewMode === 'outline'}
   <OutlineView
     bind:this={outlineRef}
