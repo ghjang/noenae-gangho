@@ -89,7 +89,7 @@
   let mmEl = $state<SVGSVGElement>()!; // 미니맵 svg — 스크럽 좌표 변환
 
   // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.ts computeHidden
-  // (시나리오 검증: scripts/check-graph.mjs). 집중(포커스, #47)이 켜져 있으면 표적의 이웃
+  // (시나리오 검증: src/lib/graph.test.ts). 집중(포커스, #47)이 켜져 있으면 표적의 이웃
   // 밖도 합쳐 숨긴다 — 全 맞춤/전도/Alt 항법/선택 정리가 전부 이 집합을 보므로 공짜로 따라온다
   const hidden = $derived.by(() => {
     const base = computeHidden(graph.nodes, graph.edges);

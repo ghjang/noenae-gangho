@@ -77,10 +77,11 @@ const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
   await p.keyboard.press('Shift+1');
   await p.waitForTimeout(200);
   const allIn = await p.locator('.node').evaluateAll(
-    (els, vh) => els.every((el) => {
-      const r = el.getBoundingClientRect();
-      return r.top >= -1 && r.left >= -1 && r.bottom <= vh + 2;
-    }),
+    (els, vh) =>
+      els.every((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top >= -1 && r.left >= -1 && r.bottom <= vh + 2;
+      }),
     vp.height,
   );
   ok(allIn, 'Shift+1 → 전체 맞춤(모든 노드 시야 안)');
@@ -90,7 +91,10 @@ const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
   const sB = (await world()).s;
   await p.keyboard.press('Shift+2');
   await p.waitForTimeout(200);
-  ok((await world()).s > sB, `Shift+2 → 선택 쪽지로 줌 (배율 ${sB.toFixed(2)}→${(await world()).s.toFixed(2)})`);
+  ok(
+    (await world()).s > sB,
+    `Shift+2 → 선택 쪽지로 줌 (배율 ${sB.toFixed(2)}→${(await world()).s.toFixed(2)})`,
+  );
 
   // ── 미니맵 클릭 점프 (사각지대: 렌더만 검증됐음) ──
   await p.keyboard.press('Control+0');
@@ -133,11 +137,14 @@ const near = (a, b, eps = 1) => Math.abs(a - b) <= eps;
   const ab0 = await edge0();
   // 緣 stroke 한가운데로 마우스 이동 → edgeHover 세팅(.hit는 pointer-events:stroke라 bbox중심 아닌
   // 경로 위 점이어야) → F. getPointAtLength(경로 중점) → getScreenCTM(.world 변환 반영)으로 화면 좌표
-  const pt = await p.locator('.edge .hit').first().evaluate((path) => {
-    const mid = path.getPointAtLength(path.getTotalLength() / 2);
-    const sp = new DOMPoint(mid.x, mid.y).matrixTransform(path.getScreenCTM());
-    return { x: sp.x, y: sp.y };
-  });
+  const pt = await p
+    .locator('.edge .hit')
+    .first()
+    .evaluate((path) => {
+      const mid = path.getPointAtLength(path.getTotalLength() / 2);
+      const sp = new DOMPoint(mid.x, mid.y).matrixTransform(path.getScreenCTM());
+      return { x: sp.x, y: sp.y };
+    });
   await p.mouse.move(pt.x, pt.y);
   await p.waitForTimeout(150);
   await p.keyboard.press('f');

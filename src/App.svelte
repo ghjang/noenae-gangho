@@ -650,11 +650,11 @@
   // 앵커 쪽지 — 검색창 Shift+2 폴백(찾은 게 없으면 선택 쪽지로 맞춤)과 뷰 라우터가 읽는다.
   // 집중 배지의 이름표(focalLabel)·캔버스 키 핸들러의 selected는 CanvasView로 이주(#152)
   const selected = $derived(ui.selectedId ? byId(ui.selectedId) : null);
-  // 동적 합성 키(mode+'Title') — 실존은 check-strings의 간접 참조 목록이 검증 (any 경계)
+  // 동적 합성 키(mode+'Title') — 실존은 strings.test.ts의 간접 참조 목록이 검증 (any 경계)
   const sheetTitle = $derived(ui.overlay ? ((t as any)[ui.overlay.mode + 'Title'] ?? '') : '');
 
   // 접힌 가지 아래 숨은 쪽지들 — 규칙·증명은 lib/graph.ts computeHidden
-  // (시나리오 검증: scripts/check-graph.mjs)
+  // (시나리오 검증: src/lib/graph.test.ts)
   // 집중(포커스, #47)이 켜져 있으면 표적의 이웃 밖도 합쳐 숨긴다 —
   // 全 맞춤/전도/Alt 항법/선택 정리가 전부 이 집합을 보므로 공짜로 따라온다
   const hidden = $derived.by(() => {

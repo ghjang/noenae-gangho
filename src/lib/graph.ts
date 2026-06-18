@@ -1,6 +1,6 @@
 // ──────────────────────────────────────────────
 // 緣 그래프 순수 함수 — 방향은 a(부모) → b(자식).
-// DOM·스토어 무관, node로 직접 검증 가능 (scripts/check-graph.mjs).
+// DOM·스토어 무관, Vitest로 단위 검증 (src/lib/graph.test.ts).
 // ──────────────────────────────────────────────
 import { nodeBox } from './geometry.ts';
 import type { Color, Edge, NoteNode } from './types.ts';
@@ -9,7 +9,7 @@ import type { Color, Edge, NoteNode } from './types.ts';
 // 규칙: ① 이미 숨은 뿌리의 봉문은 효력 없음 (상호 잠금 방지)
 //       ② 봉문은 자기 조상(순환 동료 포함)을 절대 숨기지도, 그 너머로
 //          건너가지도 않는다 — 순환 緣에서 펼치기 단추가 증발하는 참사 방지
-// 중첩 봉문(접힌 자식)은 정상으로 숨는다. 규칙을 바꾸면 check-graph.mjs도 같이.
+// 중첩 봉문(접힌 자식)은 정상으로 숨는다. 규칙을 바꾸면 graph.test.ts도 같이.
 export function computeHidden(nodes: NoteNode[], edges: Edge[]): Set<string> {
   const out = new Set<string>();
   for (const root of nodes) {
@@ -238,7 +238,7 @@ export function tidyLayout(
 // ── 왜 이 방식인가 (국룰 조사 결론, 이슈 #125) ──
 // ①성분 패킹(전부 재배열)이 아니라 ②겹침 제거를 택했다 — "뿌리 제자리" 철학을 보존해
 // 사용자의 공간 기억을 안 깨려고. 읽기 순서(y→x)의 첫 성분은 닻으로 고정, 나머지만
-// 닻에서 멀어지는 쪽으로 민다. 결정적(맨 node 검증 가능) · 순수층.
+// 닻에서 멀어지는 쪽으로 민다. 결정적 · 순수층 (graph.test.ts 검증).
 //
 // ── 전략 이음매 (#157) ──
 // 일부러 tidyLayout/arrange에 인라인하지 않고 독립 함수로 뺐다. 이게 "성분 간 전략 1번
