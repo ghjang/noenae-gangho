@@ -12,13 +12,21 @@
   import { graph, ui, selectNode, toggleCollapse, byId, setOutlineScope } from './lib/store.svelte.ts';
   import { STRINGS } from './lib/strings.ts';
   import { outlineRows, outlineFilterRows, childCounts, parentEdgeOf } from './lib/graph.ts';
-  import type { NoteNode } from './lib/types.ts';
+  import type { Color, NoteNode } from './lib/types.ts';
 
+  // hue: 빈손 팔레트 호버 색 — 그 색 행만 또렷, 나머지 흐림(캔버스 lit/오행진 fade의 족보판, #188).
+  // colorHover는 선택이 없을 때만 세팅되므로(셸) 선택 중엔 hue=null → 자연히 무동작
   let {
     onJump,
     rootId = null,
     onScopeClear,
-  }: { onJump: (n: NoteNode) => void; rootId?: string | null; onScopeClear: () => void } = $props();
+    hue = null,
+  }: {
+    onJump: (n: NoteNode) => void;
+    rootId?: string | null;
+    onScopeClear: () => void;
+    hue?: Color | null;
+  } = $props();
 
   const t = $derived(STRINGS[ui.tone]);
   // 스코프 뿌리가 베여 사라졌으면 전체로 폴백 (rootId는 진입 시점 포착 — 살아있을 때만 유효)
@@ -194,7 +202,7 @@
     {:else}
       <ul>
         {#each rows as r, i (r.node.id + ':' + i)}
-          <li style={`--d: ${r.depth}`} class:root={r.depth === 0}>
+          <li style={`--d: ${r.depth}`} class:root={r.depth === 0} class:fade={!!hue && hue !== r.node.color}>
             {#if !filtering && !r.revisit && (kidCount.get(r.node.id) ?? 0) > 0}
               <!-- 봉문 삼각형 — collapsed 필드 그 자체: 캔버스 ▸배지·오행진 ▸N과 한 데이터.
                    검색 중엔 접기를 멈추고(filtering) 점으로: 필터는 '드러내기'라 접기와 모순 (#154) -->
@@ -348,6 +356,12 @@
     );
     background-size: calc(var(--d) * 20px) 100%;
     background-repeat: no-repeat;
+    transition: opacity 0.12s; /* 팔레트 호버 비추기(#188) 부드럽게 */
+  }
+  /* 빈손 팔레트 호버 — 그 색 아닌 행은 흐림(캔버스 lit·오행진 .col.fade와 같은 어휘, #188).
+     매칭 행은 제 밝기로 남아 대비로 또렷해진다 (hue는 선택 없을 때만 세팅됨) */
+  .outline li.fade {
+    opacity: 0.4;
   }
   /* 무관한 무리(뿌리 다른 트리) 사이 호흡 — 간격 + 얇은 먹선. 깊이 0 행이 곧 무리 머리,
    :not(:first-child)로 '2개 사이에만'(첫 무리 위엔 없음). 가이드 세로선(0.14)보다 한 끗
