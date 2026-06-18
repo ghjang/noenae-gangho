@@ -859,6 +859,7 @@
                 searchIdx = i;
                 searchJumped = true;
                 canvasRef?.jumpTo(m);
+                searchEl?.focus(); // 클릭 뒤에도 input이 키보드 소유 — ↑↓가 노드 넛지 아닌 결과 순회 (#180)
               }}
               onpointerenter={() => {
                 searchIdx = i;
